@@ -261,6 +261,18 @@
     var btnOK       = document.getElementById('btnOK');
     var pedidoIdEl  = document.getElementById('pedidoIdHeader');
 
+    function cargarPedidoId(){
+      if (!pedidoIdEl || typeof google === 'undefined' || !google.script || !google.script.run) return;
+
+      google.script.run
+        .withSuccessHandler(function(id){
+          if (id) {
+            pedidoIdEl.textContent = id;
+          }
+        })
+        .generarIdPedido();
+    }
+
     contactBtn.addEventListener('click', function(){
       var dataScript = this.parentNode.querySelector('.dd-data');
       var data = [];
@@ -324,6 +336,7 @@
     function init(){
       applyScaleFix();
       sizeHeaderImage();
+      cargarPedidoId();
     }
     if (document.readyState === 'loading'){
       document.addEventListener('DOMContentLoaded', init);
