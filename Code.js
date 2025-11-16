@@ -10,6 +10,14 @@
       .setTitle('SecoMóvil — UI Kit');
   }
 
+  function abrirInicio() {
+    var template = HtmlService.createTemplateFromFile('inicio');
+    var html = template.evaluate()
+      .setTitle('Inicio');
+
+    SpreadsheetApp.getUi().showSidebar(html);
+  }
+
   function abrirNuevoPedido() {
     var init = initNuevoPedido();
     if (!init || !init.ok || !init.data) {
@@ -1758,18 +1766,25 @@ function actualizarCliente(idCliente, data) {
     if (data.sector !== undefined) {
       sheet.getRange(rowFound, 9).setValue(data.sector); // col I
     }
+    if (data.nota !== undefined) {
+      sheet.getRange(rowFound, 7).setValue(data.nota); // col G
+    }
 
     // Garantir que el cliente pasa a "Activo"
     sheet.getRange(rowFound, 6).setValue('Activo'); // col F
 
     // Leer datos actualizados para devolverlos
     var row = sheet.getRange(rowFound, 1, 1, 9).getValues()[0];
+    var sectorInfo = obtenerPrecioYColumnaSector_(row[8] || '');
     var cliente = {
       idCliente: idCliente,
       nombre: row[0] || '',
       telefono: row[1] || '',
       direccion: row[2] || '',
-      sector: row[8] || ''
+      sector: row[8] || '',
+      nota: row[6] || '',
+      columnaSector: sectorInfo && sectorInfo.columna ? sectorInfo.columna : '',
+      precioBase: sectorInfo && sectorInfo.precio !== undefined ? sectorInfo.precio : null
     };
 
     return {
@@ -1785,6 +1800,42 @@ function actualizarCliente(idCliente, data) {
       data: null
     };
   }
+}
+
+/**
+ * Busca y devuelve un cliente por su ID en BASE DE CLIENTES.
+ * @param {string} idCliente
+ * @returns {Object|null}
+ */
+function obtenerClientePorId_(idCliente) {
+  var idBuscado = (idCliente || '').toString().trim();
+  if (!idBuscado) return null;
+
+  var sheet = getSheet_('BASE DE CLIENTES');
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) return null;
+
+  var ids = sheet.getRange(2, 8, lastRow - 1, 1).getValues(); // Col H
+  for (var i = 0; i < ids.length; i++) {
+    var id = (ids[i][0] || '').toString().trim();
+    if (id === idBuscado) {
+      var row = sheet.getRange(i + 2, 1, 1, 9).getValues()[0];
+      var sectorInfo = obtenerPrecioYColumnaSector_(row[8] || '');
+
+      return {
+        idCliente: idBuscado,
+        nombre: row[0] || '',
+        telefono: row[1] || '',
+        direccion: row[2] || '',
+        nota: row[6] || '',
+        sector: row[8] || '',
+        columnaSector: sectorInfo && sectorInfo.columna ? sectorInfo.columna : '',
+        precioBase: sectorInfo && sectorInfo.precio !== undefined ? sectorInfo.precio : null
+      };
+    }
+  }
+
+  return null;
 }
 
 
@@ -1990,6 +2041,67 @@ function abrirNuevoContacto(desdeNuevoPedidoPayload) {
 }
 
 /**
+ * Abre la página editarContacto.html con los datos del contacto existente.
+ * @param {Object} payload
+ * @returns {{ok:boolean, error:string|null, data:Object|null}}
+ */
+function abrirEditarContacto(payload) {
+  try {
+    payload = payload || {};
+    var idContacto = (payload.idContacto || payload.idCliente || '').toString().trim();
+    var clienteObj = payload.cliente || null;
+
+    if (!clienteObj && idContacto) {
+      clienteObj = obtenerClientePorId_(idContacto);
+    }
+
+    if (!clienteObj) {
+      return {
+        ok: false,
+        error: 'No se encontró el contacto para editar.',
+        data: null
+      };
+    }
+
+    var sectores = leerSectores_();
+
+    var ctx = {
+      pedidoId: (payload && payload.pedidoId) ? payload.pedidoId.toString().trim() : '',
+      origen: (payload && payload.origen) ? payload.origen.toString().trim() : '',
+      idContacto: clienteObj.idCliente || idContacto,
+      cliente: clienteObj,
+      sectores: sectores
+    };
+
+    var userProps = PropertiesService.getUserProperties();
+    userProps.setProperty('SECOMOVIL_CTX_NUEVO_PEDIDO', JSON.stringify(ctx));
+
+    var template = HtmlService.createTemplateFromFile('editarContacto');
+    var html = template.evaluate()
+      .setTitle('Editar contacto');
+
+    inyectarContextoEnHtml_(html, ctx);
+    SpreadsheetApp.getUi().showSidebar(html);
+
+    return {
+      ok: true,
+      error: null,
+      data: {
+        redirectTo: 'editarContacto.html',
+        ctx: ctx
+      }
+    };
+
+  } catch (e) {
+    return {
+      ok: false,
+      error: e && e.message ? e.message : 'Error desconocido al preparar editarContacto.',
+      data: null
+    };
+  }
+}
+
+/**
  * Registra un nuevo contacto en BASE DE CLIENTES utilizando un ID ya generado
  * (idContacto) y devuelve el contexto necesario para continuar con el flujo
  * del pedido.
@@ -2074,6 +2186,78 @@ function registrarNuevoContacto(data, payload) {
       ok: false,
       success: false,
       error: e && e.message ? e.message : 'Error desconocido al registrar el contacto.',
+      data: null
+    };
+  }
+}
+
+/**
+ * Actualiza un contacto existente desde editarContacto.html y devuelve el contexto
+ * para volver a registrarPedido.html con los datos actualizados.
+ * @param {Object} data
+ * @param {Object} payload
+ * @returns {{ok:boolean, error:string|null, data:Object|null}}
+ */
+function actualizarContactoDesdeEditar(data, payload) {
+  try {
+    data = data || {};
+    payload = payload || {};
+
+    var idContacto = (data.idContacto || payload.idContacto || '').toString().trim();
+    var nombre = (data.nombre || '').toString().trim();
+    var telefono = (data.telefono || '').toString().trim();
+    var direccion = (data.direccion || '').toString().trim();
+    var sector = (data.sector || '').toString().trim();
+    var nota = (data.nota || '').toString().trim();
+    var pedidoId = (data.pedidoId || payload.pedidoId || '').toString().trim();
+
+    if (!idContacto || !nombre || !telefono || !direccion || !sector) {
+      return {
+        ok: false,
+        error: 'Faltan datos obligatorios para actualizar el contacto.',
+        data: null
+      };
+    }
+
+    var resp = actualizarCliente(idContacto, {
+      nombre: nombre,
+      telefono: telefono,
+      direccion: direccion,
+      sector: sector,
+      nota: nota
+    });
+
+    if (!resp || !resp.ok || !resp.data || !resp.data.cliente) {
+      return {
+        ok: false,
+        error: (resp && resp.error) ? resp.error : 'No se pudo actualizar el contacto.',
+        data: null
+      };
+    }
+
+    var cliente = resp.data.cliente;
+
+    var ctx = {
+      origen: 'editarContacto',
+      pedidoId: pedidoId,
+      idContacto: cliente.idCliente,
+      clienteNombre: cliente.nombre,
+      cliente: cliente
+    };
+
+    return {
+      ok: true,
+      error: null,
+      data: {
+        cliente: cliente,
+        ctx: ctx
+      }
+    };
+
+  } catch (e) {
+    return {
+      ok: false,
+      error: e && e.message ? e.message : 'Error desconocido al actualizar el contacto.',
       data: null
     };
   }

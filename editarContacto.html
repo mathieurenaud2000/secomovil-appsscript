@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, shrink-to-fit=no">
-  <title>SecoMobil – Nuevo contacto</title>
+  <title>SecoMobil – Editar contacto</title>
   <style>
     :root{
       --fix: 1;
@@ -66,6 +66,29 @@
       font-size: calc(10px * var(--fix));
       color:#111;
       white-space:nowrap;
+    }
+    .pedido-id-loader{
+      display:inline-flex;
+      align-items:flex-end;
+      justify-content:flex-end;
+      gap: calc(3px * var(--fix));
+      min-width: calc(64px * var(--fix));
+      height: calc(12px * var(--fix));
+    }
+    .pedido-id-loader .dot{
+      width: calc(5px * var(--fix));
+      height: calc(5px * var(--fix));
+      border-radius:50%;
+      background:#111;
+      opacity:0.3;
+      animation: pedidoIdPulse 1s infinite ease-in-out;
+    }
+    .pedido-id-loader .dot:nth-child(2){ animation-delay:0.15s; }
+    .pedido-id-loader .dot:nth-child(3){ animation-delay:0.30s; }
+
+    @keyframes pedidoIdPulse{
+      0%, 80%, 100%{ opacity:0.25; transform: translateY(0); }
+      40%{ opacity:0.8; transform: translateY(-1px); }
     }
 
     /* ===== CONTENU ===== */
@@ -187,10 +210,16 @@
 
       <div class="header-grid">
         <div class="header-title">
-          <span>NUEVO</span>
+          <span>EDITAR</span>
           <span>CONTACTO</span>
         </div>
-        <div class="header-id">C-0001</div>
+        <div class="header-id" id="contactoId">
+          <span class="pedido-id-loader" aria-label="Cargando ID" role="status">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+          </span>
+        </div>
       </div>
 
       <div class="sep-black"></div>
@@ -209,9 +238,7 @@
         <button type="button" class="dd-button" id="sectorBtn" data-placeholder="true">
           <span class="dd-label">Elegir un sector</span><span class="dd-caret" aria-hidden="true"></span>
         </button>
-        <script type="application/json" class="dd-data">
-          ["Centro","Mirador","Puerto Misahuallí","San Pablo","Otro"]
-        </script>
+        <script type="application/json" class="dd-data">[]</script>
       </div>
 
       <!-- Direccion -->
@@ -227,12 +254,13 @@
       <!-- WhatsApp -->
       <div class="label">WhatsApp</div>
       <input class="field" type="text" id="whatsapp" placeholder="">
+      <div class="error-text" id="whatsappError" aria-live="polite"></div>
 
       <div class="sep-gray"></div>
 
       <!-- Boutons -->
       <button class="btn btn-desactive" id="btnGuardar" disabled>GUARDAR</button>
-      <button class="btn btn-blanc">VOLVER AL INICIO</button>
+      <button class="btn btn-blanc" id="btnVolverInicio">VOLVER AL INICIO</button>
 
       <div style="height:0;"></div>
     </div>
@@ -267,28 +295,94 @@
       }
     }
 
-    /* Références des champs pour la validation */
-    var overlay = document.getElementById('ddOverlay');
-    var overlayList = document.getElementById('ddOverlayList');
-    var sectorBtn   = document.getElementById('sectorBtn');
-    var btnGuardar  = document.getElementById('btnGuardar');
+    var overlay      = document.getElementById('ddOverlay');
+    var overlayList  = document.getElementById('ddOverlayList');
+    var sectorBtn    = document.getElementById('sectorBtn');
+    var btnGuardar   = document.getElementById('btnGuardar');
+    var btnVolverIni = document.getElementById('btnVolverInicio');
 
     var nombreEl   = document.getElementById('nombre');
     var dirEl      = document.getElementById('direccion');
     var notaEl     = document.getElementById('nota');
     var whatsappEl = document.getElementById('whatsapp');
 
+    var ctxCache = null;
+    var sectoresOpciones = [];
+
+    function obtenerCtxServidor(){
+      if (ctxCache) return ctxCache;
+      if (typeof window !== 'undefined' && window.SECO_CTX){
+        ctxCache = window.SECO_CTX;
+        return ctxCache;
+      }
+      return null;
+    }
+
+    function cuandoCtxListo(callback, intento){
+      var ctx = obtenerCtxServidor();
+      if (ctx){
+        callback(ctx);
+        return;
+      }
+      var intentoActual = intento || 0;
+      if (intentoActual >= 50) return;
+      setTimeout(function(){
+        cuandoCtxListo(callback, intentoActual + 1);
+      }, 80);
+    }
+
+    function setContactoIdDesdeCtx(ctx){
+      var idEl = document.getElementById('contactoId');
+      if (!idEl || !ctx) return;
+      var idContacto = (ctx.idContacto || (ctx.cliente && ctx.cliente.idCliente) || '').toString();
+      if (idContacto){
+        idEl.textContent = idContacto;
+      }
+    }
+
+    function sincronizarSectoresDesdeCtx(ctx){
+      var sectores = Array.isArray(ctx && ctx.sectores) ? ctx.sectores : [];
+      sectoresOpciones = sectores
+        .map(function(sec){ return (sec && sec.nombre) ? sec.nombre : sec; })
+        .filter(Boolean);
+
+      var dataEl = sectorBtn && sectorBtn.parentNode ? sectorBtn.parentNode.querySelector('.dd-data') : null;
+      if (dataEl){
+        dataEl.textContent = JSON.stringify(sectoresOpciones);
+      }
+    }
+
+    function esWhatsappValido(valor){
+      var limpio = (valor || '').toString().trim();
+      return /^\d{7,15}$/.test(limpio);
+    }
+
+    function validarWhatsappCampo(){
+      var errorEl = document.getElementById('whatsappError');
+      if (!errorEl) return esWhatsappValido(whatsappEl.value);
+
+      var valor = (whatsappEl.value || '').toString().trim();
+      if (!valor){
+        errorEl.textContent = '';
+        return false;
+      }
+
+      var valido = esWhatsappValido(valor);
+      errorEl.textContent = valido ? '' : 'Número de WhatsApp inválido';
+      return valido;
+    }
+
     function champsRemplis(){
       var nomOK    = nombreEl.value.trim()   !== '';
       var dirOK    = dirEl.value.trim()      !== '';
-      var waOK     = whatsappEl.value.trim() !== '';
+      var waOK     = esWhatsappValido(whatsappEl.value);
       var sectorOK = !sectorBtn.hasAttribute('data-placeholder');
-      // Nota est optionnel → non pris en compte
       return nomOK && dirOK && waOK && sectorOK;
     }
 
     function majBoutonGuardar(){
-      if (champsRemplis()){
+      var waValido = validarWhatsappCampo();
+      if (champsRemplis() && waValido){
         btnGuardar.disabled = false;
         btnGuardar.classList.remove('btn-desactive');
         btnGuardar.classList.add('btn-noir');
@@ -299,16 +393,37 @@
       }
     }
 
-    /* Dropdown simple pour "Sector" */
-    function openSectorDropdown(){
-      var dataScript = sectorBtn.parentNode.querySelector('.dd-data');
-      var data = [];
-      if (dataScript){
-        try{ data = JSON.parse(dataScript.textContent.trim()); }catch(e){ data = []; }
+    function poblarFormularioDesdeCtx(ctx){
+      if (!ctx) return;
+
+      var cliente = ctx.cliente || {};
+      nombreEl.value   = cliente.nombre || '';
+      dirEl.value      = cliente.direccion || '';
+      notaEl.value     = cliente.nota || '';
+      whatsappEl.value = cliente.telefono || cliente.whatsapp || '';
+
+      var sector = cliente.sector || '';
+      var lbl = sectorBtn.querySelector('.dd-label');
+      if (sector && lbl){
+        lbl.textContent = sector;
+        sectorBtn.removeAttribute('data-placeholder');
       }
+
+      setContactoIdDesdeCtx(ctx);
+    }
+
+    function openSectorDropdown(){
+      if (!sectoresOpciones.length) {
+        cuandoCtxListo(function(ctx){
+          sincronizarSectoresDesdeCtx(ctx);
+          openSectorDropdown();
+        });
+        return;
+      }
+
       overlayList.innerHTML = "";
 
-      data.forEach(function(txt){
+      sectoresOpciones.forEach(function(txt){
         var li = document.createElement('li');
         li.className = "dd-overlay-option";
         li.textContent = txt;
@@ -335,18 +450,63 @@
       }
     });
 
-    /* Écouteurs sur les champs pour activer/désactiver GUARDAR */
     ['input','change'].forEach(function(ev){
       nombreEl.addEventListener(ev, majBoutonGuardar);
       dirEl.addEventListener(ev, majBoutonGuardar);
-      // notaEl est optionnel → pas nécessaire dans la logique
       whatsappEl.addEventListener(ev, majBoutonGuardar);
+    });
+
+    btnGuardar.addEventListener('click', function(){
+      if (btnGuardar.disabled) return;
+
+      var waValido = validarWhatsappCampo();
+      if (!waValido){
+        whatsappEl.focus();
+        return;
+      }
+
+      var sectorText = sectorBtn.querySelector('.dd-label')
+        ? sectorBtn.querySelector('.dd-label').textContent.trim()
+        : '';
+
+      var ctxActual = obtenerCtxServidor() || {};
+
+      var datosCliente = {
+        idContacto: (ctxActual && (ctxActual.idContacto || (ctxActual.cliente && ctxActual.cliente.idCliente))) || '',
+        pedidoId:   (ctxActual && ctxActual.pedidoId) ? ctxActual.pedidoId : '',
+        nombre:    nombreEl.value.trim(),
+        direccion: dirEl.value.trim(),
+        telefono:  whatsappEl.value.trim(),
+        sector:    sectorText,
+        nota:      notaEl.value.trim()
+      };
+
+      google.script.run
+        .withSuccessHandler(function(resp){
+          if (!resp || !resp.ok || !resp.data || !resp.data.ctx){
+            var msg = (resp && resp.error) ? resp.error : 'Error al actualizar el contacto.';
+            alert(msg);
+            return;
+          }
+
+          google.script.run.abrirRegistrarPedido(resp.data.ctx);
+        })
+        .actualizarContactoDesdeEditar(datosCliente, ctxActual);
+    });
+
+    btnVolverIni.addEventListener('click', function(){
+      google.script.run.abrirInicio();
     });
 
     function init(){
       applyScaleFix();
       sizeHeaderImage();
-      majBoutonGuardar();
+
+      cuandoCtxListo(function(ctx){
+        sincronizarSectoresDesdeCtx(ctx);
+        poblarFormularioDesdeCtx(ctx);
+        majBoutonGuardar();
+      });
     }
     if (document.readyState === 'loading'){
       document.addEventListener('DOMContentLoaded', init);

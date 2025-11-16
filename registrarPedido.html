@@ -230,7 +230,7 @@
       display:flex;
       align-items:flex-start;
       justify-content:center;
-      cursor:default; /* pas d’action pour l’instant */
+      cursor:pointer;
     }
     .contact-edit-icon-img{
       display:block;
@@ -293,7 +293,7 @@
             <div id="contactoNombre">Contacto</div>
             <div id="contactoTelefono" class="contact-subline">Selecciona o crea un contacto</div>
           </div>
-          <button type="button" class="contact-edit">
+          <button type="button" class="contact-edit" id="btnEditarContacto">
             <img class="contact-edit-icon-img"
                  src="https://lh3.googleusercontent.com/d/1IJOPYYBICvweVK9rn2mQqckhfyQOHvrJ"
                  alt="Editar contacto">
@@ -762,6 +762,8 @@
       buildDatesAndCantidad();
 
       var btnRegistrar = document.getElementById('btnRegistrar');
+      var btnEditarContacto = document.getElementById('btnEditarContacto');
+      var btnVolver = document.getElementById('btnVolver');
       if (btnRegistrar){
         btnRegistrar.addEventListener('click', function(){
           if (btnRegistrar.disabled) return;
@@ -811,6 +813,31 @@
               alert(msg);
             })
             .registrarPedidoDesdeRegistrar(payload);
+        });
+      }
+
+      if (btnEditarContacto){
+        btnEditarContacto.addEventListener('click', function(){
+          var ctx = obtenerCtxServidor();
+          var idContacto = ctx.idContacto || (ctx.cliente && ctx.cliente.idCliente) || '';
+          if (!idContacto && !ctx.cliente){
+            return;
+          }
+
+          var payload = {
+            pedidoId: ctx.pedidoId || '',
+            origen: 'registrarPedido',
+            idContacto: idContacto,
+            cliente: ctx.cliente || null
+          };
+
+          google.script.run.abrirEditarContacto(payload);
+        });
+      }
+
+      if (btnVolver){
+        btnVolver.addEventListener('click', function(){
+          google.script.run.abrirInicio();
         });
       }
     }
