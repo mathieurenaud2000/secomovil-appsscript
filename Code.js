@@ -1229,6 +1229,13 @@ function generarIdPedido_(fecha, cliente) {
 }
 
 /**
+ * Expone la generación de IDs de pedido para las páginas HTML.
+ */
+function generarIdPedido() {
+  return generarIdPedido_();
+}
+
+/**
  * Genera un ID simple para los productos detallados.
  * Formato: "prod-00001", "prod-00002", ...
  */
