@@ -1811,6 +1811,7 @@ function abrirRegistrarPedido(desdeNuevoPedidoPayload) {
  */
 function abrirNuevoContacto(desdeNuevoPedidoPayload) {
   try {
+    var idContacto = generarIdCliente_();
     var ctx = {
       pedidoId: (desdeNuevoPedidoPayload && desdeNuevoPedidoPayload.pedidoId)
         ? desdeNuevoPedidoPayload.pedidoId.toString().trim()
@@ -1818,6 +1819,7 @@ function abrirNuevoContacto(desdeNuevoPedidoPayload) {
       origen: (desdeNuevoPedidoPayload && desdeNuevoPedidoPayload.origen)
         ? desdeNuevoPedidoPayload.origen.toString().trim()
         : '',
+      idContacto: idContacto,
       cliente: (desdeNuevoPedidoPayload && desdeNuevoPedidoPayload.cliente)
         ? desdeNuevoPedidoPayload.cliente
         : null
@@ -1846,6 +1848,87 @@ function abrirNuevoContacto(desdeNuevoPedidoPayload) {
     return {
       ok: false,
       error: e && e.message ? e.message : 'Error desconocido al preparar nuevoContacto.',
+      data: null
+    };
+  }
+}
+
+/**
+ * Registra un nuevo contacto en BASE DE CLIENTES utilizando un ID ya generado
+ * (idContacto) y devuelve el contexto necesario para continuar con el flujo
+ * del pedido.
+ *
+ * @param {Object} data - Datos del contacto desde el frontend
+ * @param {Object} payload - Contexto enviado desde nuevoContacto.html
+ * @returns {Object} Respuesta con éxito/fracaso y datos del contacto
+ */
+function registrarNuevoContacto(data, payload) {
+  try {
+    data = data || {};
+    payload = payload || {};
+
+    var nombre = (data.nombre || '').toString().trim();
+    var telefono = (data.telefono || '').toString().trim();
+    var direccion = (data.direccion || '').toString().trim();
+    var sector = (data.sector || '').toString().trim();
+    var nota = (data.nota || '').toString().trim();
+    var idContacto = (data.idContacto || payload.idContacto || '').toString().trim();
+    var pedidoId = (data.pedidoId || payload.pedidoId || '').toString().trim();
+
+    if (!nombre || !telefono || !direccion || !sector || !idContacto) {
+      return {
+        ok: false,
+        success: false,
+        error: 'Faltan datos obligatorios para crear el contacto.',
+        data: null
+      };
+    }
+
+    var sheet = getSheet_('BASE DE CLIENTES');
+    var newRow = getFirstEmptyRowInColumn_(sheet, 1);
+    var hoy = new Date();
+
+    sheet.getRange(newRow, 1).setValue(nombre);
+    sheet.getRange(newRow, 2).setValue(telefono);
+    sheet.getRange(newRow, 3).setValue(direccion);
+    sheet.getRange(newRow, 4).setValue(hoy);
+    sheet.getRange(newRow, 5).setValue('');
+    sheet.getRange(newRow, 6).setValue('Nuevo');
+    sheet.getRange(newRow, 7).setValue(nota);
+    sheet.getRange(newRow, 8).setValue(idContacto);
+    sheet.getRange(newRow, 9).setValue(sector);
+
+    var totalRows = sheet.getLastRow();
+    if (totalRows > 2) {
+      sheet.getRange(2, 1, totalRows - 1, 9).sort({ column: 1, ascending: true });
+    }
+
+    var cliente = {
+      idCliente: idContacto,
+      nombre: nombre,
+      telefono: telefono,
+      direccion: direccion,
+      sector: sector,
+      nota: nota
+    };
+
+    return {
+      ok: true,
+      success: true,
+      error: null,
+      data: {
+        cliente: cliente,
+        idContacto: idContacto,
+        pedidoId: pedidoId,
+        clienteNombre: nombre
+      }
+    };
+
+  } catch (e) {
+    return {
+      ok: false,
+      success: false,
+      error: e && e.message ? e.message : 'Error desconocido al registrar el contacto.',
       data: null
     };
   }
