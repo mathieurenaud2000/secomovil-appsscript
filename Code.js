@@ -2856,7 +2856,31 @@ function getPedidosDelDia(fecha) {
     // 1) Normalizar la fecha objetivo en formato 'yyyy-MM-dd'
     var fechaObjetivoStr;
     if (fecha) {
-      var dReq = new Date(fecha);
+      var dReq;
+
+      // a) Si viene como string "yyyy-MM-dd" (caso getProximaEntrega),
+      //    crear la fecha en la zona horaria local para evitar desfaces UTC.
+      if (typeof fecha === 'string') {
+        var isoMatch = fecha.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (isoMatch) {
+          var y = Number(isoMatch[1]);
+          var m = Number(isoMatch[2]) - 1;
+          var d = Number(isoMatch[3]);
+          dReq = new Date(y, m, d, 0, 0, 0, 0);
+        }
+      }
+
+      // b) Si no se pudo parsear como ISO, intentar con el constructor normal
+      //    (Date o string genérico). Si falla, caeremos al valor por defecto.
+      if (!dReq) {
+        dReq = new Date(fecha);
+      }
+
+      // c) Si sigue siendo inválida, usar hoy.
+      if (isNaN(dReq.getTime())) {
+        dReq = new Date();
+      }
+
       fechaObjetivoStr = Utilities.formatDate(dReq, tz, 'yyyy-MM-dd');
     } else {
       var hoy = new Date();
