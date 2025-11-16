@@ -388,395 +388,293 @@
     </nav>
 
     <!-- LISTE DES CARTES -->
-    <div class="stack">
+    <div class="stack" id="cardsContainer"></div>
 
-      <!-- CARTE 1 : active, accordéon ouvert -->
-      <div class="pedido-card" data-status="activo">
-        <div class="pedido-main">
-          <div class="pedido-row1">
-            <div class="pedido-left">
-              <div class="pedido-topline">11:40&nbsp;&nbsp;MIRADOR</div>
-            </div>
-            <button type="button" class="pedido-toggle" data-role="toggle">
-              <span class="chevron" aria-hidden="true"></span>
-            </button>
-          </div>
+    <div class="sep-gray"></div>
 
-          <div class="pedido-row2">
-            <div class="pedido-left">
-              <div class="pedido-nom">LORENZO DESPACITO</div>
-              <div class="pedido-ligne">Al frente de la tienda Juanita</div>
-              <div class="pedido-note">Nota : Dejar a la puerta</div>
-            </div>
-          </div>
-
-          <div class="pedido-row3">
-            <div class="pedido-left">
-              <div class="pedido-total">1 seco x 1,00 $ = <b>1,00 $</b></div>
-            </div>
-            <div class="pedido-statuscell">
-              <div class="pedido-status-icon pedido-status--deleted">
-                <img src="https://lh3.googleusercontent.com/d/1gDEMnXLuxX7aPQkfpvcJdtm35VF9Jscc" alt="Supprimé">
-              </div>
-              <div class="pedido-status-icon pedido-status--delivered">
-                <img src="https://lh3.googleusercontent.com/d/1Pu07dgdIg8lA12EXzXxpznSE7FwQ9j8j" alt="Livré">
-              </div>
-              <button type="button" class="pedido-refresh" data-role="refresh">
-                <img src="https://lh3.googleusercontent.com/d/1rTlZ9aSk3_ay4lGH8EO3LOoHXk7f89Tq" alt="Reactivar">
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="pedido-actions">
-          <button type="button" class="btn-delete" data-role="delete">
-            <img src="https://lh3.googleusercontent.com/d/1NEwXtWZqpIJlto9dPs49xKhq3oOqwpXH" alt="Borrar">
-          </button>
-          <button type="button" class="btn-edit">
-            <img src="https://lh3.googleusercontent.com/d/1sAN049EB8LfnbC0HmAFbM1kABNykp0fA" alt="Editar">
-          </button>
-          <button type="button" class="btn-deliver" data-role="deliver">
-            <img src="https://lh3.googleusercontent.com/d/1hGCvE6OoPq-pxdYBdKBoXgiF6G_wSH2A" alt="Entregado">
-          </button>
-        </div>
-
-        <div class="pedido-reactivated">
-          <img src="https://lh3.googleusercontent.com/d/1ejYqmcRjgWxEfPf8TPAbwYYNv5ulYNAo" alt="Reactivado">
-          <div class="txt-body">Reactivado</div>
-        </div>
-      </div>
-
-      <div class="sep-gray"></div>
-
-      <!-- CARTE 2 : active, accordéon fermé -->
-      <div class="pedido-card" data-status="activo">
-        <div class="pedido-main">
-          <div class="pedido-row1">
-            <div class="pedido-left">
-              <div class="pedido-topline">11:50&nbsp;&nbsp;MIRADOR</div>
-            </div>
-            <button type="button" class="pedido-toggle" data-role="toggle">
-              <span class="chevron" aria-hidden="true"></span>
-            </button>
-          </div>
-
-          <div class="pedido-row2">
-            <div class="pedido-left">
-              <div class="pedido-nom">LORENZO DESPACITO</div>
-              <div class="pedido-ligne">Al frente de la tienda Juanita</div>
-              <div class="pedido-note">Dejar a la puerta</div>
-            </div>
-          </div>
-
-          <div class="pedido-row3">
-            <div class="pedido-left">
-              <div class="pedido-total">2 secos x 1,25 $ = <b>2,50 $</b></div>
-            </div>
-            <div class="pedido-statuscell">
-              <div class="pedido-status-icon pedido-status--deleted">
-                <img src="https://lh3.googleusercontent.com/d/1gDEMnXLuxX7aPQkfpvcJdtm35VF9Jscc" alt="Supprimé">
-              </div>
-              <div class="pedido-status-icon pedido-status--delivered">
-                <img src="https://lh3.googleusercontent.com/d/1Pu07dgdIg8lA12EXzXxpznSE7FwQ9j8j" alt="Livré">
-              </div>
-              <button type="button" class="pedido-refresh" data-role="refresh">
-                <img src="https://lh3.googleusercontent.com/d/1rTlZ9aSk3_ay4lGH8EO3LOoHXk7f89Tq" alt="Reactivar">
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="pedido-actions">
-          <button type="button" class="btn-delete" data-role="delete">
-            <img src="https://lh3.googleusercontent.com/d/1NEwXtWZqpIJlto9dPs49xKhq3oOqwpXH" alt="Borrar">
-          </button>
-          <button type="button" class="btn-edit">
-            <img src="https://lh3.googleusercontent.com/d/1sAN049EB8LfnbC0HmAFbM1kABNykp0fA" alt="Editar">
-          </button>
-          <button type="button" class="btn-deliver" data-role="deliver">
-            <img src="https://lh3.googleusercontent.com/d/1hGCvE6OoPq-pxdYBdKBoXgiF6G_wSH2A" alt="Entregado">
-          </button>
-        </div>
-
-        <div class="pedido-reactivated">
-          <img src="https://lh3.googleusercontent.com/d/1ejYqmcRjgWxEfPf8TPAbwYYNv5ulYNAo" alt="Reactivado">
-          <div class="txt-body">Reactivado</div>
-        </div>
-      </div>
-
-      <div class="sep-gray"></div>
-
-      <!-- CARTE 3 : supprimée -->
-      <div class="pedido-card is-deleted" data-status="supprimido">
-        <div class="pedido-main">
-          <div class="pedido-row1">
-            <div class="pedido-left">
-              <div class="pedido-topline">12:00&nbsp;&nbsp;MIRADOR</div>
-            </div>
-            <button type="button" class="pedido-toggle" data-role="toggle">
-              <span class="chevron" aria-hidden="true"></span>
-            </button>
-          </div>
-
-          <div class="pedido-row2">
-            <div class="pedido-left">
-              <div class="pedido-nom">LORENZO DESPACITO</div>
-              <div class="pedido-ligne">Al frente de la tienda Juanita</div>
-              <div class="pedido-note">Dejar a la puerta</div>
-            </div>
-          </div>
-
-          <div class="pedido-row3">
-            <div class="pedido-left">
-              <div class="pedido-total">2 secos x 1,25 $ = <b>2,50 $</b></div>
-            </div>
-            <div class="pedido-statuscell">
-              <div class="pedido-status-icon pedido-status--deleted">
-                <img src="https://lh3.googleusercontent.com/d/1gDEMnXLuxX7aPQkfpvcJdtm35VF9Jscc" alt="Supprimé">
-              </div>
-              <div class="pedido-status-icon pedido-status--delivered">
-                <img src="https://lh3.googleusercontent.com/d/1Pu07dgdIg8lA12EXzXxpznSE7FwQ9j8j" alt="Livré">
-              </div>
-              <button type="button" class="pedido-refresh" data-role="refresh">
-                <img src="https://lh3.googleusercontent.com/d/1rTlZ9aSk3_ay4lGH8EO3LOoHXk7f89Tq" alt="Reactivar">
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="pedido-actions">
-          <button type="button" class="btn-delete" data-role="delete">
-            <img src="https://lh3.googleusercontent.com/d/1NEwXtWZqpIJlto9dPs49xKhq3oOqwpXH" alt="Borrar">
-          </button>
-          <button type="button" class="btn-edit">
-            <img src="https://lh3.googleusercontent.com/d/1sAN049EB8LfnbC0HmAFbM1kABNykp0fA" alt="Editar">
-          </button>
-          <button type="button" class="btn-deliver" data-role="deliver">
-            <img src="https://lh3.googleusercontent.com/d/1hGCvE6OoPq-pxdYBdKBoXgiF6G_wSH2A" alt="Entregado">
-          </button>
-        </div>
-
-        <div class="pedido-reactivated">
-          <img src="https://lh3.googleusercontent.com/d/1ejYqmcRjgWxEfPf8TPAbwYYNv5ulYNAo" alt="Reactivado">
-          <div class="txt-body">Reactivado</div>
-        </div>
-      </div>
-
-      <div class="sep-gray"></div>
-
-      <!-- CARTE 4 : livrée -->
-      <div class="pedido-card is-delivered" data-status="entregado">
-        <div class="pedido-main">
-          <div class="pedido-row1">
-            <div class="pedido-left">
-              <div class="pedido-topline">12:20&nbsp;&nbsp;CENTRO</div>
-            </div>
-            <button type="button" class="pedido-toggle" data-role="toggle">
-              <span class="chevron" aria-hidden="true"></span>
-            </button>
-          </div>
-
-          <div class="pedido-row2">
-            <div class="pedido-left">
-              <div class="pedido-nom">LORENZO DESPACITO</div>
-              <div class="pedido-ligne">Al frente de la tienda Juanita</div>
-              <div class="pedido-note">Dejar a la puerta</div>
-            </div>
-          </div>
-
-          <div class="pedido-row3">
-            <div class="pedido-left">
-              <div class="pedido-total">2 secos x 1,25 $ = <b>2,50 $</b></div>
-            </div>
-            <div class="pedido-statuscell">
-              <div class="pedido-status-icon pedido-status--deleted">
-                <img src="https://lh3.googleusercontent.com/d/1gDEMnXLuxX7aPQkfpvcJdtm35VF9Jscc" alt="Supprimé">
-              </div>
-              <div class="pedido-status-icon pedido-status--delivered">
-                <img src="https://lh3.googleusercontent.com/d/1Pu07dgdIg8lA12EXzXxpznSE7FwQ9j8j" alt="Livré">
-              </div>
-              <button type="button" class="pedido-refresh" data-role="refresh">
-                <img src="https://lh3.googleusercontent.com/d/1rTlZ9aSk3_ay4lGH8EO3LOoHXk7f89Tq" alt="Reactivar">
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="pedido-actions">
-          <button type="button" class="btn-delete" data-role="delete">
-            <img src="https://lh3.googleusercontent.com/d/1NEwXtWZqpIJlto9dPs49xKhq3oOqwpXH" alt="Borrar">
-          </button>
-          <button type="button" class="btn-edit">
-            <img src="https://lh3.googleusercontent.com/d/1sAN049EB8LfnbC0HmAFbM1kABNykp0fA" alt="Editar">
-          </button>
-          <button type="button" class="btn-deliver" data-role="deliver">
-            <img src="https://lh3.googleusercontent.com/d/1hGCvE6OoPq-pxdYBdKBoXgiF6G_wSH2A" alt="Entregado">
-          </button>
-        </div>
-
-        <div class="pedido-reactivated">
-          <img src="https://lh3.googleusercontent.com/d/1ejYqmcRjgWxEfPf8TPAbwYYNv5ulYNAo" alt="Reactivado">
-          <div class="txt-body">Reactivado</div>
-        </div>
-      </div>
-
-      <div class="sep-gray"></div>
-
-      <button class="btn btn-noir">VOLVER AL INICIO</button>
-      <div class="footer-spacer"></div>
-    </div>
+    <button class="btn btn-noir" id="btnVolverInicio">VOLVER AL INICIO</button>
+    <div class="footer-spacer"></div>
   </div>
 
   <script>
-    function applyScaleFix(){
-      var cssW = window.innerWidth || document.documentElement.clientWidth;
-      var screenW = Math.min(window.screen.width || 375, window.screen.height || 812);
-      if (cssW >= 960 && cssW <= 1024) {
-        var fix = (980 / screenW) * 1.50;
-        document.documentElement.style.setProperty('--fix', fix.toFixed(3));
-      } else {
-        document.documentElement.style.setProperty('--fix', '1');
+    (function(){
+      var tabs = document.querySelectorAll('.tabs .tab');
+      var cardsContainer = document.getElementById('cardsContainer');
+      var btnVolver = document.getElementById('btnVolverInicio');
+      var pedidos = [];
+      var activeTab = 'TODO';
+
+      function applyScaleFix(){
+        var cssW = window.innerWidth || document.documentElement.clientWidth;
+        var screenW = Math.min(window.screen.width || 375, window.screen.height || 812);
+        if (cssW >= 960 && cssW <= 1024) {
+          var fix = (980 / screenW) * 1.50;
+          document.documentElement.style.setProperty('--fix', fix.toFixed(3));
+        } else {
+          document.documentElement.style.setProperty('--fix', '1');
+        }
       }
-    }
 
-    function sizeHeaderImage(){
-      var img = document.getElementById('headerImg');
-      var wrapper = document.querySelector('.wrapper');
-      if (!img || !wrapper) return;
-      var avail = Math.floor(wrapper.clientWidth);
-      if (avail > 0) {
-        img.style.width = avail + 'px';
-        img.style.maxWidth = '100%';
-        img.removeAttribute('height');
+      function sizeHeaderImage(){
+        var img = document.getElementById('headerImg');
+        var wrapper = document.querySelector('.wrapper');
+        if (!img || !wrapper) return;
+        var avail = Math.floor(wrapper.clientWidth);
+        if (avail > 0) {
+          img.style.width = avail + 'px';
+          img.style.maxWidth = '100%';
+          img.removeAttribute('height');
+        }
       }
-    }
 
-    function setupPedidos(){
-      var cards = document.querySelectorAll('.pedido-card');
+      function setButtonLoading(btn, isLoading){
+        if (!btn) return;
+        if (isLoading){
+          if (!btn.dataset.originalHtml){
+            btn.dataset.originalHtml = btn.innerHTML;
+          }
+          btn.disabled = true;
+          btn.innerHTML = '...';
+        } else {
+          btn.disabled = false;
+          if (btn.dataset.originalHtml){
+            btn.innerHTML = btn.dataset.originalHtml;
+          }
+        }
+      }
 
-      cards.forEach(function(card){
-        var toggle   = card.querySelector('[data-role="toggle"]');
-        var btnDel   = card.querySelector('[data-role="delete"]');
-        var btnDeliv = card.querySelector('[data-role="deliver"]');
-        var btnRef   = card.querySelector('[data-role="refresh"]');
+      function buildStatusClass(estado){
+        var est = (estado || '').toLowerCase();
+        if (est === 'entregado') return 'is-delivered';
+        if (est === 'cancelado' || est === 'eliminado') return 'is-deleted';
+        return '';
+      }
+
+      function createPedidoCard(pedido){
+        var card = document.createElement('div');
+        card.className = 'pedido-card ' + buildStatusClass(pedido.estado);
+        card.dataset.status = (pedido.estado || 'activo').toLowerCase();
+        card.dataset.id = pedido.idPedido || '';
+
+        var note = pedido.notas || '';
+        var sector = (pedido.cliente && pedido.cliente.sector) || '';
+        var direccion = (pedido.cliente && pedido.cliente.direccion) || '';
+        var nombre = (pedido.cliente && pedido.cliente.nombre) || '';
+        var tel = (pedido.cliente && pedido.cliente.telefono) || '';
+        var horario = pedido.horaEntrega || '--:--';
+
+        card.innerHTML = '
+          <div class="pedido-main">
+            <div class="pedido-row1">
+              <div class="pedido-left">
+                <div class="pedido-topline">' + horario + '&nbsp;&nbsp;' + sector + '</div>
+              </div>
+              <button type="button" class="pedido-toggle" data-role="toggle">
+                <span class="chevron" aria-hidden="true"></span>
+              </button>
+            </div>
+
+            <div class="pedido-row2">
+              <div class="pedido-left">
+                <div class="pedido-nom">' + nombre + '</div>
+                <div class="pedido-ligne">' + direccion + '</div>
+                <div class="pedido-note">' + (note || '') + '</div>
+              </div>
+            </div>
+
+            <div class="pedido-row3">
+              <div class="pedido-left">
+                <div class="pedido-total">WhatsApp: ' + tel + '</div>
+              </div>
+              <div class="pedido-statuscell">
+                <div class="pedido-status-icon pedido-status--deleted">
+                  <img src="https://lh3.googleusercontent.com/d/1gDEMnXLuxX7aPQkfpvcJdtm35VF9Jscc" alt="Supprimé">
+                </div>
+                <div class="pedido-status-icon pedido-status--delivered">
+                  <img src="https://lh3.googleusercontent.com/d/1Pu07dgdIg8lA12EXzXxpznSE7FwQ9j8j" alt="Livré">
+                </div>
+                <button type="button" class="pedido-refresh" data-role="refresh">
+                  <img src="https://lh3.googleusercontent.com/d/1rTlZ9aSk3_ay4lGH8EO3LOoHXk7f89Tq" alt="Reactivar">
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="pedido-actions">
+            <button type="button" class="btn-delete" data-role="delete">
+              <img src="https://lh3.googleusercontent.com/d/1NEwXtWZqpIJlto9dPs49xKhq3oOqwpXH" alt="Borrar">
+            </button>
+            <button type="button" class="btn-edit" data-role="edit">
+              <img src="https://lh3.googleusercontent.com/d/1sAN049EB8LfnbC0HmAFbM1kABNykp0fA" alt="Editar">
+            </button>
+            <button type="button" class="btn-deliver" data-role="deliver">
+              <img src="https://lh3.googleusercontent.com/d/1hGCvE6OoPq-pxdYBdKBoXgiF6G_wSH2A" alt="Entregado">
+            </button>
+          </div>
+
+          <div class="pedido-reactivated">
+            <img src="https://lh3.googleusercontent.com/d/1ejYqmcRjgWxEfPf8TPAbwYYNv5ulYNAo" alt="Reactivado">
+            <div class="txt-body">Reactivado</div>
+          </div>
+        ';
+
+        var toggle = card.querySelector('[data-role="toggle"]');
+        var btnDel = card.querySelector('[data-role="delete"]');
+        var btnDeliver = card.querySelector('[data-role="deliver"]');
+        var btnRefresh = card.querySelector('[data-role="refresh"]');
+        var btnEdit = card.querySelector('[data-role="edit"]');
 
         if (toggle){
           toggle.addEventListener('click', function(e){
             e.stopPropagation();
-            if (card.classList.contains('is-deleted') ||
-                card.classList.contains('is-delivered') ||
-                card.classList.contains('is-reactivating')) return;
+            if (card.classList.contains('is-deleted') || card.classList.contains('is-delivered')) return;
             card.classList.toggle('is-open');
           });
+        }
+
+        function refreshLista(){
+          cargarPedidos();
         }
 
         if (btnDel){
           btnDel.addEventListener('click', function(e){
             e.stopPropagation();
-            card.classList.remove('is-open');
-            card.classList.remove('is-delivered');
-            card.classList.add('is-deleted');
-            card.dataset.status = 'supprimido';
+            setButtonLoading(btnDel, true);
+            google.script.run
+              .withSuccessHandler(function(){ setButtonLoading(btnDel, false); refreshLista(); })
+              .withFailureHandler(function(){ setButtonLoading(btnDel, false); })
+              .actualizarEstadoPedido({ idPedido: pedido.idPedido, estado: 'Cancelado' });
           });
         }
 
-        if (btnDeliv){
-          btnDeliv.addEventListener('click', function(e){
+        if (btnDeliver){
+          btnDeliver.addEventListener('click', function(e){
             e.stopPropagation();
-            card.classList.remove('is-open');
-            card.classList.remove('is-deleted');
-            card.classList.add('is-delivered');
-            card.dataset.status = 'entregado';
+            setButtonLoading(btnDeliver, true);
+            google.script.run
+              .withSuccessHandler(function(){ setButtonLoading(btnDeliver, false); refreshLista(); })
+              .withFailureHandler(function(){ setButtonLoading(btnDeliver, false); })
+              .actualizarEstadoPedido({ idPedido: pedido.idPedido, estado: 'Entregado' });
           });
         }
 
-        if (btnRef){
-          btnRef.addEventListener('click', function(e){
+        if (btnRefresh){
+          btnRefresh.addEventListener('click', function(e){
             e.stopPropagation();
-            if (!card.classList.contains('is-deleted') &&
-                !card.classList.contains('is-delivered')) return;
-
-            card.classList.remove('is-deleted', 'is-delivered');
-            card.classList.add('is-reactivating');
-            card.dataset.status = 'activo';
-
-            setTimeout(function(){
-              card.classList.remove('is-reactivating');
-            }, 2000);
+            setButtonLoading(btnRefresh, true);
+            google.script.run
+              .withSuccessHandler(function(){ setButtonLoading(btnRefresh, false); refreshLista(); })
+              .withFailureHandler(function(){ setButtonLoading(btnRefresh, false); })
+              .actualizarEstadoPedido({ idPedido: pedido.idPedido, estado: 'Pendiente' });
           });
         }
-      });
-    }
 
-    function setupTabs(){
-      var tabs = document.querySelectorAll('.tabs .tab');
-      if (tabs.length < 2) return;
+        if (btnEdit){
+          btnEdit.addEventListener('click', function(e){
+            e.stopPropagation();
+            google.script.run.abrirRegistrarPedido({
+              pedidoId: pedido.idPedido || '',
+              origen: 'pedidosDelDia',
+              cliente: pedido.cliente
+            });
+          });
+        }
 
-      var tabTodo = tabs[0];
-      var tabPend = tabs[1];
+        return card;
+      }
 
-      function setActiveTab(activeTab){
-        tabs.forEach(function(t){
-          t.setAttribute('aria-selected', t === activeTab ? 'true' : 'false');
+      function renderCards(){
+        cardsContainer.innerHTML = '';
+        var filtered = pedidos.filter(function(p){
+          if (activeTab === 'PENDIENTE'){
+            return (p.estado || '').toLowerCase() === 'pendiente';
+          }
+          return true;
+        });
+
+        if (filtered.length === 0){
+          var empty = document.createElement('div');
+          empty.className = 'txt-body';
+          empty.textContent = 'No hay pedidos para hoy.';
+          cardsContainer.appendChild(empty);
+          return;
+        }
+
+        filtered.forEach(function(pedido, idx){
+          var card = createPedidoCard(pedido);
+          cardsContainer.appendChild(card);
+          if (idx < filtered.length - 1){
+            var sep = document.createElement('div');
+            sep.className = 'sep-gray';
+            cardsContainer.appendChild(sep);
+          }
         });
       }
 
-      function applyFilter(mode){
-        var cards = document.querySelectorAll('.pedido-card');
-        var seps  = document.querySelectorAll('.sep-gray');
-
-        // reset complet : toutes les cartes + tous les séparateurs visibles
-        cards.forEach(function(card){
-          card.style.display = '';
-        });
-        seps.forEach(function(sep){
-          sep.style.display = '';
-        });
-
-        if (mode === 'PENDIENTE'){
-          cards.forEach(function(card){
-            var status = card.dataset.status || 'activo';
-            if (status === 'supprimido' || status === 'entregado'){
-              card.style.display = 'none';
-              var next = card.nextElementSibling;
-              if (next && next.classList.contains('sep-gray')){
-                next.style.display = 'none';
-              }
+      function cargarPedidos(){
+        google.script.run
+          .withSuccessHandler(function(resp){
+            if (resp && resp.ok && resp.data && resp.data.pedidos){
+              pedidos = resp.data.pedidos;
+            } else {
+              pedidos = [];
             }
-          });
-        }
+            renderCards();
+          })
+          .withFailureHandler(function(){ pedidos = []; renderCards(); })
+          .getPedidosDelDia(null);
       }
 
-      tabTodo.addEventListener('click', function(e){
-        e.preventDefault();
-        setActiveTab(tabTodo);
-        applyFilter('TODO');
+      function setupTabs(){
+        if (tabs.length < 2) return;
+        var tabTodo = tabs[0];
+        var tabPend = tabs[1];
+
+        function setActiveTabBtn(btn){
+          activeTab = btn === tabPend ? 'PENDIENTE' : 'TODO';
+          tabs.forEach(function(t){
+            t.setAttribute('aria-selected', t === btn ? 'true' : 'false');
+          });
+          renderCards();
+        }
+
+        tabTodo.addEventListener('click', function(e){
+          e.preventDefault();
+          setActiveTabBtn(tabTodo);
+        });
+
+        tabPend.addEventListener('click', function(e){
+          e.preventDefault();
+          setActiveTabBtn(tabPend);
+        });
+      }
+
+      function init(){
+        applyScaleFix();
+        sizeHeaderImage();
+        setupTabs();
+        cargarPedidos();
+      }
+
+      if (document.readyState === 'loading'){
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+
+      window.addEventListener('resize', function(){
+        applyScaleFix();
+        sizeHeaderImage();
       });
 
-      tabPend.addEventListener('click', function(e){
-        e.preventDefault();
-        setActiveTab(tabPend);
-        applyFilter('PENDIENTE');
-      });
-    }
-
-    function init(){
-      applyScaleFix();
-      sizeHeaderImage();
-      setupPedidos();
-      setupTabs();
-    }
-
-    if (document.readyState === 'loading'){
-      document.addEventListener('DOMContentLoaded', init);
-    } else {
-      init();
-    }
-
-    window.addEventListener('resize', function(){
-      applyScaleFix();
-      sizeHeaderImage();
-    });
+      if (btnVolver){
+        btnVolver.addEventListener('click', function(){
+          if (google && google.script && google.script.host && google.script.host.close){
+            google.script.host.close();
+          }
+        });
+      }
+    })();
   </script>
 </body>
 </html>

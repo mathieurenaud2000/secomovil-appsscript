@@ -10,13 +10,29 @@
       .setTitle('SecoMóvil — UI Kit');
   }
 
-  function abrirInicio() {
-    var template = HtmlService.createTemplateFromFile('inicio');
-    var html = template.evaluate()
-      .setTitle('Inicio');
+function abrirInicio() {
+  var template = HtmlService.createTemplateFromFile('inicio');
+  var html = template.evaluate()
+    .setTitle('Inicio');
 
-    SpreadsheetApp.getUi().showSidebar(html);
-  }
+  SpreadsheetApp.getUi().showSidebar(html);
+}
+
+function abrirPedidosDelDia() {
+  var template = HtmlService.createTemplateFromFile('pedidosDelDia');
+  var html = template.evaluate()
+    .setTitle('Pedidos del día');
+
+  SpreadsheetApp.getUi().showSidebar(html);
+}
+
+function abrirVentaDirecta() {
+  var template = HtmlService.createTemplateFromFile('ventaDirecta');
+  var html = template.evaluate()
+    .setTitle('Venta directa');
+
+  SpreadsheetApp.getUi().showSidebar(html);
+}
 
   function abrirNuevoPedido() {
     var init = initNuevoPedido();
@@ -2902,7 +2918,6 @@ function getPedidosDelDia(fecha) {
  */
 function getProximaEntrega() {
   try {
-    // 1) Obtenir la liste complète des pedidos du jour via la fonction officielle
     var hoyStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
     var resp = getPedidosDelDia(hoyStr);
 
@@ -2915,35 +2930,15 @@ function getProximaEntrega() {
     }
 
     var pedidos = resp.data.pedidos || [];
+    var siguiente = null;
 
-    // 2) Filtrer uniquement les "actifs" : Pendiente
-    var activos = pedidos.filter(function (p) {
-      var est = (p.estado || '').toLowerCase();
-      return est === 'pendiente';
-    });
-
-    if (activos.length === 0) {
-      return {
-        ok: true,
-        error: null,
-        data: { pedido: null }
-      };
+    for (var i = 0; i < pedidos.length; i++) {
+      var est = (pedidos[i].estado || '').toLowerCase();
+      if (est === 'pendiente') {
+        siguiente = pedidos[i];
+        break;
+      }
     }
-
-    // 3) Trier par horaEntrega ASC
-    activos.sort(function (a, b) {
-      var hA = a.horaEntrega || '';
-      var hB = b.horaEntrega || '';
-
-      // Format attendu "HH:MM"
-      // Comparaison simple suffit
-      if (hA < hB) return -1;
-      if (hA > hB) return 1;
-      return 0;
-    });
-
-    // 4) Le premier est la prochaine livraison
-    var siguiente = activos[0];
 
     return {
       ok: true,
@@ -3508,6 +3503,172 @@ function marcarPedidoEntregado(data) {
     return {
       ok: false,
       error: e && e.message ? e.message : 'Error desconocido al marcar el pedido como entregado.',
+      data: null
+    };
+  }
+}
+
+/**
+ * Actualiza el estado (columna J) de un pedido identificado por su ID.
+ *
+ * @param {{idPedido:string, estado:string}} data
+ */
+function actualizarEstadoPedido(data) {
+  try {
+    if (!data || !data.idPedido || !data.estado) {
+      return {
+        ok: false,
+        error: 'Faltan idPedido o estado.',
+        data: null
+      };
+    }
+
+    var idObjetivo = data.idPedido.toString().trim();
+    var nuevoEstado = data.estado.toString().trim();
+    var tz = Session.getScriptTimeZone();
+
+    var sheetPedidos = getSheet_('PEDIDOS DIARIOS');
+    var lastRowPedidos = sheetPedidos.getLastRow();
+    if (lastRowPedidos < 2) {
+      return {
+        ok: false,
+        error: 'No hay pedidos registrados.',
+        data: null
+      };
+    }
+
+    var dataPedidos = sheetPedidos.getRange(2, 1, lastRowPedidos - 1, 11).getValues();
+    var filaEncontrada = -1;
+
+    for (var i = 0; i < dataPedidos.length; i++) {
+      var row = dataPedidos[i];
+      var idCell = (row[10] || '').toString().trim();
+      if (idCell === idObjetivo) {
+        filaEncontrada = i + 2;
+        break;
+      }
+    }
+
+    if (filaEncontrada === -1) {
+      return {
+        ok: false,
+        error: 'No se encontró el pedido con el ID especificado.',
+        data: null
+      };
+    }
+
+    sheetPedidos.getRange(filaEncontrada, 10).setValue(nuevoEstado);
+
+    var rowValues = sheetPedidos.getRange(filaEncontrada, 1, 1, 11).getValues()[0];
+
+    var fechaCell   = rowValues[0];
+    var clienteNom  = rowValues[1];
+    var telefono    = rowValues[2];
+    var direccion   = rowValues[3];
+    var cantidad    = rowValues[4];
+    var totalCell   = rowValues[5];
+    var horaEntrega = rowValues[7];
+    var notas       = rowValues[8];
+    var estado      = rowValues[9];
+    var idPedido    = rowValues[10];
+
+    var fechaStr = '';
+    if (fechaCell) {
+      var d = new Date(fechaCell);
+      fechaStr = Utilities.formatDate(d, tz, 'yyyy-MM-dd');
+    }
+
+    var totalNum = null;
+    if (totalCell !== '' && totalCell !== null && totalCell !== undefined) {
+      var t = Number(totalCell);
+      if (!isNaN(t)) {
+        totalNum = t;
+      }
+    }
+
+    var estadoStr = (estado || '').toString().trim() || nuevoEstado;
+    var idPedidoStr = (idPedido || '').toString().trim();
+
+    var sheetClientes = getSheet_('BASE DE CLIENTES');
+    var lastRowClientes = sheetClientes.getLastRow();
+    var mapaClientes = [];
+
+    if (lastRowClientes > 1) {
+      var dataClientes = sheetClientes.getRange(2, 1, lastRowClientes - 1, 9).getValues();
+      dataClientes.forEach(function (r) {
+        var nom = (r[0] || '').toString().trim();
+        var tel = (r[1] || '').toString().trim();
+        var idC = (r[7] || '').toString().trim();
+        var sec = (r[8] || '').toString().trim();
+        if (nom || tel) {
+          mapaClientes.push({
+            nombre: nom,
+            telefono: tel,
+            idCliente: idC,
+            sector: sec
+          });
+        }
+      });
+    }
+
+    function encontrarCliente(nombrePedido, telPedido) {
+      var nombreP = (nombrePedido || '').toString().trim();
+      var telP    = (telPedido    || '').toString().trim();
+
+      if (telP) {
+        for (var i = 0; i < mapaClientes.length; i++) {
+          if (mapaClientes[i].telefono === telP) {
+            return mapaClientes[i];
+          }
+        }
+      }
+
+      if (nombreP) {
+        var nombrePLower = nombreP.toLowerCase();
+        for (var j = 0; j < mapaClientes.length; j++) {
+          if (mapaClientes[j].nombre.toLowerCase() === nombrePLower) {
+            return mapaClientes[j];
+          }
+        }
+      }
+
+      return {
+        nombre: nombreP,
+        telefono: telP,
+        idCliente: '',
+        sector: ''
+      };
+    }
+
+    var cli = encontrarCliente(clienteNom, telefono);
+
+    var pedidoFront = {
+      idPedido: idPedidoStr,
+      fechaEntrega: fechaStr,
+      horaEntrega: (horaEntrega || '').toString(),
+      cantidad: Number(cantidad || 0),
+      total: totalNum,
+      estado: estadoStr,
+      notas: (notas || '').toString(),
+      cliente: {
+        idCliente: cli.idCliente || '',
+        nombre: (clienteNom || '').toString(),
+        telefono: (telefono || '').toString(),
+        direccion: (direccion || '').toString(),
+        sector: cli.sector || ''
+      }
+    };
+
+    return {
+      ok: true,
+      error: null,
+      data: { pedido: pedidoFront }
+    };
+
+  } catch (e) {
+    return {
+      ok: false,
+      error: e && e.message ? e.message : 'Error desconocido al actualizar el estado del pedido.',
       data: null
     };
   }
