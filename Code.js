@@ -1755,19 +1755,24 @@ function initNuevoPedido() {
  */
 function abrirRegistrarPedido(desdeNuevoPedidoPayload) {
   try {
+    var clienteObj = (desdeNuevoPedidoPayload && desdeNuevoPedidoPayload.cliente)
+      ? desdeNuevoPedidoPayload.cliente
+      : null;
+
     var ctx = {
       pedidoId: (desdeNuevoPedidoPayload && desdeNuevoPedidoPayload.pedidoId)
         ? desdeNuevoPedidoPayload.pedidoId.toString().trim()
         : '',
+      idContacto: (desdeNuevoPedidoPayload && desdeNuevoPedidoPayload.idContacto)
+        ? desdeNuevoPedidoPayload.idContacto.toString().trim()
+        : (clienteObj && clienteObj.idCliente) ? clienteObj.idCliente.toString().trim() : '',
       clienteNombre: (desdeNuevoPedidoPayload && desdeNuevoPedidoPayload.clienteNombre)
         ? desdeNuevoPedidoPayload.clienteNombre.toString().trim()
-        : '',
+        : (clienteObj && clienteObj.nombre) ? clienteObj.nombre.toString().trim() : '',
       origen: (desdeNuevoPedidoPayload && desdeNuevoPedidoPayload.origen)
         ? desdeNuevoPedidoPayload.origen.toString().trim()
         : '',
-      cliente: (desdeNuevoPedidoPayload && desdeNuevoPedidoPayload.cliente)
-        ? desdeNuevoPedidoPayload.cliente
-        : null
+      cliente: clienteObj
     };
 
     var userProps = PropertiesService.getUserProperties();
