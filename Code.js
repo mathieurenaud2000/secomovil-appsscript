@@ -4,13 +4,28 @@
 
 
 
-function doGet() {
-  // Cette fonction rend directement la page uikit.html quand l’URL publique est ouverte
-  return HtmlService.createHtmlOutputFromFile('uikit')
-    .setTitle('SecoMóvil — UI Kit');
-}
+  function doGet() {
+    // Cette fonction rend directement la page uikit.html quand l’URL publique est ouverte
+    return HtmlService.createHtmlOutputFromFile('uikit')
+      .setTitle('SecoMóvil — UI Kit');
+  }
 
-function ouvrirPage() {
+  function abrirNuevoPedido() {
+    var html = HtmlService.createHtmlOutputFromFile('nuevoPedido')
+      .setTitle('Nuevo pedido');
+    SpreadsheetApp.getUi().showSidebar(html);
+  }
+
+  function onOpen(e) {
+    var ui = SpreadsheetApp.getUi();
+    var menu = ui.createMenu('SecoMobil');
+
+    menu.addItem('Nuevo pedido', 'abrirNuevoPedido');
+
+    menu.addToUi();
+  }
+
+  function ouvrirPage() {
   // Ouvre la page HTML complète dans un nouvel onglet plein écran
   const url = 'https://script.google.com/macros/s/AKfycby6eNfpcV2earU4bffOgKqib2KC1s8g4crRcJkQYRcc7D8VFx6geM28K0RriIf8FQDs/exec';
   const html = HtmlService.createHtmlOutput(
