@@ -60,6 +60,12 @@
       line-height: calc(20px * var(--fix));
     }
     .header-title span{ display:block; }
+    .header-id{
+      font-size: calc(10px * var(--fix));
+      font-weight:700;
+      text-transform:uppercase;
+      margin-top: calc(4px * var(--fix));
+    }
 
     /* ===== CONTENU ===== */
     .stack{
@@ -175,11 +181,12 @@
       <div class="sep-black"></div>
 
       <div class="header-grid">
-        <div class="header-title">
-          <span>PEDIDO</span>
-          <span>REGISTRADO</span>
-        </div>
+      <div class="header-title">
+        <span>PEDIDO</span>
+        <span>REGISTRADO</span>
       </div>
+      <div class="header-id" id="pedidoId"></div>
+    </div>
 
       <div class="sep-black"></div>
     </header>
@@ -195,17 +202,18 @@
 
         <div class="confirm-info">
           <div class="confirm-line-time">
-            <span>11:40</span>
-            <span>MIRADOR</span>
+            <span id="confirmHora">11:40</span>
+            <span id="confirmSector">MIRADOR</span>
           </div>
 
-          <div class="confirm-name">LORENZO DESPACITO</div>
+          <div class="confirm-name" id="confirmNombre">LORENZO DESPACITO</div>
 
-          <div class="confirm-text">Al frente de la tienda Juanita</div>
-          <div class="confirm-text">Nota : Dejar a la puerta</div>
+          <div class="confirm-text" id="confirmDireccion">Al frente de la tienda Juanita</div>
+          <div class="confirm-text" id="confirmNota">Nota : Dejar a la puerta</div>
+          <div class="confirm-text" id="confirmWhatsapp">WhatsApp: —</div>
 
           <div class="confirm-price">
-            1 seco x 1,00 $ = <strong>1,00 $</strong>
+            <span id="confirmPrecio">1 seco x 1,00 $ = <strong>1,00 $</strong></span>
           </div>
         </div>
       </div>
@@ -217,7 +225,7 @@
 
       <div class="sep-gray"></div>
 
-      <button class="btn btn-noir">OK</button>
+      <button class="btn btn-noir" id="btnOk">OK</button>
 
       <div style="height:0;"></div>
 
@@ -248,9 +256,62 @@
       }
     }
 
+    function obtenerCtxServidor(){
+      var ctx = window.SECO_CTX || {};
+      window.pedidoConfirmCtx = ctx;
+      return ctx;
+    }
+
+    function pintarConfirmacion(){
+      var ctx = obtenerCtxServidor();
+      var pedidoIdEl = document.getElementById('pedidoId');
+      var horaEl = document.getElementById('confirmHora');
+      var sectorEl = document.getElementById('confirmSector');
+      var nombreEl = document.getElementById('confirmNombre');
+      var dirEl = document.getElementById('confirmDireccion');
+      var notaEl = document.getElementById('confirmNota');
+      var waEl = document.getElementById('confirmWhatsapp');
+      var precioEl = document.getElementById('confirmPrecio');
+
+      var nombre = ctx.clienteNombre || (ctx.cliente && ctx.cliente.nombre) || '';
+      var telefono = (ctx.cliente && (ctx.cliente.telefono || ctx.cliente.whatsapp)) || '';
+      var sector = ctx.sector || (ctx.cliente && ctx.cliente.sector) || '';
+      var direccion = (ctx.cliente && ctx.cliente.direccion) || '';
+      var nota = ctx.nota || (ctx.cliente && ctx.cliente.nota) || '';
+
+      var cantidad = Number(ctx.cantidad || 1);
+      if (!isFinite(cantidad) || cantidad < 1) cantidad = 1;
+      var unit = (ctx.precioUnitario !== undefined) ? Number(ctx.precioUnitario) : 1;
+      if (!isFinite(unit) || unit <= 0) unit = 1;
+      var total = ctx.total !== undefined ? Number(ctx.total) : unit * cantidad;
+      if (!isFinite(total)) total = unit * cantidad;
+
+      if (pedidoIdEl && ctx.pedidoId){ pedidoIdEl.textContent = ctx.pedidoId; }
+      if (horaEl){ horaEl.textContent = ctx.horaEntrega || ''; }
+      if (sectorEl){ sectorEl.textContent = sector || '—'; }
+      if (nombreEl){ nombreEl.textContent = nombre || 'Contacto'; }
+      if (dirEl){ dirEl.textContent = direccion || '—'; }
+      if (notaEl){ notaEl.textContent = nota ? ('Nota: ' + nota) : 'Nota: —'; }
+      if (waEl){ waEl.textContent = telefono ? ('WhatsApp: ' + telefono) : 'WhatsApp: —'; }
+      if (precioEl){
+        var unitTxt = unit.toFixed(2).replace('.', ',') + ' $';
+        var totalTxt = total.toFixed(2).replace('.', ',') + ' $';
+        var texto = cantidad + (cantidad === 1 ? ' seco' : ' secos') + ' x ' + unitTxt + ' = <strong>' + totalTxt + '</strong>';
+        precioEl.innerHTML = texto;
+      }
+    }
+
     function init(){
       applyScaleFix();
       sizeHeaderImage();
+      pintarConfirmacion();
+
+      var btnOk = document.getElementById('btnOk');
+      if (btnOk){
+        btnOk.addEventListener('click', function(){
+          google.script.host && google.script.host.close && google.script.host.close();
+        });
+      }
     }
 
     if (document.readyState === 'loading'){
