@@ -440,7 +440,7 @@
       if (ctx.idContacto){ document.body.setAttribute('data-id-contacto', ctx.idContacto); }
 
       var nombre = ctx.clienteNombre || 'Contacto';
-      var telefono = (ctx.cliente && (ctx.cliente.telefono || ctx.cliente.whatsapp)) || '';
+      var whatsapp = (ctx.cliente && (ctx.cliente.telefono || ctx.cliente.whatsapp)) || ctx.whatsapp || '';
       var sector = (ctx.cliente && ctx.cliente.sector) || '';
       var direccion = (ctx.cliente && ctx.cliente.direccion) || '';
       var nota = (ctx.cliente && ctx.cliente.nota) || '';
@@ -454,12 +454,12 @@
       var waEl = document.getElementById('contactoWhatsapp');
 
       if (nombreEl){ nombreEl.textContent = nombre || 'Contacto'; }
-      if (telEl){ telEl.textContent = telefono || '—'; }
+      if (telEl){ telEl.textContent = nombre ? '' : 'Selecciona o crea un contacto'; }
       if (sectorEl){ sectorEl.textContent = sector || '—'; }
       if (dirEl){ dirEl.textContent = direccion || '—'; }
       if (dirExtraEl){ dirExtraEl.textContent = ctx.idContacto ? ('ID: ' + ctx.idContacto) : ''; }
       if (notaEl){ notaEl.textContent = nota || '—'; }
-      if (waEl){ waEl.textContent = telefono || '—'; }
+      if (waEl){ waEl.textContent = whatsapp || '—'; }
     }
 
     function applyScaleFix(){
@@ -779,7 +779,7 @@
           if (!isFinite(cantidad) || cantidad < 1) cantidad = 1;
 
           var ctx = obtenerCtxServidor();
-          var telefono = (ctx.cliente && (ctx.cliente.telefono || ctx.cliente.whatsapp)) || '';
+          var whatsapp = (ctx.cliente && (ctx.cliente.telefono || ctx.cliente.whatsapp)) || ctx.whatsapp || '';
 
           var payload = {
             pedidoId: ctx.pedidoId || '',
@@ -795,7 +795,7 @@
             sector: (ctx.cliente && ctx.cliente.sector) || '',
             nota: (ctx.cliente && ctx.cliente.nota) || '',
             direccion: (ctx.cliente && ctx.cliente.direccion) || '',
-            whatsapp: telefono,
+            whatsapp: whatsapp,
             cliente: ctx.cliente || null
           };
 
