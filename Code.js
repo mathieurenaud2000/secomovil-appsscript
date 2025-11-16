@@ -1740,61 +1740,45 @@ function initNuevoPedido() {
 }
 
 /**
- * Guarda el contexto (idPedido + idCliente) y sugiere
- * redirigir a registrarPedido.html.
+ * Prepara y muestra registrarPedido.html con el contexto recibido desde
+ * nuevoPedido.html o desde nuevoContacto.html.
  *
- * desdeNuevoPedidoPayload esperado:
+ * Payload esperado (flexible):
  * {
- *   idPedido: string,
- *   idCliente: string,
- *   cliente: {                      // opcional, pero recomendado
- *     idCliente: string,
- *     nombre: string,
- *     telefono: string,
- *     direccion: string,
- *     sector: string
+ *   pedidoId: string,
+ *   clienteNombre: string, // opcional si llega un objeto cliente
+ *   origen: string,        // ej: 'nuevoPedido' | 'nuevoContacto'
+ *   cliente: {             // opcional
+ *     nombre, telefono, direccion, sector, nota
  *   }
- * }
- *
- * Respuesta:
- * {
- *   ok: true|false,
- *   error: string|null,
- *   data: {
- *     redirectTo: 'registrarPedido.html',
- *     ctx: {
- *       idPedido: string,
- *       idCliente: string,
- *       cliente: {...} | null
- *     }
- *   } | null
  * }
  */
 function abrirRegistrarPedido(desdeNuevoPedidoPayload) {
   try {
-    if (!desdeNuevoPedidoPayload ||
-        !desdeNuevoPedidoPayload.idPedido ||
-        !desdeNuevoPedidoPayload.idCliente) {
-      return {
-        ok: false,
-        error: 'Faltan idPedido o idCliente en el payload.',
-        data: null
-      };
-    }
-
-    var idPedido = desdeNuevoPedidoPayload.idPedido.toString().trim();
-    var idCliente = desdeNuevoPedidoPayload.idCliente.toString().trim();
-    var cliente = desdeNuevoPedidoPayload.cliente || null;
-
     var ctx = {
-      idPedido: idPedido,
-      idCliente: idCliente,
-      cliente: cliente
+      pedidoId: (desdeNuevoPedidoPayload && desdeNuevoPedidoPayload.pedidoId)
+        ? desdeNuevoPedidoPayload.pedidoId.toString().trim()
+        : '',
+      clienteNombre: (desdeNuevoPedidoPayload && desdeNuevoPedidoPayload.clienteNombre)
+        ? desdeNuevoPedidoPayload.clienteNombre.toString().trim()
+        : '',
+      origen: (desdeNuevoPedidoPayload && desdeNuevoPedidoPayload.origen)
+        ? desdeNuevoPedidoPayload.origen.toString().trim()
+        : '',
+      cliente: (desdeNuevoPedidoPayload && desdeNuevoPedidoPayload.cliente)
+        ? desdeNuevoPedidoPayload.cliente
+        : null
     };
 
-    // Guardar el contexto en UserProperties (por usuario)
     var userProps = PropertiesService.getUserProperties();
     userProps.setProperty('SECOMOVIL_CTX_NUEVO_PEDIDO', JSON.stringify(ctx));
+
+    var template = HtmlService.createTemplateFromFile('registrarPedido');
+    var html = template.evaluate()
+      .setTitle('Registrar pedido');
+
+    inyectarContextoEnHtml_(html, ctx, { aplicarContextoRegistrar: true });
+    SpreadsheetApp.getUi().showSidebar(html);
 
     return {
       ok: true,
@@ -1815,54 +1799,39 @@ function abrirRegistrarPedido(desdeNuevoPedidoPayload) {
 }
 
 /**
- * Guarda el contexto (idPedido + idCliente) y sugiere
- * redirigir a nuevoContacto.html.
+ * Prepara y muestra nuevoContacto.html con el ID de pedido y el origen
+ * desde donde se abrió (nuevoPedido).
  *
- * desdeNuevoPedidoPayload esperado:
+ * Payload esperado (flexible):
  * {
- *   idPedido: string,
- *   idCliente: string,      // normalmente nextIdCliente
- *   cliente: null | { ... } // opcional, suele ser null aquí
- * }
- *
- * Respuesta:
- * {
- *   ok: true|false,
- *   error: string|null,
- *   data: {
- *     redirectTo: 'nuevoContacto.html',
- *     ctx: {
- *       idPedido: string,
- *       idCliente: string,
- *       cliente: {...} | null
- *     }
- *   } | null
+ *   pedidoId: string,
+ *   origen: string,
+ *   cliente: {...} // opcional
  * }
  */
 function abrirNuevoContacto(desdeNuevoPedidoPayload) {
   try {
-    if (!desdeNuevoPedidoPayload ||
-        !desdeNuevoPedidoPayload.idPedido ||
-        !desdeNuevoPedidoPayload.idCliente) {
-      return {
-        ok: false,
-        error: 'Faltan idPedido o idCliente en el payload.',
-        data: null
-      };
-    }
-
-    var idPedido = desdeNuevoPedidoPayload.idPedido.toString().trim();
-    var idCliente = desdeNuevoPedidoPayload.idCliente.toString().trim();
-    var cliente = desdeNuevoPedidoPayload.cliente || null;
-
     var ctx = {
-      idPedido: idPedido,
-      idCliente: idCliente,
-      cliente: cliente
+      pedidoId: (desdeNuevoPedidoPayload && desdeNuevoPedidoPayload.pedidoId)
+        ? desdeNuevoPedidoPayload.pedidoId.toString().trim()
+        : '',
+      origen: (desdeNuevoPedidoPayload && desdeNuevoPedidoPayload.origen)
+        ? desdeNuevoPedidoPayload.origen.toString().trim()
+        : '',
+      cliente: (desdeNuevoPedidoPayload && desdeNuevoPedidoPayload.cliente)
+        ? desdeNuevoPedidoPayload.cliente
+        : null
     };
 
     var userProps = PropertiesService.getUserProperties();
     userProps.setProperty('SECOMOVIL_CTX_NUEVO_PEDIDO', JSON.stringify(ctx));
+
+    var template = HtmlService.createTemplateFromFile('nuevoContacto');
+    var html = template.evaluate()
+      .setTitle('Nuevo contacto');
+
+    inyectarContextoEnHtml_(html, ctx);
+    SpreadsheetApp.getUi().showSidebar(html);
 
     return {
       ok: true,
@@ -1880,6 +1849,55 @@ function abrirNuevoContacto(desdeNuevoPedidoPayload) {
       data: null
     };
   }
+}
+
+/**
+ * Inserta un script al HTML generado para exponer el contexto (pedido,
+ * cliente) y, opcionalmente, aplicar los datos en registrarPedido.html.
+ *
+ * @param {GoogleAppsScript.HTML.HtmlOutput} htmlOutput
+ * @param {Object} ctx
+ * @param {Object} [opciones]
+ * @param {boolean} [opciones.aplicarContextoRegistrar]
+ */
+function inyectarContextoEnHtml_(htmlOutput, ctx, opciones) {
+  var opts = opciones || {};
+  var jsonSeguro = JSON.stringify(ctx || {}).replace(/<\//g, '<\/');
+
+  var script = 'window.SECO_CTX = ' + jsonSeguro + ';';
+
+  if (opts.aplicarContextoRegistrar) {
+    script += "(function(){try{"
+      + "var ctx=window.SECO_CTX||{};"
+      + "var idEl=document.getElementById('pedidoId');if(idEl&&ctx.pedidoId){idEl.textContent=ctx.pedidoId;}"
+      + "var card=document.querySelector('.contact-card');"
+      + "if(card){"
+        + "var nombre=(ctx.cliente&&ctx.cliente.nombre)||ctx.clienteNombre||'';"
+        + "var telefono=(ctx.cliente&&ctx.cliente.telefono)||'';"
+        + "var headerLines=card.querySelectorAll('.contact-top .txt-body div');"
+        + "if(headerLines.length>0&&nombre){headerLines[0].textContent=nombre;}"
+        + "if(headerLines.length>1&&telefono){headerLines[1].textContent=telefono;}"
+        + "var labels=card.querySelectorAll('.label');"
+        + "labels.forEach(function(lbl){var valueEl=lbl.nextElementSibling;if(!valueEl){return;}var key=lbl.textContent.trim().toLowerCase();"
+          + "if(key==='sector'&&ctx.cliente&&ctx.cliente.sector){valueEl.textContent=ctx.cliente.sector;}"
+          + "else if(key==='direccion'&&ctx.cliente&&ctx.cliente.direccion){valueEl.textContent=ctx.cliente.direccion;}"
+          + "else if(key==='nota'&&ctx.cliente&&ctx.cliente.nota){valueEl.textContent=ctx.cliente.nota;}"
+          + "else if(key==='whatsapp'&&ctx.cliente&&(ctx.cliente.telefono||ctx.cliente.whatsapp)){valueEl.textContent=ctx.cliente.telefono||ctx.cliente.whatsapp;}"
+        + "});"
+      + "}"
+    + "}catch(e){}})();";
+  }
+
+  var tag = '<script>' + script + '</script>';
+  var contenido = htmlOutput.getContent();
+
+  if (contenido.indexOf('</body>') !== -1) {
+    contenido = contenido.replace('</body>', tag + '</body>');
+  } else {
+    contenido += tag;
+  }
+
+  htmlOutput.setContent(contenido);
 }
 
 /**

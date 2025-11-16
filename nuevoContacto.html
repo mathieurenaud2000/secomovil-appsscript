@@ -280,6 +280,10 @@
     var notaEl     = document.getElementById('nota');
     var whatsappEl = document.getElementById('whatsapp');
 
+    function obtenerCtxServidor(){
+      return (typeof window !== 'undefined' && window.SECO_CTX) ? window.SECO_CTX : {};
+    }
+
     function champsRemplis(){
       var nomOK    = nombreEl.value.trim()   !== '';
       var dirOK    = dirEl.value.trim()      !== '';
@@ -371,8 +375,12 @@
 
           var cliente = resp.data.cliente; // { idCliente, nombre, telefono, direccion, sector, nota }
 
+          var ctxNuevoPedido = obtenerCtxServidor();
+
           var payload = {
-            origen: 'nuevoContacto',
+            origen: ctxNuevoPedido.origen || 'nuevoContacto',
+            pedidoId: ctxNuevoPedido.pedidoId || '',
+            clienteNombre: cliente.nombre || '',
             cliente: cliente
           };
 
