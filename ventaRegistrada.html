@@ -166,13 +166,13 @@
         </div>
 
         <div class="confirm-info">
-          <div class="confirm-price">
+          <div class="confirm-price" id="confirmResumen">
             1 seco x 1,00 $ = <strong>1,00 $</strong>
           </div>
         </div>
       </div>
 
-      <button class="btn btn-noir">OK</button>
+      <button class="btn btn-noir" id="btnOk">OK</button>
 
       <div style="height:0;"></div>
 
@@ -203,9 +203,67 @@
       }
     }
 
+    function setButtonLoading(btn, isLoading){
+      if (!btn) return;
+      if (isLoading){
+        if (!btn.dataset.originalHtml){
+          btn.dataset.originalHtml = btn.innerHTML;
+        }
+        btn.disabled = true;
+        btn.innerHTML = '...';
+      } else {
+        btn.disabled = false;
+        if (btn.dataset.originalHtml){
+          btn.innerHTML = btn.dataset.originalHtml;
+        }
+      }
+    }
+
+    function obtenerCtxServidor(){
+      return window.SECO_CTX || {};
+    }
+
+    function renderConfirmacion(){
+      var ctx = obtenerCtxServidor();
+      var ventaIdEl = document.getElementById('ventaId');
+      var resumenEl = document.getElementById('confirmResumen');
+
+      var cantidad = Number(ctx.cantidad || ctx.qty || 1);
+      if (!isFinite(cantidad) || cantidad < 1) cantidad = 1;
+
+      var precio = (ctx.precioUnitario !== undefined) ? Number(ctx.precioUnitario) : Number(ctx.precio || 0);
+      if (!isFinite(precio) || precio < 0) precio = 0;
+
+      var total = (ctx.total !== undefined) ? Number(ctx.total) : cantidad * precio;
+      if (!isFinite(total)) total = cantidad * precio;
+
+      if (ventaIdEl && ctx.idVenta){
+        ventaIdEl.textContent = ctx.idVenta;
+      }
+
+      if (resumenEl){
+        var unitTxt = precio.toFixed(2).replace('.', ',') + ' $';
+        var totalTxt = total.toFixed(2).replace('.', ',') + ' $';
+        var resumen = cantidad + (cantidad === 1 ? ' seco' : ' secos') + ' x ' + unitTxt + ' = <strong>' + totalTxt + '</strong>';
+        resumenEl.innerHTML = resumen;
+      }
+    }
+
     function init(){
       applyScaleFix();
       sizeHeaderImage();
+      renderConfirmacion();
+
+      var btnOk = document.getElementById('btnOk');
+      if (btnOk){
+        btnOk.addEventListener('click', function(){
+          setButtonLoading(btnOk, true);
+          google.script.run
+            .withSuccessHandler(function(){ setButtonLoading(btnOk, false); })
+            .withFailureHandler(function(){ setButtonLoading(btnOk, false); })
+            .abrirInicio();
+        });
+      }
     }
 
     if (document.readyState === 'loading'){

@@ -499,20 +499,31 @@
     }
 
     function renderPedido(pedido){
+      card.style.display = '';
+
       if (!pedido){
-        card.style.display = 'none';
         pedidoActual = null;
+        heureText.textContent = '--:--';
+        sectorText.textContent = '—';
+        clienteText.textContent = '—';
+        direccionText.textContent = '—';
+        notaText.textContent = '';
+        extraText.textContent = '';
+        currentHour = '--:--';
+        setNormal();
+        captureNormalHeight();
         return;
       }
-      card.style.display = '';
+
       pedidoActual = pedido;
       heureText.textContent = pedido.horaEntrega || '--:--';
       sectorText.textContent = (pedido.cliente && pedido.cliente.sector) || '—';
       clienteText.textContent = (pedido.cliente && pedido.cliente.nombre) || '—';
-      direccionText.textContent = (pedido.cliente && pedido.cliente.direccion) || '';
+      direccionText.textContent = (pedido.cliente && pedido.cliente.direccion) || '—';
       notaText.textContent = pedido.notas || '';
       extraText.textContent = pedido.cliente && pedido.cliente.telefono ? 'WhatsApp: ' + pedido.cliente.telefono : '';
       currentHour = pedido.horaEntrega || '--:--';
+      setNormal();
       captureNormalHeight();
     }
 

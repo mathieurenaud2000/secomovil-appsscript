@@ -256,6 +256,22 @@
       }
     }
 
+    function setButtonLoading(btn, isLoading){
+      if (!btn) return;
+      if (isLoading){
+        if (!btn.dataset.originalHtml){
+          btn.dataset.originalHtml = btn.innerHTML;
+        }
+        btn.disabled = true;
+        btn.innerHTML = '...';
+      } else {
+        btn.disabled = false;
+        if (btn.dataset.originalHtml){
+          btn.innerHTML = btn.dataset.originalHtml;
+        }
+      }
+    }
+
     function obtenerCtxServidor(){
       var ctx = window.SECO_CTX || {};
       window.pedidoConfirmCtx = ctx;
@@ -309,7 +325,11 @@
       var btnOk = document.getElementById('btnOk');
       if (btnOk){
         btnOk.addEventListener('click', function(){
-          google.script.host && google.script.host.close && google.script.host.close();
+          setButtonLoading(btnOk, true);
+          google.script.run
+            .withSuccessHandler(function(){ setButtonLoading(btnOk, false); })
+            .withFailureHandler(function(){ setButtonLoading(btnOk, false); })
+            .abrirInicio();
         });
       }
     }
