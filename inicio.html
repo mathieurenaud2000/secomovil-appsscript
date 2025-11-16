@@ -71,6 +71,7 @@
     display:grid;
     grid-template-rows: 1fr var(--actionsH);
     --actionsH: calc(50px * var(--fix));
+    position:relative;
   }
 
   .card-main{ grid-row:1; }
@@ -175,6 +176,29 @@
   .card.is-delivered .card-confirm-delete,
   .card.is-delivered .card-confirm-time,
   .card.is-delivered .card-confirm-delivery{ display:none; }
+
+  .card-loading{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(255,255,255,0.9);
+    z-index:5;
+  }
+  .card:not(.is-loading) .card-loading{ display:none; }
+  .spinner{
+    width:42px;
+    height:42px;
+    border-radius:50%;
+    border:5px solid rgba(0,0,0,0.1);
+    border-top-color:#000;
+    animation:spin 1s linear infinite;
+  }
+  @keyframes spin{
+    from{ transform:rotate(0deg); }
+    to{ transform:rotate(360deg); }
+  }
 
   /* Actions (ligne 2) */
   .card-actions{
@@ -354,6 +378,7 @@
       <img class="arrow-grey" src="https://lh3.googleusercontent.com/d/1or6tPZN2u4WpSsFBdx3SsM4HNGCWDcC7" alt="Continuer">
       <img class="check-grey-bottom" src="https://lh3.googleusercontent.com/d/1kIWQWxgpGWgRbdiBcm_X1BpwFZkUwX5l" alt="Entregado">
     </div>
+    <div class="card-loading" id="cardLoading" aria-hidden="true"><div class="spinner" aria-label="Cargando"></div></div>
   </div>
 
   <div class="stack">
@@ -396,6 +421,7 @@
     const btnNuevoPedido = document.getElementById('btnNuevoPedido');
     const btnVentaDirecta = document.getElementById('btnVentaDirecta');
     const btnPedidosDelDia = document.getElementById('btnPedidosDelDia');
+    const cardLoading = document.getElementById('cardLoading');
 
     const overlay = document.getElementById('ddOverlay');
     const overlayList = document.getElementById('ddOverlayList');
@@ -514,14 +540,34 @@
       }
     }
 
+    function setCardLoading(isLoading){
+      if (!card || !cardLoading) return;
+      if (isLoading){
+        card.classList.add('is-loading');
+      } else {
+        card.classList.remove('is-loading');
+      }
+    }
+
     function formatHour(hora){
       if (!hora) return '--:--';
-      const parts = String(hora).split(':');
-      const h = parts[0] || '';
-      const m = parts[1] || '';
-      const hh = h.padStart(2, '0');
-      const mm = m.padStart(2, '0');
-      return `${hh}:${mm}`;
+
+      if (hora instanceof Date){
+        return `${hora.getHours()}:${hora.getMinutes().toString().padStart(2, '0')}`;
+      }
+
+      const raw = String(hora).trim();
+      const direct = raw.match(/(\d{1,2}):(\d{2})/);
+      if (direct){
+        return `${Number(direct[1])}:${direct[2]}`;
+      }
+
+      const parsed = new Date(raw);
+      if (!isNaN(parsed.getTime())){
+        return `${parsed.getHours()}:${parsed.getMinutes().toString().padStart(2, '0')}`;
+      }
+
+      return raw;
     }
 
     function formatMoney(value){
@@ -579,6 +625,7 @@
 
     function cargarProximoPedido(){
       card.classList.remove('is-deleted','is-delivered');
+      setCardLoading(true);
       google.script.run
         .withSuccessHandler(function(resp){
           if (resp && resp.ok && resp.data){
@@ -586,8 +633,9 @@
           } else {
             renderPedido(null);
           }
+          setCardLoading(false);
         })
-        .withFailureHandler(function(){ renderPedido(null); })
+        .withFailureHandler(function(){ renderPedido(null); setCardLoading(false); })
         .getProximaEntrega();
     }
 
@@ -658,7 +706,7 @@
       for(let h=6; h<=18; h++){
         for(let m=0; m<60; m+=5){
           if(h===18 && m>55) break;
-          out.push(pad(h)+":"+pad(m));
+          out.push(h+":"+pad(m));
         }
       }
       return out;
@@ -766,12 +814,14 @@
         currentHour = heureText.textContent.trim();
         applyScaleFix();
         captureNormalHeight();
+        setCardLoading(true);
         cargarProximoPedido();
       });
     } else {
       currentHour = heureText.textContent.trim();
       applyScaleFix();
       captureNormalHeight();
+      setCardLoading(true);
       cargarProximoPedido();
     }
 
