@@ -290,8 +290,8 @@
       <div class="section-block contact-card">
         <div class="contact-top">
           <div class="txt-body">
-            <div>Lorenzo</div>
-            <div>Despacito</div>
+            <div id="contactoNombre">Contacto</div>
+            <div id="contactoTelefono" class="contact-subline">Selecciona o crea un contacto</div>
           </div>
           <button type="button" class="contact-edit">
             <img class="contact-edit-icon-img"
@@ -304,7 +304,7 @@
 
         <div>
           <div class="label">Sector</div>
-          <div class="txt-body">Centro Misahualli</div>
+          <div class="txt-body" id="contactoSector">—</div>
         </div>
 
         <div class="sep-gray"></div>
@@ -312,8 +312,8 @@
         <div>
           <div class="label">Direccion</div>
           <div class="txt-body">
-            <div>Al frente de la tienda</div>
-            <div>Juanita</div>
+            <div id="contactoDireccion">—</div>
+            <div id="contactoDireccionExtra"></div>
           </div>
         </div>
 
@@ -321,14 +321,14 @@
 
         <div>
           <div class="label">Nota</div>
-          <div class="txt-body">Dejar a la puerta</div>
+          <div class="txt-body" id="contactoNota">—</div>
         </div>
 
         <div class="sep-gray"></div>
 
         <div>
           <div class="label">WhatsApp</div>
-          <div class="txt-body">593987903447</div>
+          <div class="txt-body" id="contactoWhatsapp">—</div>
         </div>
       </div>
 
@@ -396,6 +396,60 @@
   </div>
 
   <script>
+    var pedidoContext = {
+      pedidoId: '',
+      idContacto: '',
+      clienteNombre: '',
+      origen: '',
+      cliente: null
+    };
+
+    function obtenerCtxServidor(){
+      var ctx = window.SECO_CTX || {};
+      pedidoContext = {
+        pedidoId: ctx.pedidoId || '',
+        idContacto: ctx.idContacto || (ctx.cliente && ctx.cliente.idCliente) || '',
+        clienteNombre: ctx.clienteNombre || (ctx.cliente && ctx.cliente.nombre) || '',
+        origen: ctx.origen || '',
+        cliente: ctx.cliente || null
+      };
+
+      window.pedidoContext = pedidoContext;
+      return pedidoContext;
+    }
+
+    function pintarContextoEnPantalla(){
+      var ctx = obtenerCtxServidor();
+
+      var pedidoIdEl = document.getElementById('pedidoId');
+      if (pedidoIdEl && ctx.pedidoId){ pedidoIdEl.textContent = ctx.pedidoId; }
+
+      document.body.setAttribute('data-origen', ctx.origen || '');
+      if (ctx.idContacto){ document.body.setAttribute('data-id-contacto', ctx.idContacto); }
+
+      var nombre = ctx.clienteNombre || 'Contacto';
+      var telefono = (ctx.cliente && (ctx.cliente.telefono || ctx.cliente.whatsapp)) || '';
+      var sector = (ctx.cliente && ctx.cliente.sector) || '';
+      var direccion = (ctx.cliente && ctx.cliente.direccion) || '';
+      var nota = (ctx.cliente && ctx.cliente.nota) || '';
+
+      var nombreEl = document.getElementById('contactoNombre');
+      var telEl = document.getElementById('contactoTelefono');
+      var sectorEl = document.getElementById('contactoSector');
+      var dirEl = document.getElementById('contactoDireccion');
+      var dirExtraEl = document.getElementById('contactoDireccionExtra');
+      var notaEl = document.getElementById('contactoNota');
+      var waEl = document.getElementById('contactoWhatsapp');
+
+      if (nombreEl){ nombreEl.textContent = nombre || 'Contacto'; }
+      if (telEl){ telEl.textContent = telefono || nombre || '—'; }
+      if (sectorEl){ sectorEl.textContent = sector || '—'; }
+      if (dirEl){ dirEl.textContent = direccion || '—'; }
+      if (dirExtraEl){ dirExtraEl.textContent = ctx.idContacto ? ('ID: ' + ctx.idContacto) : ''; }
+      if (notaEl){ notaEl.textContent = nota || '—'; }
+      if (waEl){ waEl.textContent = telefono || '—'; }
+    }
+
     function applyScaleFix(){
       var cssW = window.innerWidth || document.documentElement.clientWidth;
       var screenW = Math.min(window.screen.width || 375, window.screen.height || 812);
@@ -672,6 +726,7 @@
     }
 
     function init(){
+      pintarContextoEnPantalla();
       applyScaleFix();
       sizeHeaderImage();
       initDropdowns();
