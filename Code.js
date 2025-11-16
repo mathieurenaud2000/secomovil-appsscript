@@ -2853,6 +2853,32 @@ function getPedidosDelDia(fecha) {
   try {
     var tz = Session.getScriptTimeZone();
 
+    function normalizarHoraEntrega(valor) {
+      if (valor === null || valor === undefined || valor === '') {
+        return '';
+      }
+
+      if (Object.prototype.toString.call(valor) === '[object Date]' && !isNaN(valor.getTime())) {
+        return Utilities.formatDate(valor, tz, 'H:mm');
+      }
+
+      var str = valor.toString().trim();
+      if (!str) {
+        return '';
+      }
+
+      var match = str.match(/^(\d{1,2}):(\d{2})$/);
+      if (match) {
+        var hora = Number(match[1]);
+        var minutos = match[2];
+        if (!isNaN(hora)) {
+          return hora + ':' + minutos;
+        }
+      }
+
+      return str;
+    }
+
     // 1) Normalizar la fecha objetivo en formato 'yyyy-MM-dd'
     var fechaObjetivoStr;
     if (fecha) {
@@ -3012,7 +3038,7 @@ function getPedidosDelDia(fecha) {
       var pedidoFront = {
         idPedido: idPedidoStr,
         fechaEntrega: fechaCellStr,
-        horaEntrega: (horaEntrega || '').toString(),
+        horaEntrega: normalizarHoraEntrega(horaEntrega),
         cantidad: Number(cantidad || 0),
         total: totalNum,
         estado: estadoStr,
