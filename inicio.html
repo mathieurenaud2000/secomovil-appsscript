@@ -510,7 +510,7 @@
 
     function setButtonLoading(btn, isLoading){
       if (!btn) return;
-      var loadingColor = 'rgba(255,255,255,0.2)';
+      var loadingColor = 'rgba(255,255,255,0.5)';
       if (isLoading){
         if (!btn.dataset.originalColor){
           var computed = window.getComputedStyle ? getComputedStyle(btn).color : btn.style.color;
@@ -526,7 +526,7 @@
 
     function setHalfLoading(el, isLoading){
       if (!el) return;
-      var loadingColor = 'rgba(255,255,255,0.2)';
+      var loadingColor = 'rgba(255,255,255,0.5)';
       var icon = el.querySelector('img');
       if (isLoading){
         if (!el.dataset.originalColor){
@@ -540,7 +540,7 @@
         el.dataset.loading = '1';
         el.style.color = loadingColor;
         el.style.pointerEvents = 'none';
-        if (icon){ icon.style.opacity = '0.2'; }
+        if (icon){ icon.style.opacity = '0.5'; }
       } else {
         el.dataset.loading = '0';
         el.style.color = el.dataset.originalColor || '';
