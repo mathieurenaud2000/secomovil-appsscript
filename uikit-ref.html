@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, shrink-to-fit=no">
+<title>SecoMobil – Carte Commande</title>
+<style>
+  :root{
+    --fix: 1;
+    --radius: 40px;
+    --font-mini: 12px;
+    --font-body: 15px;
+    --side: 50px;
+    --gap: 12px;
+
+    --black:#000;
+    --white:#fff;
+    --gray10: rgba(0,0,0,0.10);
+    --gray20: rgba(0,0,0,0.20);
+    --gray25: rgba(0,0,0,0.25);
+  }
+
+  html, body { margin:0; padding:0; font-family: Roboto, system-ui, -apple-system, "Segoe UI", Arial, sans-serif; background:#fff; overflow-x:hidden; box-sizing:border-box; }
+  *, *::before, *::after { box-sizing:inherit; }
+  *:focus { outline:none!important; box-shadow:none!important; }
+
+  .wrapper { padding: 0 var(--side); }
+
+  /* Entête */
+  .page-top { height: calc(10px * var(--fix)); }
+  .header-logo img{ display:block; width:100%; height:auto; object-fit:contain; margin:0 8px calc(10px * var(--fix)) 0; padding:0; }
+
+  /* Boutons génériques sous la carte */
+  .btn{
+    width:100%; border-radius: var(--radius); border:5px solid #000;
+    padding: calc(14px * var(--fix)) calc(16px * var(--fix));
+    text-transform:uppercase; font-weight:700; line-height:0.95; letter-spacing:0.5px;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    margin: calc(var(--gap) * var(--fix)) 0; user-select:none;
+    font-size: calc(var(--font-body) * var(--fix));
+    background:#fff; color:#000;
+  }
+  .btn--white{ border-color:#000; }
+  .btn--gray{ border-color: rgba(0,0,0,0.20); }
+
+  /* Double bouton noir */
+  .double-actions{
+    display:grid; grid-template-columns: 1fr 1fr; gap:4px; margin:0;
+    box-shadow:0 20px 40px rgba(0,0,0,0.40); border-radius:var(--radius);
+  }
+  .double-actions .half{
+    background:#000; color:#fff; border:5px solid #000;
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+    padding: calc(10px * var(--fix)) calc(12px * var(--fix));
+    text-align:center; text-transform:uppercase; font-weight:700; line-height:0.95; user-select:none;
+  }
+  .double-actions .half--left{ border-top-left-radius: var(--radius); border-bottom-left-radius: var(--radius); border-top-right-radius:0; border-bottom-right-radius:0; }
+  .double-actions .half--right{ border-top-right-radius: var(--radius); border-bottom-right-radius: var(--radius); border-top-left-radius:0; border-bottom-left-radius:0; }
+  .double-actions .half img{ display:block; width:50%; height:auto; object-fit:contain; margin-bottom: calc(4px * var(--fix)); }
+  .double-actions .half div{ font-size: calc(var(--font-body) * var(--fix)); }
+
+  .sep-black{ height:5px; background:#000; border:0; margin: calc(var(--gap) * var(--fix)) 0; }
+
+  /* ====== CARTE ====== */
+  .card{
+    background:#fff; border:5px solid #000; border-radius: var(--radius);
+    box-shadow:0 20px 40px rgba(0,0,0,0.40);
+    overflow:hidden; margin: calc(var(--gap) * var(--fix)) 0;
+    user-select:none;
+
+    display:grid;
+    grid-template-rows: 1fr var(--actionsH);
+    --actionsH: calc(50px * var(--fix));
+  }
+
+  .card-main{ grid-row:1; }
+  .card-top, .card-body{ padding: calc(10px * var(--fix)); }
+  .card-top{
+    display:grid; grid-template-columns:auto 1fr auto; align-items:start;
+    border-bottom:0; padding:0;
+  }
+  .card-top .meta{ font-size:calc(var(--font-mini) * var(--fix)); color:#111; display:flex; align-items:center; }
+  .card-top .heure{ padding: calc(10px * var(--fix)) calc(10px * var(--fix)) 0 calc(10px * var(--fix)); }
+  .card-top .secteur{ padding: calc(10px * var(--fix)) 0 0 0; text-align:left; }
+  .card-top .edit-cell{ padding: calc(10px * var(--fix)) calc(10px * var(--fix)) 0 0; }
+  .card-top .edit-img{ display:block; height: calc(12px * var(--fix)); width:auto; object-fit:contain; }
+
+  .card-body{
+    border-top:0; border-bottom:2px solid #000;
+    padding-top: calc(10px * var(--fix)); padding-bottom: calc(10px * var(--fix));
+  }
+  .card-name{ font-weight:700; text-transform:uppercase; font-size:calc(var(--font-body) * var(--fix)); line-height:1.05; margin-bottom:calc(6px * var(--fix)); }
+  .card-line{ font-size:calc(var(--font-mini) * var(--fix)); line-height:1.15; margin-bottom:calc(4px * var(--fix)); }
+  .card-total{ font-size:calc(var(--font-mini) * var(--fix)); line-height:1.15; color:#000; margin-top: calc(4px * var(--fix)); }
+  .card-total b{ font-weight:700; }
+
+  /* CONFIRMATION + SUPPRIMÉ + LIVRÉ */
+  .card-confirm,
+  .card-deleted,
+  .card-delivered{
+    grid-row:1;
+    display:none;
+    padding: calc(12px * var(--fix)) calc(10px * var(--fix));
+    text-align:center;
+    border-bottom:2px solid #000;
+  }
+
+  /* Icônes pour DELETE + HEURE + LIVRAISON */
+  .card-confirm-delete .icon,
+  .card-confirm-time .icon,
+  .card-confirm-delivery .icon{
+    display:block; margin: 0 auto calc(2.5px * var(--fix));
+    height: calc(34px * 1.25 * var(--fix));
+    width:auto; object-fit:contain;
+  }
+
+  /* AJUSTEMENT DEMANDÉ : icône plus grande pour confirmation de livraison */
+  .card-confirm-delivery .icon{
+    height: calc(40px * 1.25 * var(--fix));
+  }
+
+  .card-confirm-delete .title,
+  .card-confirm-delivery .title{
+    font-weight:400;
+    font-size: calc(var(--font-body) * var(--fix));
+  }
+
+  .card-confirm-time .title{
+    font-weight:400;
+    font-size: calc(26px * var(--fix));
+  }
+
+  .card.is-deleted .card-deleted{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    border-bottom:0;
+  }
+  .card-deleted .icon{
+    display:block; margin: 0 auto calc(10px * var(--fix));
+    height: calc(34px * 2 * var(--fix)); width:auto; object-fit:contain;
+  }
+  .card-deleted .msg{
+    font-size: calc(var(--font-body) * var(--fix));
+    color:#000; font-weight:400;
+  }
+
+  .card.is-delivered .card-delivered{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    border-bottom:0;
+  }
+  .card-delivered .icon{
+    display:block; margin: 0 auto calc(10px * var(--fix));
+    height: calc(34px * 2 * var(--fix)); width:auto; object-fit:contain;
+  }
+  .card-delivered .msg{
+    font-size: calc(var(--font-body) * var(--fix));
+    color:#000; font-weight:400;
+  }
+
+  .card.is-confirm .card-main,
+  .card.is-timeconfirm .card-main,
+  .card.is-deliveryconfirm .card-main{ display:none; }
+
+  .card.is-confirm .card-confirm-delete,
+  .card.is-timeconfirm .card-confirm-time,
+  .card.is-deliveryconfirm .card-confirm-delivery{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+
+  .card.is-deleted .card-main,
+  .card.is-deleted .card-confirm-delete,
+  .card.is-deleted .card-confirm-time,
+  .card.is-deleted .card-confirm-delivery{ display:none; }
+
+  .card.is-delivered .card-main,
+  .card.is-delivered .card-confirm-delete,
+  .card.is-delivered .card-confirm-time,
+  .card.is-delivered .card-confirm-delivery{ display:none; }
+
+  /* Actions (ligne 2) */
+  .card-actions{
+    grid-row:2;
+    display:flex; align-items:stretch; gap:0; height: var(--actionsH); padding:0;
+    position:relative; background:#fff;
+  }
+  .card-actions > button{
+    flex: 0 0 33.3333%; appearance:none; border:0; background:#fff; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; padding:0; position:relative;
+  }
+  .card-actions > button + button{ border-left:2px solid #000; }
+  .card-actions .act-icon{ width:calc(34px * var(--fix)); height:auto; object-fit:contain; }
+
+  .card-actions .act--delete .act-icon{ width:calc(27.2px * var(--fix)); }
+  .card-actions .act--delay  .act-icon{ width:calc(30.6px * var(--fix)); }
+  .card-actions .act--confirm{ background:#000; color:#fff; }
+  .card-actions .act--confirm .act-icon{ width:calc(30.6px * var(--fix)); }
+
+  .card.is-confirm .card-actions .act--delay,
+  .card.is-timeconfirm .card-actions .act--delay,
+  .card.is-deliveryconfirm .card-actions .act--delay{ display:none; }
+
+  .card.is-confirm .card-actions .act--confirm,
+  .card.is-timeconfirm .card-actions .act--confirm,
+  .card.is-deliveryconfirm .card-actions .act--confirm{
+    flex: 0 0 66.6667%; background:#fff; color:#000;
+  }
+
+  .card.is-confirm .card-actions .act--delete,
+  .card.is-timeconfirm .card-actions .act--delete,
+  .card.is-deliveryconfirm .card-actions .act--delete{ background:#fff; }
+
+  .card.is-deleted{
+    --actionsH: calc(50px * 0.34 * var(--fix));
+  }
+  .card.is-deleted .card-actions > button{ display:none; }
+  .card.is-deleted .card-actions::before{
+    content:""; flex:1 1 auto; display:block; background:#fff;
+  }
+  .card.is-deleted .card-actions .arrow-grey{
+    display:block;
+  }
+
+  .card.is-delivered{
+    --actionsH: calc(50px * 0.34 * var(--fix));
+  }
+  .card.is-delivered .card-actions > button{ display:none; }
+  .card.is-delivered .card-actions::before{
+    content:""; flex:1 1 auto; display:block; background:#fff;
+  }
+  .card.is-delivered .card-actions .arrow-grey{ display:block; }
+  .card.is-delivered .card-actions .check-grey-bottom{ display:none; }
+
+  .card-actions .arrow-grey,
+  .card-actions .check-grey-bottom{
+    position:absolute; right: calc(10px * var(--fix)); bottom: calc(6px * var(--fix));
+    width: calc(28px * var(--fix)); height:auto; object-fit:contain;
+    display:none;
+  }
+  .check-grey-bottom{ filter: grayscale(1) brightness(0.6); }
+
+  /* OVERLAY HEURES */
+  .dd-overlay{
+    position: fixed; inset: 0; background:#fff;
+    display:none; z-index: 1000; overflow:auto;
+  }
+  .dd-overlay[data-open="true"]{ display:block; }
+
+  .dd-overlay-list{
+    list-style:none; margin:0; padding:0;
+    font-size: calc(var(--font-body) * var(--fix));
+  }
+  .dd-overlay-list.grid3{
+    display:grid; grid-template-columns: 1fr 1fr 1fr;
+  }
+  .dd-grid-option{
+    display:flex; align-items:center; justify-content:center;
+    min-height: calc(44px * var(--fix));
+    padding: calc(12px * var(--fix)) calc(10px * var(--fix));
+    border-bottom: 2px solid var(--gray20);
+    cursor:pointer; text-align:center;
+  }
+  .dd-grid-option[data-col="2"],
+  .dd-grid-option[data-col="3"]{
+    border-left: 2px solid var(--gray20);
+  }
+  .dd-grid-option.placeholder{
+    grid-column: 1/-1; color:var(--gray25);
+  }
+  .dd-grid-sep-black{
+    grid-column: 1/-1; border-top:5px solid var(--black);
+  }
+
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="page-top"></div>
+  <header class="header-logo">
+    <img src="https://lh3.googleusercontent.com/d/18Wt7nLNgictTO4GjVLzytrd31ADjZ0qW" alt="Logo SecoMobil">
+  </header>
+
+  <section class="double-actions">
+    <div class="half half--left">
+      <img src="https://lh3.googleusercontent.com/d/1JD2tYd3TAtYAUEt56qEuvQpDeuoDEq2W" alt="Nuevo Pedido">
+      <div>NUEVO</div><div>PEDIDO</div>
+    </div>
+    <div class="half half--right">
+      <img src="https://lh3.googleusercontent.com/d/17J2imVibMPuqjlgH9sDLqrI087b5N5zX" alt="Venta Directa">
+      <div>VENTA</div><div>DIRECTA</div>
+    </div>
+  </section>
+
+  <div class="card" id="card1">
+
+    <div class="card-main">
+      <div class="card-top">
+        <div class="heure meta" id="heureText">11:40</div>
+        <div class="secteur meta">MIRADOR</div>
+        <div class="edit-cell">
+          <img class="edit-img" src="https://lh3.googleusercontent.com/d/1IJOPYYBICvweVK9rn2mQqckhfyQOHvrJ" alt="Éditer">
+        </div>
+      </div>
+
+      <div class="card-body">
+        <div class="card-name">LORENZO DESPACITO</div>
+        <div class="card-line">Al frente de la tienda Juanita</div>
+        <div class="card-line">Dejar a la puerta</div>
+        <div class="card-total">2 secos x 1,00 $ = <b>2,00 $</b></div>
+      </div>
+    </div>
+
+    <!-- CONFIRM DELETE -->
+    <div class="card-confirm card-confirm-delete">
+      <img class="icon" src="https://lh3.googleusercontent.com/d/1NEwXtWZqpIJlto9dPs49xKhq3oOqwpXH" alt="Supprimer">
+      <div class="title">Borrar pedido</div>
+    </div>
+
+    <!-- CONFIRM HEURE -->
+    <div class="card-confirm card-confirm-time">
+      <img class="icon" src="https://lh3.googleusercontent.com/d/1BPyjEt1b57naswgY9cD_kdmFoWg-6-sK" alt="Hora">
+      <div class="title" id="timeConfirmTitle">12:30</div>
+    </div>
+
+    <!-- CONFIRM LIVRAISON (MODIFIÉ : ICÔNE AJOUTÉE + TAILLE AJUSTÉE) -->
+    <div class="card-confirm card-confirm-delivery">
+      <img class="icon" src="https://lh3.googleusercontent.com/d/10KDhCOjzY9fReyqolIQZoy9fbOfOJjW6" alt="Entregado">
+      <div class="title">Pedido entregado</div>
+    </div>
+
+    <!-- ÉCRAN SUPPRIMÉ -->
+    <div class="card-deleted">
+      <img class="icon" src="https://lh3.googleusercontent.com/d/1ejYqmcRjgWxEfPf8TPAbwYYNv5ulYNAo" alt="OK">
+      <div class="msg">Pedido borrado</div>
+    </div>
+
+    <!-- ÉCRAN LIVRÉ -->
+    <div class="card-delivered">
+      <img class="icon" src="https://lh3.googleusercontent.com/d/1ejYqmcRjgWxEfPf8TPAbwYYNv5ulYNAo" alt="OK">
+      <div class="msg">Pedido entregado</div>
+    </div>
+
+    <div class="card-actions">
+      <button type="button" class="act--delete" id="btnDel">
+        <img class="act-icon" src="https://lh3.googleusercontent.com/d/1NEwXtWZqpIJlto9dPs49xKhq3oOqwpXH" alt="Supprimer">
+      </button>
+
+      <button type="button" class="act--delay" id="btnDelay">
+        <img class="act-icon" src="https://lh3.googleusercontent.com/d/1BPyjEt1b57naswgY9cD_kdmFoWg-6-sK" alt="Reporter">
+      </button>
+
+      <button type="button" class="act--confirm" id="btnConfirm">
+        <img class="act-icon" src="https://lh3.googleusercontent.com/d/1kIWQWxgpGWgRbdiBcm_X1BpwFZkUwX5l" alt="Confirmer">
+      </button>
+
+      <img class="arrow-grey" src="https://lh3.googleusercontent.com/d/1or6tPZN2u4WpSsFBdx3SsM4HNGCWDcC7" alt="Continuer">
+      <img class="check-grey-bottom" src="https://lh3.googleusercontent.com/d/1kIWQWxgpGWgRbdiBcm_X1BpwFZkUwX5l" alt="Entregado">
+    </div>
+  </div>
+
+  <div class="stack">
+    <button class="btn btn--white">PEDIDOS DEL DIA</button>
+  </div>
+  <div class="sep-black"></div>
+
+  <div class="stack">
+    <button class="btn btn--gray">REGISTRAR GASTO</button>
+    <button class="btn btn--gray">CERRAR EL DIA</button>
+  </div>
+
+  <div class="sep-black"></div>
+  <div class="stack">
+    <button class="btn btn--gray">CONFIGURATION</button>
+  </div>
+
+  <div style="height: var(--side)"></div>
+</div>
+
+<div class="dd-overlay" id="ddOverlay">
+  <div class="dd-overlay-inner">
+    <ul class="dd-overlay-list grid3" id="ddOverlayList"></ul>
+  </div>
+</div>
+
+<script>
+  (function(){
+    const card = document.getElementById('card1');
+    const btnDel = document.getElementById('btnDel');
+    const btnConfirm = document.getElementById('btnConfirm');
+    const btnDelay = document.getElementById('btnDelay');
+    const heureText = document.getElementById('heureText');
+    const timeConfirmTitle = document.getElementById('timeConfirmTitle');
+
+    const overlay = document.getElementById('ddOverlay');
+    const overlayList = document.getElementById('ddOverlayList');
+
+    const ICONS = {
+      trash:   "https://lh3.googleusercontent.com/d/1NEwXtWZqpIJlto9dPs49xKhq3oOqwpXH",
+      xgray:   "https://lh3.googleusercontent.com/d/15wgAEpPLmV12eD0dFTr4dD9yZugrNiCs",
+      checkBlk:"https://lh3.googleusercontent.com/d/1CiREwW0rHzmdha8SqKtDEqr9iPNW21eG",
+      checkW:  "https://lh3.googleusercontent.com/d/1kIWQWxgpGWgRbdiBcm_X1BpwFZkUwX5l"
+    };
+
+    let normalHeight = null;
+    let currentHour = null;
+    let pendingHour = null;
+
+    function captureNormalHeight(){
+      const wasConfirm       = card.classList.contains('is-confirm');
+      const wasDeleted       = card.classList.contains('is-deleted');
+      const wasTimeConfirm   = card.classList.contains('is-timeconfirm');
+      const wasDeliveryConf  = card.classList.contains('is-deliveryconfirm');
+      const wasDelivered     = card.classList.contains('is-delivered');
+
+      card.classList.remove('is-confirm','is-deleted','is-timeconfirm','is-deliveryconfirm','is-delivered');
+      card.style.height = '';
+      normalHeight = card.offsetHeight;
+      card.style.height = normalHeight + 'px';
+
+      if (wasDeleted) card.classList.add('is-deleted');
+      else if (wasDelivered) card.classList.add('is-delivered');
+      else if (wasDeliveryConf) card.classList.add('is-deliveryconfirm');
+      else if (wasTimeConfirm) card.classList.add('is-timeconfirm');
+      else if (wasConfirm) card.classList.add('is-confirm');
+    }
+
+    function lockToNormalHeight(){
+      if (!normalHeight) captureNormalHeight();
+      card.style.height = normalHeight + 'px';
+    }
+
+    function setNormal(){
+      card.classList.remove('is-confirm','is-deleted','is-timeconfirm','is-deliveryconfirm','is-delivered');
+      btnDel.querySelector('img').src = ICONS.trash;
+      btnConfirm.querySelector('img').src = ICONS.checkW;
+      card.style.height = '';
+      captureNormalHeight();
+    }
+
+    function setConfirm(){
+      lockToNormalHeight();
+      card.classList.add('is-confirm');
+      card.classList.remove('is-deleted','is-timeconfirm','is-deliveryconfirm','is-delivered');
+      btnDel.querySelector('img').src = ICONS.xgray;
+      btnConfirm.querySelector('img').src = ICONS.checkBlk;
+    }
+
+    function setDeleted(){
+      lockToNormalHeight();
+      card.classList.add('is-deleted');
+      card.classList.remove('is-confirm','is-timeconfirm','is-deliveryconfirm','is-delivered');
+    }
+
+    function setTimeConfirm(){
+      if (!pendingHour) return;
+      lockToNormalHeight();
+      timeConfirmTitle.textContent = pendingHour;
+      card.classList.add('is-timeconfirm');
+      card.classList.remove('is-confirm','is-deleted','is-deliveryconfirm','is-delivered');
+      btnDel.querySelector('img').src = ICONS.xgray;
+      btnConfirm.querySelector('img').src = ICONS.checkBlk;
+    }
+
+    function setDeliveryConfirm(){
+      lockToNormalHeight();
+      card.classList.add('is-deliveryconfirm');
+      card.classList.remove('is-confirm','is-deleted','is-timeconfirm','is-delivered');
+      btnDel.querySelector('img').src = ICONS.xgray;
+      btnConfirm.querySelector('img').src = ICONS.checkBlk;
+    }
+
+    function setDelivered(){
+      lockToNormalHeight();
+      card.classList.add('is-delivered');
+      card.classList.remove('is-confirm','is-deleted','is-timeconfirm','is-deliveryconfirm');
+    }
+
+    btnDel.addEventListener('click', function(e){
+      e.stopPropagation();
+      if (card.classList.contains('is-confirm')){
+        setNormal();
+      } else if (card.classList.contains('is-timeconfirm')){
+        pendingHour = null;
+        setNormal();
+      } else if (card.classList.contains('is-deliveryconfirm')){
+        setNormal();
+      } else {
+        setConfirm();
+      }
+    });
+
+    btnConfirm.addEventListener('click', function(e){
+      e.stopPropagation();
+      if (card.classList.contains('is-confirm')){
+        setDeleted();
+      } else if (card.classList.contains('is-timeconfirm')){
+        if (pendingHour){
+          heureText.textContent = pendingHour;
+          currentHour = pendingHour;
+          pendingHour = null;
+        }
+        setNormal();
+      } else if (card.classList.contains('is-deliveryconfirm')){
+        setDelivered();
+      } else {
+        setDeliveryConfirm();
+      }
+    });
+
+    card.addEventListener('click', function(){
+      if (card.classList.contains('is-deleted') || card.classList.contains('is-delivered')){
+        setNormal();
+      }
+    });
+
+    function pad(n){ return n<10 ? '0'+n : ''+n; }
+    function buildTimes(){
+      const out=[];
+      for(let h=6; h<=18; h++){
+        for(let m=0; m<60; m+=5){
+          if(h===18 && m>55) break;
+          out.push(pad(h)+":"+pad(m));
+        }
+      }
+      return out;
+    }
+
+    function openHoursOverlay(){
+      overlayList.innerHTML = '';
+
+      const ph = document.createElement('li');
+      ph.className = 'dd-grid-option placeholder';
+      ph.textContent = 'Heure';
+      ph.addEventListener('click', () => closeOverlay());
+      overlayList.appendChild(ph);
+
+      const times = buildTimes();
+      let col = 1;
+      let rowCount = 0;
+
+      times.forEach((txt, idx) => {
+        const li = document.createElement('li');
+        li.className = 'dd-grid-option';
+        li.dataset.col = String(col);
+        li.textContent = txt;
+        li.addEventListener('click', () => {
+          pendingHour = txt;
+          closeOverlay();
+          setTimeConfirm();
+        });
+        overlayList.appendChild(li);
+
+        col = (col % 3) + 1;
+        if ((idx+1) % 3 === 0){
+          rowCount++;
+          if (rowCount === 4 && idx < times.length - 1){
+            const sep = document.createElement('li');
+            sep.className = 'dd-grid-sep-black';
+            overlayList.appendChild(sep);
+            rowCount = 0;
+          }
+        }
+      });
+
+      overlay.setAttribute('data-open','true');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeOverlay(){
+      overlay.removeAttribute('data-open');
+      document.body.style.overflow = '';
+    }
+
+    btnDelay.addEventListener('click', function(e){
+      e.stopPropagation();
+      openHoursOverlay();
+    });
+
+    overlay.addEventListener('click', function(e){
+      if (e.target === overlay) closeOverlay();
+    });
+
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape' && overlay.getAttribute('data-open')){
+        closeOverlay();
+      }
+    });
+
+    function applyScaleFix(){
+      let cssW = window.innerWidth;
+      let screenW = Math.min(window.screen.width, window.screen.height);
+      if (cssW >= 960 && cssW <= 1024){
+        let fix = (980 / screenW) * 1.50;
+        document.documentElement.style.setProperty('--fix', fix.toFixed(3));
+      } else {
+        document.documentElement.style.setProperty('--fix', '1');
+      }
+      setTimeout(captureNormalHeight, 0);
+    }
+
+    if (document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', ()=>{
+        currentHour = heureText.textContent.trim();
+        applyScaleFix();
+        captureNormalHeight();
+      });
+    } else {
+      currentHour = heureText.textContent.trim();
+      applyScaleFix();
+      captureNormalHeight();
+    }
+
+    window.addEventListener('resize', ()=>{
+      applyScaleFix();
+      if (!card.classList.contains('is-confirm') &&
+          !card.classList.contains('is-deleted') &&
+          !card.classList.contains('is-timeconfirm') &&
+          !card.classList.contains('is-deliveryconfirm') &&
+          !card.classList.contains('is-delivered')){
+        captureNormalHeight();
+      } else {
+        lockToNormalHeight();
+      }
+    });
+
+  })();
+</script>
+</body>
+</html>

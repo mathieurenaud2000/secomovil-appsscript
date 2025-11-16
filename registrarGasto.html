@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, shrink-to-fit=no">
+  <title>SecoMobil – Registrar gasto</title>
+  <style>
+    :root{
+      --fix: 1;
+      --gap: 12px;
+      --radius: 40px;
+      --font-label: 12px;
+      --font-small: 14px;
+      --font-body: 15px;
+      --btn-fs: 16px;
+      --btn-ph: 14px;
+      --btn-pw: 18px;
+      --btn-minh: 48px;
+      --black: #000;
+      --white: #fff;
+      --gray05: rgba(0,0,0,0.05);
+      --gray10: rgba(0,0,0,0.10);
+      --gray15: rgba(0,0,0,0.15);
+      --gray20: rgba(0,0,0,0.20);
+      --gray25: rgba(0,0,0,0.25);
+    }
+
+    html, body{
+      margin:0; padding:0;
+      width:100%; max-width:100%;
+      overflow-x:hidden; box-sizing:border-box;
+      background:#fff;
+      font-family: Roboto, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    }
+    *, *::before, *::after{ box-sizing:inherit; }
+    *:focus{ outline:none!important; box-shadow:none!important; }
+
+    .wrapper{ padding: 0 50px; }
+
+    /* ===== ENTÊTE ===== */
+    .header{ display:block; margin: calc(var(--gap) * var(--fix)) 0; }
+    .header-logo{ display:block; width:100%; line-height:0; margin:0; }
+    .header-img{
+      display:block; width:100%; height:auto;
+      object-fit:contain; object-position:left center;
+      margin:0 8px 15px 0;
+      padding-bottom:30px;
+    }
+
+    .sep-black{ height:0; border-top: 5px solid var(--black); }
+    .sep-gray { height:0; border-top: 2px solid var(--gray20); }
+
+    .header-grid{
+      display:grid; grid-template-columns: 1fr;
+      align-items:end;
+      gap: calc(8px * var(--fix));
+      padding: calc(12px * var(--fix)) 0;
+    }
+    .header-title{
+      text-transform: uppercase; font-weight: 900;
+      font-size: calc(21px * var(--fix));
+      line-height: calc(20px * var(--fix));
+    }
+    .header-title span{ display:block; }
+
+    /* ===== BOUTONS ===== */
+    .btn{
+      display:block; width:100%;
+      text-transform:uppercase; font-weight:700;
+      font-size: calc(var(--btn-fs) * var(--fix)); line-height:1.2;
+      padding: calc(var(--btn-ph) * var(--fix)) calc(var(--btn-pw) * var(--fix));
+      min-height: calc(var(--btn-minh) * var(--fix));
+      border-radius: var(--radius);
+      border: 5px solid transparent; cursor:pointer;
+      transition: filter .15s ease, background .15s ease, color .15s ease, border-color .15s ease;
+    }
+    .btn:active{ filter:brightness(0.95); }
+
+    .btn-noir{
+      background:#000; color:#fff; border-color:#000;
+      box-shadow:0 20px 40px rgba(0,0,0,0.40);
+    }
+    .btn-blanc{
+      background:#fff; color:#000; border-color: var(--gray20);
+    }
+    .btn-desactive{
+      background: var(--gray10); color:#fff;
+      border:0;
+      box-shadow:none;
+      cursor:default;
+    }
+
+    .stack{
+      display:flex; flex-direction:column;
+      gap: calc(var(--gap) * var(--fix));
+    }
+
+    .txt-mini{
+      font-size: calc(var(--font-label) * var(--fix));
+      color:#111;
+    }
+    .txt-small{
+      font-size: calc(var(--font-small) * var(--fix));
+      color:#111;
+    }
+
+    /* ===== LABELS ===== */
+    .label-line{
+      font-size: calc(var(--font-small) * var(--fix));
+    }
+    .label-line .main{
+      color:#000;
+    }
+    .label-line .opt{
+      color: var(--gray25);
+    }
+
+    /* ===== CHAMP TEXTE MULTI-LIGNES ===== */
+    .field-multi{
+      width:100%;
+      min-height: calc(60px * var(--fix));
+      border-radius: var(--radius);
+      border:5px solid var(--gray20);
+      font-size: calc(var(--font-body) * var(--fix));
+      padding: calc(10px * var(--fix)) calc(12px * var(--fix));
+      resize: vertical;
+    }
+
+    /* ===== DROPDOWN ===== */
+    .dropdown{
+      position:relative; width:100%;
+      font-size: calc(var(--font-body) * var(--fix));
+    }
+    .dropdown[data-variant="boxed"] .dd-button{
+      border: 5px solid var(--black);
+      border-radius: var(--radius);
+      background:#fff; color:#000;
+      padding: calc(10px * var(--fix)) calc(36px * var(--fix)) calc(10px * var(--fix)) calc(10px * var(--fix));
+    }
+
+    .dd-button{
+      width:100%; text-align:left; position:relative; cursor:pointer;
+      line-height:1.3; font-size: inherit;
+    }
+    .dd-button[data-placeholder="true"] .dd-label{ color: var(--gray25); }
+    .dd-label{ display:block; padding-right: calc(18px * var(--fix)); }
+    .dd-caret{
+      position:absolute; right: calc(16px * var(--fix)); top:50%; transform: translateY(-50%);
+      width: 0; height: 0; pointer-events:none;
+      border-left: calc(6px * var(--fix)) solid transparent;
+      border-right: calc(6px * var(--fix)) solid transparent;
+      border-top: calc(6px * var(--fix)) solid #000;
+    }
+
+    /* OVERLAY LISTE */
+    .dd-overlay{
+      position: fixed; inset: 0; background:#fff; display:none; z-index: 1000;
+      overflow:auto;
+    }
+    .dd-overlay[data-open="true"]{ display:block; }
+    .dd-overlay-inner{ max-width:100%; padding-top: 0; }
+    .dd-overlay-list{
+      list-style:none; margin:0; padding:0;
+      font-size: calc(var(--font-body) * var(--fix));
+    }
+    .dd-overlay-option{
+      padding: calc(12px * var(--fix)) calc(10px * var(--fix));
+      border-bottom: 2px solid var(--gray20);
+      line-height:1.25; cursor:pointer;
+    }
+    .dd-overlay-option.placeholder{ color: var(--gray25); }
+
+    /* ===== CARTE DÉPENSE ===== */
+    .expense-card{
+      border-radius: var(--radius);
+      border:5px solid #000;
+      background:#fff;
+      padding:0;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+    }
+
+    .exp-row1{
+      display:grid;
+      grid-template-columns: 45% auto 1fr; /* 1re colonne à 45% */
+      align-items:flex-start;
+      border-bottom:2px solid var(--gray20);
+      padding:0;
+    }
+    .exp-qty-wrap{
+      padding: calc(15px * var(--fix));
+    }
+    .exp-qty-input{
+      width:100%;
+      border-radius:0;
+      border:2px solid var(--gray20);
+      background:#fff;
+      font-size: calc(var(--font-body) * var(--fix));
+      padding: calc(8px * var(--fix)) calc(6px * var(--fix));
+      text-align:center; /* contenu centré */
+    }
+    .exp-unit{
+      padding: 0 0 calc(12px * var(--fix)) 0; /* padding-left 0px */
+      align-self:flex-end;
+      display:flex;
+      align-items:flex-end;
+      font-size: calc(var(--font-label) * var(--fix)); /* texte mini */
+    }
+    .exp-unit span{
+      display:inline-block;
+    }
+    .exp-edit{
+      padding: calc(15px * var(--fix)) calc(15px * var(--fix)) 0 0;
+      display:flex;
+      justify-content:flex-end;
+    }
+    .exp-edit img{
+      display:block;
+      width: calc(18px * var(--fix));
+      height:auto;
+      object-fit:contain;
+      opacity:0.45;
+    }
+
+    .exp-row2{
+      padding: calc(15px * var(--fix));
+      font-size: calc(var(--font-small) * var(--fix));
+      color: var(--gray25);
+    }
+
+    .exp-row3{
+      display:grid;
+      grid-template-columns: auto 1fr;
+      align-items:flex-end;
+      padding:0;
+    }
+    .exp-label{
+      padding: 0 0 calc(15px * var(--fix)) calc(15px * var(--fix));
+      font-size: calc(var(--font-label) * var(--fix));
+    }
+    .exp-total{
+      padding: 0 calc(15px * var(--fix)) calc(12px * var(--fix)) 0; /* bas 10px */
+      text-align:right;
+      font-size: calc(24px * var(--fix));
+      font-weight:400;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+
+    <!-- ENTÊTE -->
+    <header class="header">
+      <div class="header-logo">
+        <img class="header-img" id="headerImg"
+             src="https://lh3.googleusercontent.com/d/15N5N0TgMBTxmn2v-sKsG53mEAKaxXYtA"
+             alt="Logo SecoMobil">
+      </div>
+
+      <div class="sep-black"></div>
+
+      <div class="header-grid">
+        <div class="header-title">
+          <span>REGISTRAR</span>
+          <span>GASTO</span>
+        </div>
+      </div>
+
+      <div class="sep-black"></div>
+    </header>
+
+    <!-- CONTENU -->
+    <div class="stack">
+
+      <!-- Date -->
+      <div class="txt-mini" id="expenseDate">5/11/2025</div>
+
+      <!-- Catégorie -->
+      <div class="dropdown" data-variant="boxed">
+        <button type="button" class="dd-button" data-placeholder="false">
+          <span class="dd-label">Alimento</span><span class="dd-caret" aria-hidden="true"></span>
+        </button>
+        <script type="application/json" class="dd-data">
+          ["Alimento","Gasolina","Transporte","Insumos","Otros"]
+        </script>
+      </div>
+
+      <!-- Produit -->
+      <div class="dropdown" data-variant="boxed">
+        <button type="button" class="dd-button" data-placeholder="false">
+          <span class="dd-label">Pollo</span><span class="dd-caret" aria-hidden="true"></span>
+        </button>
+        <script type="application/json" class="dd-data">
+          ["Pollo","Arroz","Aceite","Verduras surtidas","Hielo"]
+        </script>
+      </div>
+
+      <div class="sep-gray"></div>
+
+      <!-- Label Proveedor -->
+      <div class="label-line">
+        <span class="main">Proveedor</span>
+      </div>
+
+      <!-- Fournisseur -->
+      <div class="dropdown" data-variant="boxed">
+        <button type="button" class="dd-button" data-placeholder="false">
+          <span class="dd-label">Tienda Juanita</span><span class="dd-caret" aria-hidden="true"></span>
+        </button>
+        <script type="application/json" class="dd-data">
+          ["Tienda Juanita","Mercado Central","Proveedor Diego","Supermercado La 14"]
+        </script>
+      </div>
+
+      <!-- CARTE DÉPENSE -->
+      <div class="expense-card" id="expenseCard" data-unit-label="Lb" data-unit-price="1.75">
+        <!-- Ligne 1 -->
+        <div class="exp-row1">
+          <div class="exp-qty-wrap">
+            <input type="number" min="0" step="0.01" inputmode="decimal"
+                   class="exp-qty-input" id="qtyInput" placeholder="">
+          </div>
+          <div class="exp-unit">
+            <span id="unitLabel">Lb</span>
+          </div>
+          <div class="exp-edit">
+            <img src="https://lh3.googleusercontent.com/d/1IJOPYYBICvweVK9rn2mQqckhfyQOHvrJ" alt="Éditer">
+          </div>
+        </div>
+
+        <!-- Ligne 2 -->
+        <div class="exp-row2">
+          <span id="unitPriceText">1,75 $ / libra</span>
+        </div>
+
+        <!-- Ligne 3 -->
+        <div class="exp-row3">
+          <div class="exp-label">Gasto</div>
+          <div class="exp-total" id="expenseTotal">0,00 $</div>
+        </div>
+      </div>
+
+      <div class="sep-gray"></div>
+
+      <!-- Observations -->
+      <div class="label-line">
+        <span class="main">Observaciones</span><span class="opt"> (Opcional)</span>
+      </div>
+      <textarea class="field-multi" id="obsField"></textarea>
+
+      <div class="sep-gray"></div>
+
+      <!-- Boutons -->
+      <button class="btn btn-desactive" id="btnRegistrar" disabled>REGISTRAR</button>
+      <button class="btn btn-blanc">VOLVER AL INICIO</button>
+
+      <div style="height: calc(24px * var(--fix));"></div>
+    </div>
+  </div>
+
+  <!-- OVERLAY GLOBAL DROPDOWNS -->
+  <div class="dd-overlay" id="ddOverlay" aria-hidden="true">
+    <div class="dd-overlay-inner" id="ddOverlayInner">
+      <ul class="dd-overlay-list" id="ddOverlayList" role="listbox" aria-label="Options"></ul>
+    </div>
+  </div>
+
+  <script>
+    /* ===== Correctif d'échelle ===== */
+    function applyScaleFix(){
+      var cssW = window.innerWidth || document.documentElement.clientWidth;
+      var screenW = Math.min(window.screen.width || 375, window.screen.height || 812);
+      if (cssW >= 960 && cssW <= 1024) {
+        var fix = (980 / screenW) * 1.50;
+        document.documentElement.style.setProperty('--fix', fix.toFixed(3));
+      } else {
+        document.documentElement.style.setProperty('--fix', '1');
+      }
+    }
+
+    function sizeHeaderImage(){
+      var img = document.getElementById('headerImg');
+      var wrapper = document.querySelector('.wrapper');
+      if (!img || !wrapper) return;
+      var avail = Math.floor(wrapper.clientWidth);
+      if (avail > 0) {
+        img.style.width = avail + 'px';
+        img.style.maxWidth = '100%';
+        img.removeAttribute('height');
+      }
+    }
+
+    /* ===== DROPDOWNS ===== */
+    var overlay, overlayList, currentDropdown = null;
+
+    function openOverlayFor(dropdown){
+      currentDropdown = dropdown;
+      overlayList.innerHTML = "";
+
+      var button = dropdown.querySelector('.dd-button');
+      var label  = dropdown.querySelector('.dd-label');
+
+      var dataEl = dropdown.querySelector('.dd-data');
+      var items = [];
+      if (dataEl) {
+        try { items = JSON.parse(dataEl.textContent.trim()); } catch(e){ items = []; }
+      }
+
+      var placeholderText = label.textContent.trim() || 'Sélectionner';
+      var liPh = document.createElement('li');
+      liPh.className = 'dd-overlay-option placeholder';
+      liPh.textContent = placeholderText;
+      liPh.addEventListener('click', function(){
+        label.textContent = placeholderText;
+        button.setAttribute('data-placeholder','true');
+        dropdown.dataset.value = '';
+        closeOverlay();
+        setTimeout(()=>button.focus({preventScroll:true}),0);
+      });
+      overlayList.appendChild(liPh);
+
+      items.forEach(function(txt){
+        var li = document.createElement('li');
+        li.className = 'dd-overlay-option';
+        li.textContent = txt;
+        li.addEventListener('click', function(){
+          label.textContent = txt;
+          button.removeAttribute('data-placeholder');
+          dropdown.dataset.value = txt;
+          closeOverlay();
+          setTimeout(()=>button.focus({preventScroll:true}),0);
+        });
+        overlayList.appendChild(li);
+      });
+
+      document.getElementById('ddOverlay').setAttribute('data-open','true');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeOverlay(){
+      document.getElementById('ddOverlay').setAttribute('data-open','false');
+      document.body.style.overflow = '';
+      currentDropdown = null;
+    }
+
+    function setupDropdown(dropdown){
+      var button = dropdown.querySelector('.dd-button');
+      var label  = dropdown.querySelector('.dd-label');
+
+      var phText = label.textContent.trim() || 'Sélectionner';
+      dropdown.dataset.ph = phText;
+      dropdown.dataset.value = label.textContent.trim();
+
+      button.addEventListener('click', function(){
+        openOverlayFor(dropdown);
+      });
+      button.addEventListener('keydown', function(e){
+        if (e.key === 'Enter' || e.key === ' '){
+          e.preventDefault();
+          openOverlayFor(dropdown);
+        }
+      });
+    }
+
+    function initDropdowns(){
+      overlay = document.getElementById('ddOverlay');
+      overlayList = document.getElementById('ddOverlayList');
+
+      document.querySelectorAll('.dropdown').forEach(setupDropdown);
+
+      document.addEventListener('keydown', function(e){
+        if (e.key === 'Escape' && overlay.getAttribute('data-open') === 'true'){
+          closeOverlay();
+        }
+      });
+
+      overlay.addEventListener('click', function(e){
+        if (e.target === e.currentTarget) closeOverlay();
+      });
+    }
+
+    /* ===== LOGIQUE DE CALCUL ===== */
+    function parseNumber(val){
+      if (!val) return 0;
+      val = String(val).replace(/\s+/g,'').replace(',', '.');
+      var n = parseFloat(val);
+      return isNaN(n) ? 0 : n;
+    }
+
+    function formatMoney(n){
+      var s = n.toFixed(2);
+      s = s.replace('.', ',');
+      return s + ' $';
+    }
+
+    function setupExpenseCard(){
+      var card = document.getElementById('expenseCard');
+      if (!card) return;
+
+      var qtyInput = document.getElementById('qtyInput');
+      var totalEl  = document.getElementById('expenseTotal');
+      var btnReg   = document.getElementById('btnRegistrar');
+
+      var unitPrice = parseNumber(card.dataset.unitPrice || '0');
+
+      function recompute(){
+        var q = parseNumber(qtyInput.value);
+        var hasQty = qtyInput.value.trim() !== '' && q > 0;
+
+        var total = hasQty ? q * unitPrice : 0;
+        totalEl.textContent = formatMoney(total);
+
+        if (hasQty){
+          btnReg.disabled = false;
+          btnReg.classList.remove('btn-desactive');
+          btnReg.classList.add('btn-noir');
+        } else {
+          btnReg.disabled = true;
+          btnReg.classList.remove('btn-noir');
+          btnReg.classList.add('btn-desactive');
+        }
+      }
+
+      ['input','change'].forEach(function(ev){
+        qtyInput.addEventListener(ev, recompute);
+      });
+
+      recompute();
+    }
+
+    function init(){
+      applyScaleFix();
+      sizeHeaderImage();
+      initDropdowns();
+      setupExpenseCard();
+    }
+
+    if (document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+
+    window.addEventListener('resize', function(){
+      applyScaleFix();
+      sizeHeaderImage();
+    });
+  </script>
+</body>
+</html>

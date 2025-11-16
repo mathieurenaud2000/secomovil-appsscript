@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, shrink-to-fit=no">
+  <title>SecoMobil – Registrar Pedido</title>
+  <style>
+    :root{
+      --fix: 1;
+      --gap: 12px;
+      --radius: 40px;
+      --font-label: 12px;
+      --font-small: 14px;
+      --font-body: 15px;
+      --btn-fs: 16px;
+      --btn-ph: 14px;
+      --btn-pw: 18px;
+      --btn-minh: 48px;
+      --black: #000;
+      --white: #fff;
+      --gray10: rgba(0,0,0,0.10);
+      --gray20: rgba(0,0,0,0.20);
+      --gray25: rgba(0,0,0,0.25);
+    }
+
+    html, body {
+      margin:0; padding:0; width:100%; max-width:100%;
+      overflow-x:hidden; box-sizing:border-box;
+      background:#fff;
+      font-family: Roboto, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    }
+    *, *::before, *::after { box-sizing:inherit; }
+    *:focus { outline:none!important; box-shadow:none!important; }
+
+    .wrapper { padding: 0 50px; }
+
+    /* ===== ENTÊTE ===== */
+    .header { display:block; margin: calc(var(--gap) * var(--fix)) 0; }
+    .header-logo { display:block; width:100%; line-height:0; margin:0; }
+    .header-img{
+      display:block; width:100%; height:auto;
+      object-fit:contain; object-position:left center;
+      margin:0 8px 15px 0;
+      padding-bottom:30px;
+    }
+
+    .sep-black { height:0; border-top: 5px solid var(--black); }
+    .sep-gray  { height:0; border-top: 2px solid var(--gray20); }
+
+    .header-grid{
+      display:grid; grid-template-columns: 1fr auto;
+      align-items:end; gap: calc(8px * var(--fix));
+      padding: calc(12px * var(--fix)) 0;
+    }
+    .header-title{
+      text-transform: uppercase; font-weight: 900;
+      font-size: calc(21px * var(--fix));
+      line-height: calc(20px * var(--fix));
+    }
+    .header-title span{ display:block; }
+    .header-id{
+      text-align:right; align-self:end;
+      font-size: calc(8px * var(--fix)); color:#111; white-space:nowrap;
+    }
+
+    /* ===== CONTENU ===== */
+    .stack { display:flex; flex-direction:column; gap: calc(var(--gap) * var(--fix)); }
+
+    /* label -> élément : gap/2 */
+    .label + .field,
+    .label + textarea.field,
+    .label + .dropdown { margin-top: calc((-1 * var(--gap) / 2) * var(--fix)); }
+
+    /* Boutons */
+    .btn {
+      display:block; width:100%;
+      text-transform:uppercase; font-weight:700;
+      font-size: calc(var(--btn-fs) * var(--fix)); line-height:1.2;
+      padding: calc(var(--btn-ph) * var(--fix)) calc(var(--btn-pw) * var(--fix));
+      min-height: calc(var(--btn-minh) * var(--fix));
+      border-radius: var(--radius);
+      border: 5px solid transparent; cursor:pointer;
+      transition: filter .15s ease;
+    }
+    .btn:active { filter:brightness(0.95); }
+    .btn-noir { background:#000; color:#fff; border-color:#000; box-shadow:0 20px 40px rgba(0,0,0,0.40); }
+    .btn-blanc { background:#fff; color:#000; border-color:#000; }
+    .btn-desactive { background: var(--gray10); color:#fff; border:0; box-shadow:none; cursor:default; }
+    .btn-gris { background:#fff; color:#000; border-color: var(--gray20); }
+
+    /* Textes */
+    .txt-body  { font-size: calc(var(--font-body) * var(--fix)); font-weight:500; color:#111; }
+    .txt-small { font-size: calc(var(--font-small) * var(--fix)); font-weight:400; color:#222; }
+    .label     { font-size: calc(var(--font-label) * var(--fix)); font-weight:400; color: var(--gray25); }
+
+    /* Champs génériques */
+    .field{
+      width:100%; background:#fff; color:#000;
+      border: 5px solid var(--black); border-radius: var(--radius);
+      font-size: calc(var(--font-body) * var(--fix));
+      line-height:1.3;
+      padding: calc(10px * var(--fix)) calc(12px * var(--fix));
+    }
+    .field::placeholder { color: var(--gray25); }
+    textarea.field { min-height: calc(0.96em * var(--fix)); resize: vertical; }
+
+    /* ===== DROPDOWN (COMPOSANT) ===== */
+    .dropdown{
+      position: relative; width:100%;
+      font-size: calc(var(--font-body) * var(--fix));
+    }
+    .dropdown[data-variant="boxed"] .dd-button{
+      border: 5px solid var(--black);
+      border-radius: var(--radius);
+      background:#fff; color:#000;
+      padding: calc(10px * var(--fix)) calc(36px * var(--fix)) calc(10px * var(--fix)) calc(10px * var(--fix));
+    }
+    .dropdown[data-variant="plain"] .dd-button{
+      border: 0; border-radius: 0;
+      background:#fff; color:#000;
+      padding: 0 calc(36px * var(--fix)) 0 0;
+      height: calc(44px * var(--fix));
+      display:flex; align-items:center;
+      margin-top:0; margin-bottom:0;
+    }
+    .sep-black + .dropdown[data-variant="plain"],
+    .sep-gray  + .dropdown[data-variant="plain"] { margin-top: calc(-12px * var(--fix)); }
+    .dropdown[data-variant="plain"] + .sep-black,
+    .dropdown[data-variant="plain"] + .sep-gray  { margin-top: calc(-12px * var(--fix)); }
+
+    .dd-button{
+      width:100%; text-align:left; position:relative; cursor:pointer;
+      line-height:1.3; font-size: inherit;
+    }
+    .dd-button[data-placeholder="true"] .dd-label{ color: var(--gray25); }
+    .dd-label{ display:block; padding-right: calc(18px * var(--fix)); }
+    .dd-caret{
+      position:absolute; right: calc(16px * var(--fix)); top:50%; transform: translateY(-50%);
+      width: 0; height: 0; pointer-events:none;
+      border-left: calc(6px * var(--fix)) solid transparent;
+      border-right: calc(6px * var(--fix)) solid transparent;
+      border-top: calc(6px * var(--fix)) solid #000;
+    }
+
+    /* ===== OVERLAY (plein écran) ===== */
+    .dd-overlay{
+      position: fixed; inset: 0; background:#fff; display:none; z-index: 1000;
+      overflow:auto;
+    }
+    .dd-overlay[data-open="true"]{ display:block; }
+    .dd-overlay-inner{ max-width:100%; padding-top: 0; }
+
+    .dd-overlay-list{
+      list-style:none; margin:0; padding:0;
+      font-size: calc(var(--font-body) * var(--fix));
+    }
+    .dd-overlay-option{
+      padding: calc(12px * var(--fix)) calc(10px * var(--fix));
+      border-bottom: 2px solid var(--gray20);
+      line-height:1.25; cursor:pointer;
+    }
+    .dd-overlay-option:last-child{ border-bottom: 0; }
+    .dd-overlay-option[aria-selected="true"]{ background: var(--gray10); }
+    .dd-overlay-option:active{ background: var(--gray20); }
+    .dd-overlay-option.placeholder{ color: var(--gray25); }
+
+    /* ===== Variante GRID 3 colonnes (HORA) ===== */
+    .dd-overlay-list.grid3{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      column-gap: 0;
+      row-gap: 0;
+      padding: 0;
+      margin: 0;
+    }
+    .dd-grid-option{
+      list-style:none;
+      display:flex; align-items:center; justify-content:center;
+      min-height: calc(44px * var(--fix));
+      padding: calc(12px * var(--fix)) calc(10px * var(--fix));
+      border-bottom: 2px solid var(--gray20);
+      line-height:1.25; cursor:pointer; text-align:center;
+    }
+    .dd-grid-option.placeholder{
+      grid-column: 1 / -1;
+      color: var(--gray25);
+      border-bottom: 2px solid var(--gray20);
+    }
+    .dd-grid-option[data-col="2"],
+    .dd-grid-option[data-col="3"]{
+      border-left: 2px solid var(--gray20);
+    }
+    .dd-grid-sep-black{
+      grid-column: 1 / -1;
+      height: 0;
+      border-top: 5px solid var(--black);
+    }
+
+    /* ===== SECTIONS ===== */
+    .section-title{
+      text-transform:uppercase;
+      font-weight:900;
+      font-size: calc(14px * var(--fix));
+    }
+
+    .section-block{
+      display:flex;
+      flex-direction:column;
+      gap: calc(6px * var(--fix));
+    }
+
+    .contact-card{
+      display:flex;
+      flex-direction:column;
+      gap: calc(6px * var(--fix));
+      padding: calc(6px * var(--fix)) 0;
+    }
+
+    .contact-top{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap: calc(8px * var(--fix));
+    }
+
+    .contact-edit{
+      border:0;
+      background:none;
+      padding:0;
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
+      cursor:default; /* pas d’action pour l’instant */
+    }
+    .contact-edit-icon-img{
+      display:block;
+      width: calc(26px * var(--fix));
+      height:auto;
+      object-fit:contain;
+    }
+
+    .price-row{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding: calc(8px * var(--fix)) 0;
+    }
+    .price-label,
+    .price-value{
+      text-transform:uppercase;
+      font-weight:900;
+      font-size: calc(14px * var(--fix));
+    }
+    .price-value{
+      text-align:right;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+
+    <!-- ===== ENTÊTE ===== -->
+    <header class="header" id="pageHeader">
+      <div class="header-logo">
+        <img class="header-img" id="headerImg"
+             src="https://lh3.googleusercontent.com/d/15N5N0TgMBTxmn2v-sKsG53mEAKaxXYtA"
+             alt="Logo SecoMobil">
+      </div>
+
+      <div class="sep-black"></div>
+
+      <div class="header-grid">
+        <div class="header-title">
+          <span>REGISTRAR</span>
+          <span>PEDIDO</span>
+        </div>
+        <div class="header-id" id="pedidoId">P-00001</div>
+      </div>
+
+      <div class="sep-black"></div>
+    </header>
+
+    <!-- ===== CONTENU ===== -->
+    <div class="stack">
+
+      <!-- SECTION CONTACTO -->
+      <div class="section-title">CONTACTO</div>
+      <div class="sep-black"></div>
+
+      <div class="section-block contact-card">
+        <div class="contact-top">
+          <div class="txt-body">
+            <div>Lorenzo</div>
+            <div>Despacito</div>
+          </div>
+          <button type="button" class="contact-edit">
+            <img class="contact-edit-icon-img"
+                 src="https://lh3.googleusercontent.com/d/1IJOPYYBICvweVK9rn2mQqckhfyQOHvrJ"
+                 alt="Editar contacto">
+          </button>
+        </div>
+
+        <div class="sep-gray"></div>
+
+        <div>
+          <div class="label">Sector</div>
+          <div class="txt-body">Centro Misahualli</div>
+        </div>
+
+        <div class="sep-gray"></div>
+
+        <div>
+          <div class="label">Direccion</div>
+          <div class="txt-body">
+            <div>Al frente de la tienda</div>
+            <div>Juanita</div>
+          </div>
+        </div>
+
+        <div class="sep-gray"></div>
+
+        <div>
+          <div class="label">Nota</div>
+          <div class="txt-body">Dejar a la puerta</div>
+        </div>
+
+        <div class="sep-gray"></div>
+
+        <div>
+          <div class="label">WhatsApp</div>
+          <div class="txt-body">593987903447</div>
+        </div>
+      </div>
+
+      <!-- SÉPARATEUR NOIR AVANT PEDIDO -->
+      <div class="sep-black"></div>
+
+      <!-- SECTION PEDIDO -->
+      <div class="section-title">PEDIDO</div>
+      <div class="sep-black"></div>
+
+      <!-- Fecha -->
+      <div class="dropdown" data-variant="plain" data-list-variant="fullscreen" data-name="fecha">
+        <button type="button" class="dd-button">
+          <span class="dd-label">Fecha</span><span class="dd-caret" aria-hidden="true"></span>
+        </button>
+        <script type="application/json" class="dd-data">[]</script>
+      </div>
+
+      <div class="sep-gray"></div>
+
+      <!-- Hora -->
+      <div class="dropdown" data-variant="plain" data-list-variant="grid3" data-name="hora">
+        <button type="button" class="dd-button" data-placeholder="true">
+          <span class="dd-label">Seleccionar hora</span><span class="dd-caret" aria-hidden="true"></span>
+        </button>
+        <script type="application/json" class="dd-data">[]</script>
+      </div>
+
+      <div class="sep-gray"></div>
+
+      <!-- Cantidad -->
+      <div class="dropdown" data-variant="plain" data-list-variant="fullscreen" data-name="cantidad">
+        <button type="button" class="dd-button">
+          <span class="dd-label">Cantidad</span><span class="dd-caret" aria-hidden="true"></span>
+        </button>
+        <script type="application/json" class="dd-data">[]</script>
+      </div>
+
+      <div class="sep-black"></div>
+
+      <!-- PRIX -->
+      <div class="price-row">
+        <div class="price-label">PRECIO</div>
+        <div class="price-value" id="precioValor">1,00 $</div>
+      </div>
+
+      <!-- SÉPARATEUR NOIR SOUS LE PRIX -->
+      <div class="sep-black"></div>
+
+      <!-- BOUTONS -->
+      <button class="btn btn-desactive" id="btnRegistrar" disabled>REGISTRAR</button>
+      <button class="btn btn-blanc" id="btnVolver">VOLVER AL INICIO</button>
+
+      <!-- ESPACEMENT SOUS LE BOUTON = 0 PX (même pattern que gastoRegistrado) -->
+      <div style="height:0;"></div>
+
+    </div>
+  </div>
+
+  <!-- ===== OVERLAY GLOBAL ===== -->
+  <div class="dd-overlay" id="ddOverlay" aria-hidden="true">
+    <div class="dd-overlay-inner" id="ddOverlayInner">
+      <ul class="dd-overlay-list" id="ddOverlayList" role="listbox" aria-label="Options"></ul>
+    </div>
+  </div>
+
+  <script>
+    function applyScaleFix(){
+      var cssW = window.innerWidth || document.documentElement.clientWidth;
+      var screenW = Math.min(window.screen.width || 375, window.screen.height || 812);
+      if (cssW >= 960 && cssW <= 1024) {
+        var fix = (980 / screenW) * 1.50;
+        document.documentElement.style.setProperty('--fix', fix.toFixed(3));
+      } else {
+        document.documentElement.style.setProperty('--fix', '1');
+      }
+    }
+
+    function sizeHeaderImage(){
+      var img = document.getElementById('headerImg');
+      var wrapper = document.querySelector('.wrapper');
+      if (!img || !wrapper) return;
+      var avail = Math.floor(wrapper.clientWidth);
+      if (avail > 0) {
+        img.style.width = avail + 'px';
+        img.style.maxWidth = '100%';
+        img.removeAttribute('height');
+      }
+    }
+
+    /* Génère 06:00 → 18:55 par pas de 5 min */
+    function buildTimes(){
+      const out=[];
+      for(let h=6;h<=18;h++){
+        for(let m=0;m<60;m+=5){
+          if(h===18 && m>55) break;
+          out.push(String(h).padStart(2,"0")+":"+String(m).padStart(2,"0"));
+        }
+      }
+      return out;
+    }
+
+    /* Dates à partir de demain (n jours) */
+    function buildDatesStartingTomorrow(count){
+      const dias = ["Domingo","Lunes","Martes","Miercoles","Jueves","Viernes","Sabado"];
+      const res = [];
+      const hoy = new Date();
+      for (let i = 1; i <= count; i++){
+        const d = new Date(hoy);
+        d.setDate(hoy.getDate() + i);
+        const dia = dias[d.getDay()];
+        const dd  = String(d.getDate()).padStart(2,"0");
+        const mm  = String(d.getMonth()+1).padStart(2,"0");
+        const yyyy = d.getFullYear();
+        res.push(dia + ", " + dd + "/" + mm + "/" + yyyy);
+      }
+      return res;
+    }
+
+    function updatePrecioYBoton(){
+      var precioBase = 1.00;
+      var ddFecha    = document.querySelector('.dropdown[data-name="fecha"]');
+      var ddHora     = document.querySelector('.dropdown[data-name="hora"]');
+      var ddCantidad = document.querySelector('.dropdown[data-name="cantidad"]');
+      var btn        = document.getElementById('btnRegistrar');
+      var precioEl   = document.getElementById('precioValor');
+
+      function isFilled(dd){
+        if (!dd) return false;
+        var button = dd.querySelector('.dd-button');
+        var val = dd.dataset.value || '';
+        var isPlaceholder = button && button.getAttribute('data-placeholder') === 'true';
+        return !isPlaceholder && val !== '';
+      }
+
+      var cantidad = 1;
+      if (ddCantidad){
+        var raw = ddCantidad.dataset.value || '';
+        var m = raw.match(/^(\d+)/);
+        if (m) cantidad = parseInt(m[1],10);
+      }
+      if (!isFinite(cantidad) || cantidad < 1) cantidad = 1;
+
+      var total = precioBase * cantidad;
+      if (precioEl){
+        var txt = total.toFixed(2).replace('.', ',') + ' $';
+        precioEl.textContent = txt;
+      }
+
+      var ok = isFilled(ddFecha) && isFilled(ddHora) && isFilled(ddCantidad);
+      if (btn){
+        btn.disabled = !ok;
+        btn.classList.toggle('btn-noir', ok);
+        btn.classList.toggle('btn-desactive', !ok);
+      }
+    }
+
+    var overlay, overlayList, currentDropdown = null;
+
+    function openOverlayFor(dropdown){
+      currentDropdown = dropdown;
+      overlayList.className = 'dd-overlay-list';
+      overlayList.innerHTML = "";
+
+      var button = dropdown.querySelector('.dd-button');
+      var label  = dropdown.querySelector('.dd-label');
+
+      var variant = dropdown.dataset.listVariant || 'fullscreen';
+
+      if (variant === 'grid3'){
+        overlayList.classList.add('grid3');
+
+        var phText = dropdown.dataset.ph || label.textContent.trim() || 'Heure';
+        var ph = document.createElement('li');
+        ph.className = 'dd-grid-option placeholder';
+        ph.textContent = phText;
+        ph.addEventListener('click', function(){
+          label.textContent = phText;
+          button.setAttribute('data-placeholder','true');
+          dropdown.dataset.value = '';
+          closeOverlay();
+          setTimeout(()=>button.focus({preventScroll:true}),0);
+          updatePrecioYBoton();
+        });
+        overlayList.appendChild(ph);
+
+        var times = buildTimes();
+        var perRow = 3, groupRows = 4, groupSize = perRow * groupRows;
+        var col = 1;
+
+        times.forEach(function(txt, idx){
+          var li = document.createElement('li');
+          li.className = 'dd-grid-option';
+          li.textContent = txt;
+          li.setAttribute('role','option');
+          li.dataset.col = String(col);
+
+          li.addEventListener('click', function(){
+            label.textContent = txt;
+            button.removeAttribute('data-placeholder');
+            dropdown.dataset.value = txt;
+            closeOverlay();
+            setTimeout(()=>button.focus({preventScroll:true}),0);
+            updatePrecioYBoton();
+          });
+          overlayList.appendChild(li);
+
+          col = (col % 3) + 1;
+
+          var pos = idx + 1;
+          if (pos % groupSize === 0 && pos < times.length){
+            var sep = document.createElement('li');
+            sep.className = 'dd-grid-sep-black';
+            overlayList.appendChild(sep);
+          }
+        });
+
+      } else {
+        var dataEl = dropdown.querySelector('.dd-data');
+        var items = [];
+        if (dataEl) {
+          try { items = JSON.parse(dataEl.textContent.trim() || "[]"); } catch(e){ items = []; }
+        }
+
+        var placeholderText = dropdown.dataset.ph || label.textContent.trim() || 'Seleccionar';
+        var liPh = document.createElement('li');
+        liPh.className = 'dd-overlay-option placeholder';
+        liPh.setAttribute('role','option');
+        liPh.textContent = placeholderText;
+        liPh.addEventListener('click', function(){
+          label.textContent = placeholderText;
+          button.setAttribute('data-placeholder','true');
+          dropdown.dataset.value = '';
+          closeOverlay();
+          setTimeout(()=>button.focus({preventScroll:true}),0);
+          updatePrecioYBoton();
+        });
+        overlayList.appendChild(liPh);
+
+        items.forEach(function(txt){
+          var li = document.createElement('li');
+          li.className = 'dd-overlay-option';
+          li.setAttribute('role','option');
+          li.textContent = txt;
+          li.addEventListener('click', function(){
+            label.textContent = txt;
+            button.removeAttribute('data-placeholder');
+            dropdown.dataset.value = txt;
+            closeOverlay();
+            setTimeout(()=>button.focus({preventScroll:true}),0);
+            updatePrecioYBoton();
+          });
+          overlayList.appendChild(li);
+        });
+      }
+
+      document.getElementById('ddOverlay').setAttribute('data-open','true');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeOverlay(){
+      document.getElementById('ddOverlay').setAttribute('data-open','false');
+      document.body.style.overflow = '';
+      currentDropdown = null;
+    }
+
+    function setupDropdown(dropdown){
+      var button = dropdown.querySelector('.dd-button');
+      var label  = dropdown.querySelector('.dd-label');
+
+      var phText = label.textContent.trim() || 'Seleccionar';
+      dropdown.dataset.ph = phText;
+      if (!dropdown.dataset.value){
+        dropdown.dataset.value = '';
+      }
+
+      button.addEventListener('click', function(){
+        openOverlayFor(dropdown);
+      });
+      button.addEventListener('keydown', function(e){
+        if (e.key === 'Enter' || e.key === ' '){
+          e.preventDefault();
+          openOverlayFor(dropdown);
+        }
+      });
+    }
+
+    function initDropdowns(){
+      document.querySelectorAll('.dropdown').forEach(setupDropdown);
+      overlayList = document.getElementById('ddOverlayList');
+
+      document.addEventListener('keydown', function(e){
+        if (e.key === 'Escape' && document.getElementById('ddOverlay').getAttribute('data-open') === 'true'){
+          closeOverlay();
+        }
+      });
+
+      document.getElementById('ddOverlay').addEventListener('click', function(e){
+        if (e.target === e.currentTarget) closeOverlay();
+      });
+    }
+
+    function buildDatesAndCantidad(){
+      var ddFecha    = document.querySelector('.dropdown[data-name="fecha"]');
+      var ddCantidad = document.querySelector('.dropdown[data-name="cantidad"]');
+
+      if (ddFecha){
+        var dataElF = ddFecha.querySelector('.dd-data');
+        if (dataElF){
+          var fechas = buildDatesStartingTomorrow(7);
+          dataElF.textContent = JSON.stringify(fechas);
+          if (fechas.length){
+            var btnF = ddFecha.querySelector('.dd-button');
+            var labF = ddFecha.querySelector('.dd-label');
+            labF.textContent = fechas[0];
+            if (btnF) btnF.removeAttribute('data-placeholder');
+            ddFecha.dataset.value = fechas[0];
+          }
+        }
+      }
+
+      if (ddCantidad){
+        var dataElC = ddCantidad.querySelector('.dd-data');
+        if (dataElC){
+          var items = [];
+          for (var i = 1; i <= 10; i++){
+            items.push(i + (i === 1 ? ' seco' : ' secos'));
+          }
+          dataElC.textContent = JSON.stringify(items);
+          if (items.length){
+            var btnC = ddCantidad.querySelector('.dd-button');
+            var labC = ddCantidad.querySelector('.dd-label');
+            labC.textContent = items[0];
+            if (btnC) btnC.removeAttribute('data-placeholder');
+            ddCantidad.dataset.value = items[0];
+          }
+        }
+      }
+
+      updatePrecioYBoton();
+    }
+
+    function init(){
+      applyScaleFix();
+      sizeHeaderImage();
+      initDropdowns();
+      buildDatesAndCantidad();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+
+    window.addEventListener('resize', function(){
+      applyScaleFix();
+      sizeHeaderImage();
+    });
+  </script>
+</body>
+</html>

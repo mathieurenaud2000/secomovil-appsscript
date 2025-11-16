@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, shrink-to-fit=no">
+  <title>SecoMobil – Cerrar el día</title>
+  <style>
+    :root{
+      --fix: 1;
+      --gap: 12px;
+      --radius: 40px;
+      --font-label: 12px;
+      --font-small: 14px;
+      --font-body: 15px;
+      --btn-fs: 16px;
+      --btn-ph: 14px;
+      --btn-pw: 18px;
+      --btn-minh: 48px;
+      --black: #000;
+      --white: #fff;
+      --gray05: rgba(0,0,0,0.05);
+      --gray10: rgba(0,0,0,0.10);
+      --gray20: rgba(0,0,0,0.20);
+      --gray25: rgba(0,0,0,0.25);
+    }
+
+    html, body{
+      margin:0; padding:0;
+      width:100%; max-width:100%;
+      overflow-x:hidden; box-sizing:border-box;
+      background:#fff;
+      font-family: Roboto, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    }
+    *, *::before, *::after{ box-sizing:inherit; }
+    *:focus{ outline:none!important; box-shadow:none!important; }
+
+    .wrapper{ padding: 0 50px; }
+
+    /* ENTÊTE */
+    .header{ display:block; margin: calc(var(--gap) * var(--fix)) 0; }
+    .header-logo{ display:block; width:100%; line-height:0; margin:0; }
+    .header-img{
+      display:block; width:100%; height:auto;
+      object-fit:contain; object-position:left center;
+      margin:0 8px 15px 0;
+      padding-bottom:30px;
+    }
+
+    .sep-black{ height:0; border-top: 5px solid var(--black); }
+    .sep-gray { height:0; border-top: 2px solid var(--gray20); }
+
+    .header-grid{
+      display:grid; grid-template-columns: 1fr;
+      align-items:end;
+      gap: calc(8px * var(--fix));
+      padding: calc(12px * var(--fix)) 0;
+    }
+    .header-title{
+      text-transform: uppercase; font-weight: 900;
+      font-size: calc(21px * var(--fix));
+      line-height: calc(20px * var(--fix));
+    }
+    .header-title span{ display:block; }
+
+    /* TEXTE */
+    .stack{
+      display:flex;
+      flex-direction:column;
+      gap: calc(var(--gap) * var(--fix));
+    }
+    .txt-mini{
+      font-size: calc(var(--font-label) * var(--fix));
+      color:#111;
+    }
+    .txt-small{
+      font-size: calc(var(--font-small) * var(--fix));
+      color:#111;
+    }
+
+    /* BOUTONS */
+    .btn{
+      display:block; width:100%;
+      text-transform:uppercase; font-weight:700;
+      font-size: calc(var(--btn-fs) * var(--fix)); line-height:1.2;
+      padding: calc(var(--btn-ph) * var(--fix)) calc(var(--btn-pw) * var(--fix));
+      min-height: calc(var(--btn-minh) * var(--fix));
+      border-radius: var(--radius);
+      border: 5px solid transparent; cursor:pointer;
+      transition: filter .15s ease;
+    }
+    .btn-noir{
+      background:#000; color:#fff; border-color:#000;
+      box-shadow:0 20px 40px rgba(0,0,0,0.40);
+    }
+    .btn-blanc{
+      background:#fff; color:#000; border-color: var(--gray20);
+    }
+    .btn-desactive{
+      background: var(--gray10); color:#fff;
+      border:0;
+      box-shadow:none;
+      cursor:default;
+    }
+
+    /* BLOCS TOTALS */
+    .section-block{
+      display:flex;
+      flex-direction:column;
+      gap: calc(6px * var(--fix));
+    }
+    .section-title-box{
+      border-radius: var(--radius);
+      border: 2px solid var(--gray20);
+      background:#f8f8f8;
+      padding: calc(10px * var(--fix));
+      text-align:center;
+      text-transform:uppercase;
+      font-weight:700;
+      font-size: calc(var(--font-small) * var(--fix));
+    }
+    .summary-rows{
+      display:flex;
+      flex-direction:column;
+    }
+    .summary-row{
+      display:flex;
+      justify-content:space-between;
+      padding: calc(8px * var(--fix)) 0;
+      font-size: calc(var(--font-small) * var(--fix));
+    }
+    .summary-row + .summary-row{ border-top:1px solid var(--gray20); }
+    .summary-row.total{ font-weight:700; }
+    .summary-sep-black{
+      margin: calc(4px * var(--fix)) 0;
+      border-top:2px solid #000;
+    }
+
+    /* CHECKBOX */
+    .checkbox-row{
+      display:flex;
+      align-items:center;
+      gap: calc(8px * var(--fix));
+      font-size: calc(14px * var(--fix));
+    }
+    .checkbox-row input{
+      width: calc(18px * var(--fix));
+      height: calc(18px * var(--fix));
+      accent-color:#000;
+    }
+
+    /* ESPACEMENT FINAL (3px comme gastoRegistrado.html) */
+    .footer-gap{
+      height: calc(3px * var(--fix));
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+
+    <!-- ENTÊTE -->
+    <header class="header">
+      <div class="header-logo">
+        <img class="header-img" id="headerImg"
+             src="https://lh3.googleusercontent.com/d/15N5N0TgMBTxmn2v-sKsG53mEAKaxXYtA"
+             alt="Logo SecoMobil">
+      </div>
+
+      <div class="sep-black"></div>
+
+      <div class="header-grid">
+        <div class="header-title">
+          <span>CERRAR</span>
+          <span>EL DÍA</span>
+        </div>
+      </div>
+
+      <div class="sep-black"></div>
+    </header>
+
+    <!-- CONTENU -->
+    <div class="stack">
+
+      <div class="txt-mini" id="closeDate">5/11/2025</div>
+
+      <!-- ===== INGRESOS ===== -->
+      <section class="section-block">
+        <div class="section-title-box">INGRESOS</div>
+
+        <div class="summary-rows">
+          <div class="summary-row"><div>Pedidos (34)</div><div>47,00 $</div></div>
+          <div class="summary-row"><div>Ventas (45)</div><div>65,00 $</div></div>
+
+          <div class="summary-sep-black"></div>
+
+          <div class="summary-row total"><div>Ingresos total (79)</div><div>112,00 $</div></div>
+        </div>
+      </section>
+
+      <div class="sep-gray"></div>
+
+      <!-- ===== GASTOS ===== -->
+      <section class="section-block">
+        <div class="section-title-box">GASTOS</div>
+
+        <div class="summary-rows">
+          <div class="summary-row"><div>Alimentos</div><div>39,00 $</div></div>
+          <div class="summary-row"><div>Transporte</div><div>12,00 $</div></div>
+          <div class="summary-row"><div>Empleados</div><div>26,00 $</div></div>
+          <div class="summary-row"><div>Otros</div><div>6,00 $</div></div>
+
+          <div class="summary-sep-black"></div>
+
+          <div class="summary-row total"><div>Total</div><div>83,00 $</div></div>
+        </div>
+      </section>
+
+      <div class="sep-gray"></div>
+
+      <!-- ===== BENEFICIOS ===== -->
+      <section class="section-block">
+        <div class="section-title-box">BENEFICIOS</div>
+
+        <div class="summary-rows">
+          <div class="summary-row"><div>Ingresos</div><div>112,00 $</div></div>
+          <div class="summary-row"><div>Gastos</div><div>83,00 $</div></div>
+
+          <div class="summary-sep-black"></div>
+
+          <div class="summary-row total"><div>Total</div><div>29,00 $</div></div>
+        </div>
+      </section>
+
+      <div class="sep-gray"></div>
+
+      <!-- Confirmation -->
+      <label class="checkbox-row">
+        <input type="checkbox" id="chkConfirm">
+        <span>Confirmar los datos</span>
+      </label>
+
+      <!-- Boutons -->
+      <button class="btn btn-desactive" id="btnCerrar" disabled>CERRAR EL DÍA</button>
+      <button class="btn btn-blanc">VOLVER AL INICIO</button>
+
+      <div class="footer-gap"></div>
+    </div>
+  </div>
+
+  <script>
+    function applyScaleFix(){
+      var cssW = window.innerWidth;
+      var screenW = Math.min(window.screen.width, window.screen.height);
+      if(cssW >= 960 && cssW <= 1024){
+        var fix = (980 / screenW) * 1.50;
+        document.documentElement.style.setProperty('--fix', fix.toFixed(3));
+      } else {
+        document.documentElement.style.setProperty('--fix','1');
+      }
+    }
+
+    function sizeHeaderImage(){
+      var img = document.getElementById('headerImg');
+      var wrapper = document.querySelector('.wrapper');
+      if(img && wrapper){
+        var avail = Math.floor(wrapper.clientWidth);
+        img.style.width = avail + 'px';
+        img.style.maxWidth = '100%';
+        img.removeAttribute('height');
+      }
+    }
+
+    function setupConfirm(){
+      var chk = document.getElementById('chkConfirm');
+      var btn = document.getElementById('btnCerrar');
+
+      function sync(){
+        if(chk.checked){
+          btn.disabled = false;
+          btn.classList.remove('btn-desactive');
+          btn.classList.add('btn-noir');
+        } else {
+          btn.disabled = true;
+          btn.classList.remove('btn-noir');
+          btn.classList.add('btn-desactive');
+        }
+      }
+
+      chk.addEventListener('change', sync);
+      sync();
+    }
+
+    function init(){
+      applyScaleFix();
+      sizeHeaderImage();
+      setupConfirm();
+    }
+
+    if(document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+
+    window.addEventListener('resize', function(){
+      applyScaleFix();
+      sizeHeaderImage();
+    });
+  </script>
+</body>
+</html>

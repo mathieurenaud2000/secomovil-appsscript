@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, shrink-to-fit=no">
+  <title>SecoMobil – Sistema configurado</title>
+  <style>
+    :root{
+      --fix: 1;
+      --gap: 12px;
+      --radius: 40px;
+      --font-label: 12px;
+      --font-small: 14px;
+      --font-body: 15px;
+      --btn-fs: 16px;
+      --btn-ph: 14px;
+      --btn-pw: 18px;
+      --btn-minh: 48px;
+      --black: #000;
+      --white: #fff;
+      --gray10: rgba(0,0,0,0.10);
+      --gray20: rgba(0,0,0,0.20);
+      --gray25: rgba(0,0,0,0.25);
+    }
+
+    html, body{
+      margin:0; padding:0;
+      width:100%; max-width:100%;
+      overflow-x:hidden; box-sizing:border-box;
+      background:#fff;
+      font-family: Roboto, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    }
+    *, *::before, *::after{ box-sizing:inherit; }
+    *:focus{ outline:none!important; box-shadow:none!important; }
+
+    .wrapper{ padding: 0 50px; }
+
+    /* ===== ENTÊTE ===== */
+    .header{ display:block; margin: calc(var(--gap) * var(--fix)) 0; }
+    .header-logo{ display:block; width:100%; line-height:0; margin:0; }
+    .header-img{
+      display:block; width:100%; height:auto;
+      object-fit:contain; object-position:left center;
+      margin:0 8px 15px 0;
+      padding-bottom:30px;
+    }
+
+    .sep-black{ height:0; border-top: 5px solid var(--black); }
+
+    .header-grid{
+      display:grid; grid-template-columns: 1fr;
+      align-items:end;
+      gap: calc(8px * var(--fix));
+      padding: calc(12px * var(--fix)) 0;
+    }
+    .header-title{
+      text-transform: uppercase; font-weight: 900;
+      font-size: calc(21px * var(--fix));
+      line-height: calc(20px * var(--fix));
+    }
+    .header-title span{ display:block; }
+
+    /* ===== CONTENU ===== */
+    .stack{
+      display:flex;
+      flex-direction:column;
+      gap: calc(var(--gap) * var(--fix));
+    }
+
+    /* ===== CARTE ===== */
+    .confirm-card{
+      border-radius: var(--radius);
+      border:5px solid var(--gray20);
+      background:#fff;
+      padding: calc(15px * var(--fix));
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+    }
+    .confirm-card img{
+      display:block;
+      width: calc(80px * var(--fix));
+      height:auto;
+      object-fit:contain;
+    }
+
+    /* ===== BOUTON ===== */
+    .btn{
+      display:block; width:100%;
+      text-transform:uppercase; font-weight:700;
+      font-size: calc(var(--btn-fs) * var(--fix)); line-height:1.2;
+      padding: calc(var(--btn-ph) * var(--fix)) calc(var(--btn-pw) * var(--fix));
+      min-height: calc(var(--btn-minh) * var(--fix));
+      border-radius: var(--radius);
+      border: 5px solid transparent; cursor:pointer;
+      transition: filter .15s ease, background .15s ease, color .15s ease, border-color .15s ease;
+    }
+    .btn:active{ filter:brightness(0.95); }
+
+    .btn-noir{
+      background:#000; color:#fff; border-color:#000;
+      box-shadow:0 20px 40px rgba(0,0,0,0.40);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+
+    <!-- ENTÊTE -->
+    <header class="header">
+      <div class="header-logo">
+        <img class="header-img" id="headerImg"
+             src="https://lh3.googleusercontent.com/d/15N5N0TgMBTxmn2v-sKsG53mEAKaxXYtA"
+             alt="Logo SecoMobil">
+      </div>
+
+      <div class="sep-black"></div>
+
+      <div class="header-grid">
+        <div class="header-title">
+          <span>SISTEMA</span>
+          <span>CONFIGURADO</span>
+        </div>
+      </div>
+
+      <div class="sep-black"></div>
+    </header>
+
+    <!-- CONTENU -->
+    <div class="stack">
+
+      <div class="confirm-card">
+        <img src="https://lh3.googleusercontent.com/d/1ejYqmcRjgWxEfPf8TPAbwYYNv5ulYNAo"
+             alt="Sistema configurado">
+      </div>
+
+      <button class="btn btn-noir">OK</button>
+
+      <!-- ESPACEMENT SOUS LE BOUTON = 0 PX -->
+      <div style="height:0;"></div>
+
+    </div>
+  </div>
+
+  <script>
+    function applyScaleFix(){
+      var cssW = window.innerWidth || document.documentElement.clientWidth;
+      var screenW = Math.min(window.screen.width || 375, window.screen.height || 812);
+      if (cssW >= 960 && cssW <= 1024) {
+        var fix = (980 / screenW) * 1.50;
+        document.documentElement.style.setProperty('--fix', fix.toFixed(3));
+      } else {
+        document.documentElement.style.setProperty('--fix', '1');
+      }
+    }
+
+    function sizeHeaderImage(){
+      var img = document.getElementById('headerImg');
+      var wrapper = document.querySelector('.wrapper');
+      if (!img || !wrapper) return;
+      var avail = Math.floor(wrapper.clientWidth);
+      img.style.width = avail + 'px';
+      img.style.maxWidth = '100%';
+      img.removeAttribute('height');
+    }
+
+    function init(){
+      applyScaleFix();
+      sizeHeaderImage();
+    }
+
+    if (document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+
+    window.addEventListener('resize', function(){
+      applyScaleFix();
+      sizeHeaderImage();
+    });
+  </script>
+</body>
+</html>

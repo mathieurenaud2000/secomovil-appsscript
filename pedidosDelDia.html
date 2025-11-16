@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, shrink-to-fit=no">
+  <title>SecoMobil – Pedidos del día</title>
+  <style>
+    :root{
+      --fix: 1;
+      --gap: 12px;
+      --radius: 40px;
+      --font-label: 12px;
+      --font-small: 14px;
+      --font-body: 15px;
+      --btn-fs: 16px;
+      --btn-ph: 14px;
+      --btn-pw: 18px;
+      --btn-minh: 48px;
+      --black: #000;
+      --white: #fff;
+      --gray10: rgba(0,0,0,0.10);
+      --gray15: rgba(0,0,0,0.15);
+      --gray20: rgba(0,0,0,0.20);
+      --gray25: rgba(0,0,0,0.25);
+      --gray40: rgba(0,0,0,0.40);
+    }
+
+    html, body{
+      margin:0; padding:0;
+      width:100%; max-width:100%;
+      overflow-x:hidden; box-sizing:border-box;
+      background:#fff;
+      font-family: Roboto, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    }
+    *, *::before, *::after{ box-sizing:inherit; }
+    *:focus{ outline:none!important; box-shadow:none!important; }
+
+    .wrapper{ padding: 0 50px; }
+
+    /* ===== ENTÊTE SECONDAIRE ===== */
+    .header{ display:block; margin: calc(var(--gap) * var(--fix)) 0; }
+    .header-logo{ display:block; width:100%; line-height:0; margin:0; }
+    .header-img{
+      display:block; width:100%; height:auto;
+      object-fit:contain; object-position:left center;
+      margin:0 8px 15px 0;
+      padding-bottom:30px;
+    }
+
+    .sep-black{ height:0; border-top: 5px solid var(--black); }
+    .sep-gray { height:0; border-top: 2px solid var(--gray20); margin-top: calc(5px * var(--fix)); }
+
+    .header-grid{
+      display:grid; grid-template-columns: 1fr;
+      align-items:end;
+      gap: calc(8px * var(--fix));
+      padding: calc(12px * var(--fix)) 0 0 0;
+    }
+    .header-title{
+      text-transform: uppercase; font-weight: 900;
+      font-size: calc(21px * var(--fix));
+      line-height: calc(20px * var(--fix));
+    }
+    .header-title span{ display:block; }
+
+    /* ===== ONGLET TODO / PENDIENTE ===== */
+    .tabs{
+      display:grid;
+      grid-template-columns: 40% 60%;
+      margin: calc(var(--gap) * var(--fix)) 0 calc(var(--gap) * var(--fix));
+    }
+    .tab{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-transform:uppercase;
+      font-weight:700;
+      font-size: calc(var(--font-body) * var(--fix) + 2px);
+      padding: calc(10px * var(--fix)) 0;
+      background:#fff;
+      cursor:pointer;
+      border:0;
+      border-bottom:3px solid #000;
+      color:#000;
+    }
+    .tab[aria-selected="true"]{
+      border-top:3px solid #000;
+      border-left:3px solid #000;
+      border-right:3px solid #000;
+      border-bottom:0;
+    }
+
+    /* ===== BOUTONS GLOBAUX ===== */
+    .btn{
+      display:block; width:100%;
+      text-transform:uppercase; font-weight:700;
+      font-size: calc(var(--btn-fs) * var(--fix)); line-height:1.2;
+      padding: calc(var(--btn-ph) * var(--fix)) calc(var(--btn-pw) * var(--fix));
+      min-height: calc(var(--btn-minh) * var(--fix));
+      border-radius: var(--radius);
+      border: 5px solid transparent; cursor:pointer;
+      transition: filter .15s ease;
+    }
+    .btn:active{ filter:brightness(0.95); }
+    .btn-noir{
+      background:#000; color:#fff; border-color:#000;
+      box-shadow:0 20px 40px rgba(0,0,0,0.40);
+    }
+
+    .stack{
+      display:flex; flex-direction:column;
+      gap: calc(var(--gap) * var(--fix));
+    }
+
+    .txt-mini{
+      font-size: calc(var(--font-label) * var(--fix));
+      color:#222;
+    }
+    .txt-body{
+      font-size: calc(var(--font-body) * var(--fix));
+      color:#111;
+    }
+
+    /* ===== CARTE PEDIDO ===== */
+    .pedido-card{
+      background:#fff;
+      border:5px solid #fff;      /* bordure blanche constante pour éviter le saut */
+      border-radius: var(--radius);
+      box-shadow:none;
+      padding:0;
+      margin:0;
+      display:flex;
+      flex-direction:column;
+      position:relative;
+      transition: background .15s ease, border-color .15s ease, box-shadow .15s ease, color .15s ease;
+    }
+
+    .pedido-main{
+      display:flex;
+      flex-direction:column;
+    }
+
+    /* Ligne 1 : heure + secteur / flèche ou icône */
+    .pedido-row1{
+      display:grid;
+      grid-template-columns: auto 1fr;
+      align-items:center;
+      padding: 0 0 calc(5px * var(--fix)) 0;
+    }
+    .pedido-topline{
+      font-size: calc(var(--font-label) * var(--fix));
+      color:#111;
+      padding:0;
+      white-space:nowrap;
+    }
+    .pedido-row1 .pedido-toggle{
+      justify-self:end;
+    }
+
+    /* Ligne 2 : nom + direction + note */
+    .pedido-row2{
+      padding:0;
+    }
+    .pedido-row2 .pedido-left{
+      display:flex;
+      flex-direction:column;
+      gap: calc(2px * var(--fix));
+    }
+
+    .pedido-nom{
+      font-weight:700;
+      text-transform:uppercase;
+      font-size: calc(var(--font-small) * var(--fix));
+    }
+    .pedido-ligne,
+    .pedido-note{
+      font-size: calc(var(--font-label) * var(--fix));
+      line-height:1.2;
+    }
+
+    /* Ligne 3 : quantité/prix + cellule de statut */
+    .pedido-row3{
+      display:grid;
+      grid-template-columns: auto 1fr;
+      align-items:center;
+      padding:0;
+    }
+    /* Padding haut uniquement sur la première colonne (quantité/prix) */
+    .pedido-row3 > .pedido-left{
+      padding-top: calc(10px * var(--fix));
+    }
+    .pedido-total{
+      font-size: calc(var(--font-label) * var(--fix));
+    }
+    .pedido-total b{ font-weight:700; }
+
+    .pedido-statuscell{
+      display:flex;
+      align-items:flex-end; /* icône collée en bas */
+      justify-content:flex-end;
+      gap: calc(6px * var(--fix));
+      padding:0;
+      background:#fff;      /* fond blanc forcé dans tous les états */
+    }
+
+    /* Flèche accordéon */
+    .pedido-toggle{
+      border:0; background:transparent; padding:0;
+      width: calc(24px * var(--fix)); height: calc(24px * var(--fix));
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer;
+      transition: opacity .15s ease;
+    }
+    .chevron{
+      width:0; height:0;
+      border-left: calc(6px * var(--fix)) solid transparent;
+      border-right: calc(6px * var(--fix)) solid transparent;
+      border-top: calc(6px * var(--fix)) solid #000;
+      transition: transform .15s ease, border-top-color .15s ease;
+    }
+    .pedido-card.is-open .chevron{
+      transform: rotate(180deg);
+    }
+
+    /* Icônes de statut (ligne 1 col. 2, en absolu) */
+    .pedido-status-icon{
+      width: calc(22px * var(--fix));
+      height: calc(22px * var(--fix));
+      display:none;
+      position:absolute;
+      top:0;
+      right:0;
+    }
+    .pedido-status-icon img{
+      display:block; width:100%; height:auto; object-fit:contain;
+    }
+
+    .pedido-refresh{
+      width: calc(22px * var(--fix));
+      height: calc(22px * var(--fix));
+      display:none;
+      cursor:pointer;
+      background:#fff;
+    }
+    .pedido-refresh img{
+      display:block; width:100%; height:auto; object-fit:contain;
+    }
+
+    .pedido-card.is-deleted .pedido-status--deleted,
+    .pedido-card.is-delivered .pedido-status--delivered{
+      display:block;
+    }
+    .pedido-card.is-deleted .pedido-refresh,
+    .pedido-card.is-delivered .pedido-refresh{
+      display:block;
+    }
+
+    /* Ligne 4 : accordéon (3 boutons pleine largeur) */
+    .pedido-actions{
+      display:none;
+      margin:0;                 /* pas de marge bas, on gère seulement le haut à l'ouverture */
+      border-radius: var(--radius);
+      overflow:hidden;
+      box-shadow:none;
+      border:3px solid #000;
+    }
+    .pedido-card.is-open:not(.is-deleted):not(.is-delivered) .pedido-actions{
+      display:flex;
+      margin-top: calc(18px * var(--fix));  /* 8 px de base + 10 px ajoutés */
+    }
+    .pedido-actions button{
+      flex:1 1 33.3333%;
+      border:0;
+      padding: calc(7px * var(--fix)) 0;
+      background:#fff;
+      cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .pedido-actions button + button{
+      border-left:2px solid #000;
+    }
+    .pedido-actions img{
+      display:block;
+      width: calc(15px * var(--fix));
+      height:auto;
+      object-fit:contain;
+    }
+    .pedido-actions .btn-deliver{
+      background:#000;
+    }
+    .pedido-actions .btn-deliver img{
+      width: calc(15px * var(--fix));
+    }
+
+    /* États supprimé / livré : fond blanc, texte gris pâle, icônes couleur originale */
+    .pedido-card.is-deleted,
+    .pedido-card.is-delivered{
+      background:#fff;
+      border-color:#fff;
+      box-shadow:none;
+    }
+    .pedido-card.is-deleted .pedido-left,
+    .pedido-card.is-deleted .pedido-left *,
+    .pedido-card.is-deleted .pedido-topline,
+    .pedido-card.is-delivered .pedido-left,
+    .pedido-card.is-delivered .pedido-left *,
+    .pedido-card.is-delivered .pedido-topline{
+      color: var(--gray25) !important;
+    }
+
+    /* flèche invisible mais espace conservé en supprimé / livré */
+    .pedido-card.is-deleted .pedido-toggle,
+    .pedido-card.is-delivered .pedido-toggle{
+      opacity:0;
+      pointer-events:none;
+    }
+
+    /* Carte REACTIVÉE (temporaire, overlay) */
+    .pedido-reactivated{
+      position:absolute;
+      inset:0;
+      display:none;
+      align-items:center;        /* CORRECTION : centrage horizontal */
+      justify-content:center;    /* centrage vertical */
+      flex-direction:column;
+      text-align:center;
+      pointer-events:none;
+    }
+    .pedido-reactivated img{
+      display:block;
+      width: calc(56px * var(--fix));          /* plus petit qu’avant selon ta demande précédente */
+      height:auto;
+      object-fit:contain;
+      margin-bottom: calc(4px * var(--fix));   /* espace réduit */
+    }
+    .pedido-reactivated .txt-body{
+      font-weight:500;
+      font-size: calc((var(--font-body) - 2px) * var(--fix));
+    }
+
+    /* État de réactivation : bordure noire, shadow, texte + flèche blancs */
+    .pedido-card.is-reactivating{
+      background:#fff;
+      border-color:#000;
+      box-shadow:0 20px 40px rgba(0,0,0,0.40);
+    }
+    .pedido-card.is-reactivating .pedido-left,
+    .pedido-card.is-reactivating .pedido-left *,
+    .pedido-card.is-reactivating .pedido-topline{
+      color:#fff !important;
+    }
+    .pedido-card.is-reactivating .chevron{
+      border-top-color:#fff;
+    }
+    .pedido-card.is-reactivating .pedido-reactivated{
+      display:flex;
+    }
+
+    .footer-spacer{
+      height: calc(24px * var(--fix));
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <!-- ENTÊTE -->
+    <header class="header">
+      <div class="header-logo">
+        <img class="header-img" id="headerImg"
+             src="https://lh3.googleusercontent.com/d/15N5N0TgMBTxmn2v-sKsG53mEAKaxXYtA"
+             alt="Logo SecoMobil">
+      </div>
+
+      <div class="sep-black"></div>
+
+      <div class="header-grid">
+        <div class="header-title">
+          <span>PEDIDOS</span>
+          <span>DEL DIA</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ONGLET TODO / PENDIENTE -->
+    <nav class="tabs" aria-label="Filtres de commandes">
+      <button class="tab" aria-selected="true">TODO</button>
+      <button class="tab" aria-selected="false">PENDIENTE</button>
+    </nav>
+
+    <!-- LISTE DES CARTES -->
+    <div class="stack">
+
+      <!-- CARTE 1 : active, accordéon ouvert -->
+      <div class="pedido-card" data-status="activo">
+        <div class="pedido-main">
+          <div class="pedido-row1">
+            <div class="pedido-left">
+              <div class="pedido-topline">11:40&nbsp;&nbsp;MIRADOR</div>
+            </div>
+            <button type="button" class="pedido-toggle" data-role="toggle">
+              <span class="chevron" aria-hidden="true"></span>
+            </button>
+          </div>
+
+          <div class="pedido-row2">
+            <div class="pedido-left">
+              <div class="pedido-nom">LORENZO DESPACITO</div>
+              <div class="pedido-ligne">Al frente de la tienda Juanita</div>
+              <div class="pedido-note">Nota : Dejar a la puerta</div>
+            </div>
+          </div>
+
+          <div class="pedido-row3">
+            <div class="pedido-left">
+              <div class="pedido-total">1 seco x 1,00 $ = <b>1,00 $</b></div>
+            </div>
+            <div class="pedido-statuscell">
+              <div class="pedido-status-icon pedido-status--deleted">
+                <img src="https://lh3.googleusercontent.com/d/1gDEMnXLuxX7aPQkfpvcJdtm35VF9Jscc" alt="Supprimé">
+              </div>
+              <div class="pedido-status-icon pedido-status--delivered">
+                <img src="https://lh3.googleusercontent.com/d/1Pu07dgdIg8lA12EXzXxpznSE7FwQ9j8j" alt="Livré">
+              </div>
+              <button type="button" class="pedido-refresh" data-role="refresh">
+                <img src="https://lh3.googleusercontent.com/d/1rTlZ9aSk3_ay4lGH8EO3LOoHXk7f89Tq" alt="Reactivar">
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="pedido-actions">
+          <button type="button" class="btn-delete" data-role="delete">
+            <img src="https://lh3.googleusercontent.com/d/1NEwXtWZqpIJlto9dPs49xKhq3oOqwpXH" alt="Borrar">
+          </button>
+          <button type="button" class="btn-edit">
+            <img src="https://lh3.googleusercontent.com/d/1sAN049EB8LfnbC0HmAFbM1kABNykp0fA" alt="Editar">
+          </button>
+          <button type="button" class="btn-deliver" data-role="deliver">
+            <img src="https://lh3.googleusercontent.com/d/1hGCvE6OoPq-pxdYBdKBoXgiF6G_wSH2A" alt="Entregado">
+          </button>
+        </div>
+
+        <div class="pedido-reactivated">
+          <img src="https://lh3.googleusercontent.com/d/1ejYqmcRjgWxEfPf8TPAbwYYNv5ulYNAo" alt="Reactivado">
+          <div class="txt-body">Reactivado</div>
+        </div>
+      </div>
+
+      <div class="sep-gray"></div>
+
+      <!-- CARTE 2 : active, accordéon fermé -->
+      <div class="pedido-card" data-status="activo">
+        <div class="pedido-main">
+          <div class="pedido-row1">
+            <div class="pedido-left">
+              <div class="pedido-topline">11:50&nbsp;&nbsp;MIRADOR</div>
+            </div>
+            <button type="button" class="pedido-toggle" data-role="toggle">
+              <span class="chevron" aria-hidden="true"></span>
+            </button>
+          </div>
+
+          <div class="pedido-row2">
+            <div class="pedido-left">
+              <div class="pedido-nom">LORENZO DESPACITO</div>
+              <div class="pedido-ligne">Al frente de la tienda Juanita</div>
+              <div class="pedido-note">Dejar a la puerta</div>
+            </div>
+          </div>
+
+          <div class="pedido-row3">
+            <div class="pedido-left">
+              <div class="pedido-total">2 secos x 1,25 $ = <b>2,50 $</b></div>
+            </div>
+            <div class="pedido-statuscell">
+              <div class="pedido-status-icon pedido-status--deleted">
+                <img src="https://lh3.googleusercontent.com/d/1gDEMnXLuxX7aPQkfpvcJdtm35VF9Jscc" alt="Supprimé">
+              </div>
+              <div class="pedido-status-icon pedido-status--delivered">
+                <img src="https://lh3.googleusercontent.com/d/1Pu07dgdIg8lA12EXzXxpznSE7FwQ9j8j" alt="Livré">
+              </div>
+              <button type="button" class="pedido-refresh" data-role="refresh">
+                <img src="https://lh3.googleusercontent.com/d/1rTlZ9aSk3_ay4lGH8EO3LOoHXk7f89Tq" alt="Reactivar">
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="pedido-actions">
+          <button type="button" class="btn-delete" data-role="delete">
+            <img src="https://lh3.googleusercontent.com/d/1NEwXtWZqpIJlto9dPs49xKhq3oOqwpXH" alt="Borrar">
+          </button>
+          <button type="button" class="btn-edit">
+            <img src="https://lh3.googleusercontent.com/d/1sAN049EB8LfnbC0HmAFbM1kABNykp0fA" alt="Editar">
+          </button>
+          <button type="button" class="btn-deliver" data-role="deliver">
+            <img src="https://lh3.googleusercontent.com/d/1hGCvE6OoPq-pxdYBdKBoXgiF6G_wSH2A" alt="Entregado">
+          </button>
+        </div>
+
+        <div class="pedido-reactivated">
+          <img src="https://lh3.googleusercontent.com/d/1ejYqmcRjgWxEfPf8TPAbwYYNv5ulYNAo" alt="Reactivado">
+          <div class="txt-body">Reactivado</div>
+        </div>
+      </div>
+
+      <div class="sep-gray"></div>
+
+      <!-- CARTE 3 : supprimée -->
+      <div class="pedido-card is-deleted" data-status="supprimido">
+        <div class="pedido-main">
+          <div class="pedido-row1">
+            <div class="pedido-left">
+              <div class="pedido-topline">12:00&nbsp;&nbsp;MIRADOR</div>
+            </div>
+            <button type="button" class="pedido-toggle" data-role="toggle">
+              <span class="chevron" aria-hidden="true"></span>
+            </button>
+          </div>
+
+          <div class="pedido-row2">
+            <div class="pedido-left">
+              <div class="pedido-nom">LORENZO DESPACITO</div>
+              <div class="pedido-ligne">Al frente de la tienda Juanita</div>
+              <div class="pedido-note">Dejar a la puerta</div>
+            </div>
+          </div>
+
+          <div class="pedido-row3">
+            <div class="pedido-left">
+              <div class="pedido-total">2 secos x 1,25 $ = <b>2,50 $</b></div>
+            </div>
+            <div class="pedido-statuscell">
+              <div class="pedido-status-icon pedido-status--deleted">
+                <img src="https://lh3.googleusercontent.com/d/1gDEMnXLuxX7aPQkfpvcJdtm35VF9Jscc" alt="Supprimé">
+              </div>
+              <div class="pedido-status-icon pedido-status--delivered">
+                <img src="https://lh3.googleusercontent.com/d/1Pu07dgdIg8lA12EXzXxpznSE7FwQ9j8j" alt="Livré">
+              </div>
+              <button type="button" class="pedido-refresh" data-role="refresh">
+                <img src="https://lh3.googleusercontent.com/d/1rTlZ9aSk3_ay4lGH8EO3LOoHXk7f89Tq" alt="Reactivar">
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="pedido-actions">
+          <button type="button" class="btn-delete" data-role="delete">
+            <img src="https://lh3.googleusercontent.com/d/1NEwXtWZqpIJlto9dPs49xKhq3oOqwpXH" alt="Borrar">
+          </button>
+          <button type="button" class="btn-edit">
+            <img src="https://lh3.googleusercontent.com/d/1sAN049EB8LfnbC0HmAFbM1kABNykp0fA" alt="Editar">
+          </button>
+          <button type="button" class="btn-deliver" data-role="deliver">
+            <img src="https://lh3.googleusercontent.com/d/1hGCvE6OoPq-pxdYBdKBoXgiF6G_wSH2A" alt="Entregado">
+          </button>
+        </div>
+
+        <div class="pedido-reactivated">
+          <img src="https://lh3.googleusercontent.com/d/1ejYqmcRjgWxEfPf8TPAbwYYNv5ulYNAo" alt="Reactivado">
+          <div class="txt-body">Reactivado</div>
+        </div>
+      </div>
+
+      <div class="sep-gray"></div>
+
+      <!-- CARTE 4 : livrée -->
+      <div class="pedido-card is-delivered" data-status="entregado">
+        <div class="pedido-main">
+          <div class="pedido-row1">
+            <div class="pedido-left">
+              <div class="pedido-topline">12:20&nbsp;&nbsp;CENTRO</div>
+            </div>
+            <button type="button" class="pedido-toggle" data-role="toggle">
+              <span class="chevron" aria-hidden="true"></span>
+            </button>
+          </div>
+
+          <div class="pedido-row2">
+            <div class="pedido-left">
+              <div class="pedido-nom">LORENZO DESPACITO</div>
+              <div class="pedido-ligne">Al frente de la tienda Juanita</div>
+              <div class="pedido-note">Dejar a la puerta</div>
+            </div>
+          </div>
+
+          <div class="pedido-row3">
+            <div class="pedido-left">
+              <div class="pedido-total">2 secos x 1,25 $ = <b>2,50 $</b></div>
+            </div>
+            <div class="pedido-statuscell">
+              <div class="pedido-status-icon pedido-status--deleted">
+                <img src="https://lh3.googleusercontent.com/d/1gDEMnXLuxX7aPQkfpvcJdtm35VF9Jscc" alt="Supprimé">
+              </div>
+              <div class="pedido-status-icon pedido-status--delivered">
+                <img src="https://lh3.googleusercontent.com/d/1Pu07dgdIg8lA12EXzXxpznSE7FwQ9j8j" alt="Livré">
+              </div>
+              <button type="button" class="pedido-refresh" data-role="refresh">
+                <img src="https://lh3.googleusercontent.com/d/1rTlZ9aSk3_ay4lGH8EO3LOoHXk7f89Tq" alt="Reactivar">
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="pedido-actions">
+          <button type="button" class="btn-delete" data-role="delete">
+            <img src="https://lh3.googleusercontent.com/d/1NEwXtWZqpIJlto9dPs49xKhq3oOqwpXH" alt="Borrar">
+          </button>
+          <button type="button" class="btn-edit">
+            <img src="https://lh3.googleusercontent.com/d/1sAN049EB8LfnbC0HmAFbM1kABNykp0fA" alt="Editar">
+          </button>
+          <button type="button" class="btn-deliver" data-role="deliver">
+            <img src="https://lh3.googleusercontent.com/d/1hGCvE6OoPq-pxdYBdKBoXgiF6G_wSH2A" alt="Entregado">
+          </button>
+        </div>
+
+        <div class="pedido-reactivated">
+          <img src="https://lh3.googleusercontent.com/d/1ejYqmcRjgWxEfPf8TPAbwYYNv5ulYNAo" alt="Reactivado">
+          <div class="txt-body">Reactivado</div>
+        </div>
+      </div>
+
+      <div class="sep-gray"></div>
+
+      <button class="btn btn-noir">VOLVER AL INICIO</button>
+      <div class="footer-spacer"></div>
+    </div>
+  </div>
+
+  <script>
+    function applyScaleFix(){
+      var cssW = window.innerWidth || document.documentElement.clientWidth;
+      var screenW = Math.min(window.screen.width || 375, window.screen.height || 812);
+      if (cssW >= 960 && cssW <= 1024) {
+        var fix = (980 / screenW) * 1.50;
+        document.documentElement.style.setProperty('--fix', fix.toFixed(3));
+      } else {
+        document.documentElement.style.setProperty('--fix', '1');
+      }
+    }
+
+    function sizeHeaderImage(){
+      var img = document.getElementById('headerImg');
+      var wrapper = document.querySelector('.wrapper');
+      if (!img || !wrapper) return;
+      var avail = Math.floor(wrapper.clientWidth);
+      if (avail > 0) {
+        img.style.width = avail + 'px';
+        img.style.maxWidth = '100%';
+        img.removeAttribute('height');
+      }
+    }
+
+    function setupPedidos(){
+      var cards = document.querySelectorAll('.pedido-card');
+
+      cards.forEach(function(card){
+        var toggle   = card.querySelector('[data-role="toggle"]');
+        var btnDel   = card.querySelector('[data-role="delete"]');
+        var btnDeliv = card.querySelector('[data-role="deliver"]');
+        var btnRef   = card.querySelector('[data-role="refresh"]');
+
+        if (toggle){
+          toggle.addEventListener('click', function(e){
+            e.stopPropagation();
+            if (card.classList.contains('is-deleted') ||
+                card.classList.contains('is-delivered') ||
+                card.classList.contains('is-reactivating')) return;
+            card.classList.toggle('is-open');
+          });
+        }
+
+        if (btnDel){
+          btnDel.addEventListener('click', function(e){
+            e.stopPropagation();
+            card.classList.remove('is-open');
+            card.classList.remove('is-delivered');
+            card.classList.add('is-deleted');
+            card.dataset.status = 'supprimido';
+          });
+        }
+
+        if (btnDeliv){
+          btnDeliv.addEventListener('click', function(e){
+            e.stopPropagation();
+            card.classList.remove('is-open');
+            card.classList.remove('is-deleted');
+            card.classList.add('is-delivered');
+            card.dataset.status = 'entregado';
+          });
+        }
+
+        if (btnRef){
+          btnRef.addEventListener('click', function(e){
+            e.stopPropagation();
+            if (!card.classList.contains('is-deleted') &&
+                !card.classList.contains('is-delivered')) return;
+
+            card.classList.remove('is-deleted', 'is-delivered');
+            card.classList.add('is-reactivating');
+            card.dataset.status = 'activo';
+
+            setTimeout(function(){
+              card.classList.remove('is-reactivating');
+            }, 2000);
+          });
+        }
+      });
+    }
+
+    function setupTabs(){
+      var tabs = document.querySelectorAll('.tabs .tab');
+      if (tabs.length < 2) return;
+
+      var tabTodo = tabs[0];
+      var tabPend = tabs[1];
+
+      function setActiveTab(activeTab){
+        tabs.forEach(function(t){
+          t.setAttribute('aria-selected', t === activeTab ? 'true' : 'false');
+        });
+      }
+
+      function applyFilter(mode){
+        var cards = document.querySelectorAll('.pedido-card');
+        var seps  = document.querySelectorAll('.sep-gray');
+
+        // reset complet : toutes les cartes + tous les séparateurs visibles
+        cards.forEach(function(card){
+          card.style.display = '';
+        });
+        seps.forEach(function(sep){
+          sep.style.display = '';
+        });
+
+        if (mode === 'PENDIENTE'){
+          cards.forEach(function(card){
+            var status = card.dataset.status || 'activo';
+            if (status === 'supprimido' || status === 'entregado'){
+              card.style.display = 'none';
+              var next = card.nextElementSibling;
+              if (next && next.classList.contains('sep-gray')){
+                next.style.display = 'none';
+              }
+            }
+          });
+        }
+      }
+
+      tabTodo.addEventListener('click', function(e){
+        e.preventDefault();
+        setActiveTab(tabTodo);
+        applyFilter('TODO');
+      });
+
+      tabPend.addEventListener('click', function(e){
+        e.preventDefault();
+        setActiveTab(tabPend);
+        applyFilter('PENDIENTE');
+      });
+    }
+
+    function init(){
+      applyScaleFix();
+      sizeHeaderImage();
+      setupPedidos();
+      setupTabs();
+    }
+
+    if (document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+
+    window.addEventListener('resize', function(){
+      applyScaleFix();
+      sizeHeaderImage();
+    });
+  </script>
+</body>
+</html>
