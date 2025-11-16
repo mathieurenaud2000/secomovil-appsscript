@@ -234,7 +234,7 @@
     }
     .contact-edit-icon-img{
       display:block;
-      width: calc(26px * var(--fix));
+      width: calc(26px * 0.75 * var(--fix));
       height:auto;
       object-fit:contain;
     }
@@ -404,6 +404,21 @@
       cliente: null,
       precioUnitario: null
     };
+
+    function setButtonLoading(btn, isLoading){
+      if (!btn) return;
+      if (isLoading){
+        if (!btn.dataset.originalColor){
+          var computed = window.getComputedStyle ? getComputedStyle(btn).color : btn.style.color;
+          btn.dataset.originalColor = computed || '';
+        }
+        btn.disabled = true;
+        btn.style.color = 'rgba(0,0,0,0.8)';
+      } else {
+        btn.disabled = false;
+        btn.style.color = btn.dataset.originalColor || '';
+      }
+    }
 
     function obtenerCtxServidor(){
       var ctx = window.SECO_CTX || {};
@@ -768,6 +783,8 @@
         btnRegistrar.addEventListener('click', function(){
           if (btnRegistrar.disabled) return;
 
+          setButtonLoading(btnRegistrar, true);
+
           var ddFecha    = document.querySelector('.dropdown[data-name="fecha"]');
           var ddHora     = document.querySelector('.dropdown[data-name="hora"]');
           var ddCantidad = document.querySelector('.dropdown[data-name="cantidad"]');
@@ -803,12 +820,14 @@
 
           google.script.run
             .withSuccessHandler(function(resp){
+              setButtonLoading(btnRegistrar, false);
               if (!resp || !resp.ok) {
                 var msg = (resp && resp.error) ? resp.error : 'No se pudo registrar el pedido.';
                 alert(msg);
               }
             })
             .withFailureHandler(function(err){
+              setButtonLoading(btnRegistrar, false);
               var msg = (err && err.message) ? err.message : 'Error al registrar el pedido.';
               alert(msg);
             })

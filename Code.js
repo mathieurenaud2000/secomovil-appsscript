@@ -2496,6 +2496,85 @@ function registrarPedidoDesdeRegistrar(payload) {
   }
 }
 
+function construirMensajePedidoRegistrado_(pedido) {
+  pedido = pedido || {};
+
+  function formatCurrency(num) {
+    var n = Number(num);
+    if (!isFinite(n)) return '';
+    return n.toFixed(2) + ' $';
+  }
+
+  var partes = ['Tu pedido SecoMóvil esta registrado :'];
+  var datos = [];
+
+  if (pedido.pedidoId) {
+    datos.push('ID ' + pedido.pedidoId);
+  }
+
+  var nombre = (pedido.clienteNombre || (pedido.cliente && pedido.cliente.nombre) || '').toString().trim();
+  if (nombre) {
+    datos.push('Cliente: ' + nombre);
+  }
+
+  var cantidad = Number(pedido.cantidad || 0);
+  if (isFinite(cantidad) && cantidad > 0) {
+    var unitTxt = formatCurrency(pedido.precioUnitario);
+    var totalTxt = formatCurrency(pedido.total);
+    var linea = 'Cantidad: ' + cantidad;
+    if (unitTxt) {
+      linea += ' (unit ' + unitTxt + ')';
+    }
+    if (totalTxt) {
+      linea += ' total ' + totalTxt;
+    }
+    datos.push(linea);
+  }
+
+  var fechaEntrega = (pedido.fechaEntrega || '').toString().trim();
+  var horaEntrega = (pedido.horaEntrega || '').toString().trim();
+  if (fechaEntrega || horaEntrega) {
+    datos.push('Entrega: ' + fechaEntrega + (horaEntrega ? ' ' + horaEntrega : ''));
+  }
+
+  if (pedido.direccion) {
+    datos.push('Dirección: ' + pedido.direccion);
+  }
+
+  return partes.concat(datos).join(' ');
+}
+
+function enviarWhatsappMensaje_(telefono, mensaje) {
+  // Punto centralizado para integrar con la API real de WhatsApp si existe.
+  Logger.log('[WhatsApp] ' + telefono + ' -> ' + mensaje);
+  return true;
+}
+
+function enviarWhatsappPedidoRegistrado(payload) {
+  try {
+    var datos = payload || {};
+    var telefono = (datos.whatsapp || (datos.cliente && datos.cliente.telefono) || '').toString().trim();
+    if (!telefono) {
+      return { ok: false, error: 'No se proporcionó número de WhatsApp.', data: null };
+    }
+
+    var mensaje = construirMensajePedidoRegistrado_(datos);
+    enviarWhatsappMensaje_(telefono, mensaje);
+
+    return {
+      ok: true,
+      error: null,
+      data: { mensaje: mensaje }
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e && e.message ? e.message : 'Error al enviar el mensaje de WhatsApp.',
+      data: null
+    };
+  }
+}
+
 /**
  * Crea un pedido nuevo en PEDIDOS DIARIOS a partir de los datos
  * del formulario registrarPedido.html.

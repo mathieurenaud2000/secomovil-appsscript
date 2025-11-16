@@ -485,16 +485,32 @@
     function setButtonLoading(btn, isLoading){
       if (!btn) return;
       if (isLoading){
-        if (!btn.dataset.originalHtml){
-          btn.dataset.originalHtml = btn.innerHTML;
+        if (!btn.dataset.originalColor){
+          var computed = window.getComputedStyle ? getComputedStyle(btn).color : btn.style.color;
+          btn.dataset.originalColor = computed || '';
         }
         btn.disabled = true;
-        btn.innerHTML = '...';
+        btn.style.color = 'rgba(0,0,0,0.8)';
       } else {
         btn.disabled = false;
-        if (btn.dataset.originalHtml){
-          btn.innerHTML = btn.dataset.originalHtml;
+        btn.style.color = btn.dataset.originalColor || '';
+      }
+    }
+
+    function setHalfLoading(el, isLoading){
+      if (!el) return;
+      if (isLoading){
+        if (!el.dataset.originalColor){
+          var computed = window.getComputedStyle ? getComputedStyle(el).color : el.style.color;
+          el.dataset.originalColor = computed || '';
         }
+        el.dataset.loading = '1';
+        el.style.color = 'rgba(0,0,0,0.8)';
+        el.style.pointerEvents = 'none';
+      } else {
+        el.dataset.loading = '0';
+        el.style.color = el.dataset.originalColor || '';
+        el.style.pointerEvents = '';
       }
     }
 
@@ -690,11 +706,21 @@
     }
 
     btnNuevoPedido.addEventListener('click', function(){
-      google.script.run.abrirNuevoPedido();
+      if (btnNuevoPedido.dataset.loading === '1') return;
+      setHalfLoading(btnNuevoPedido, true);
+      google.script.run
+        .withSuccessHandler(function(){ setHalfLoading(btnNuevoPedido, false); })
+        .withFailureHandler(function(){ setHalfLoading(btnNuevoPedido, false); })
+        .abrirNuevoPedido();
     });
 
     btnVentaDirecta.addEventListener('click', function(){
-      google.script.run.abrirVentaDirecta();
+      if (btnVentaDirecta.dataset.loading === '1') return;
+      setHalfLoading(btnVentaDirecta, true);
+      google.script.run
+        .withSuccessHandler(function(){ setHalfLoading(btnVentaDirecta, false); })
+        .withFailureHandler(function(){ setHalfLoading(btnVentaDirecta, false); })
+        .abrirVentaDirecta();
     });
 
     btnPedidosDelDia.addEventListener('click', function(){
