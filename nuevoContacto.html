@@ -317,6 +317,21 @@
     var ctxCache = null;
     var sectoresOpciones = [];
 
+    function setButtonLoading(btn, isLoading){
+      if (!btn) return;
+      if (isLoading){
+        if (!btn.dataset.originalColor){
+          var computed = window.getComputedStyle ? getComputedStyle(btn).color : btn.style.color;
+          btn.dataset.originalColor = computed || '';
+        }
+        btn.disabled = true;
+        btn.style.color = 'rgba(0,0,0,0.8)';
+      } else {
+        btn.disabled = false;
+        btn.style.color = btn.dataset.originalColor || '';
+      }
+    }
+
     function obtenerCtxServidor(){
       if (ctxCache) return ctxCache;
       if (typeof window !== 'undefined' && window.SECO_CTX) {
@@ -470,8 +485,11 @@
         nota:      notaEl.value.trim()
       };
 
+      setButtonLoading(btnGuardar, true);
+
       google.script.run
         .withSuccessHandler(function(resp){
+          setButtonLoading(btnGuardar, false);
           if (!resp || (!resp.ok && !resp.success) || !resp.data || !resp.data.cliente){
             var msg = (resp && resp.error) ? resp.error : 'Error al crear el cliente.';
             alert(msg);
@@ -491,6 +509,11 @@
           };
 
           google.script.run.abrirRegistrarPedido(payload);
+        })
+        .withFailureHandler(function(err){
+          setButtonLoading(btnGuardar, false);
+          var msg = (err && err.message) ? err.message : 'Error al crear el cliente.';
+          alert(msg);
         })
         .registrarNuevoContacto(datosCliente, ctxActual);
     });

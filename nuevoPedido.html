@@ -290,16 +290,15 @@
     function setButtonLoading(btn, isLoading){
       if (!btn) return;
       if (isLoading){
-        if (!btn.dataset.originalHtml){
-          btn.dataset.originalHtml = btn.innerHTML;
+        if (!btn.dataset.originalColor){
+          var computed = window.getComputedStyle ? getComputedStyle(btn).color : btn.style.color;
+          btn.dataset.originalColor = computed || '';
         }
         btn.disabled = true;
-        btn.innerHTML = '...';
+        btn.style.color = 'rgba(0,0,0,0.8)';
       } else {
         btn.disabled = false;
-        if (btn.dataset.originalHtml){
-          btn.innerHTML = btn.dataset.originalHtml;
-        }
+        btn.style.color = btn.dataset.originalColor || '';
       }
     }
 

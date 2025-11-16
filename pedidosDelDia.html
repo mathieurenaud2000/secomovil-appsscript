@@ -430,16 +430,15 @@
       function setButtonLoading(btn, isLoading){
         if (!btn) return;
         if (isLoading){
-          if (!btn.dataset.originalHtml){
-            btn.dataset.originalHtml = btn.innerHTML;
+          if (!btn.dataset.originalColor){
+            var computed = window.getComputedStyle ? getComputedStyle(btn).color : btn.style.color;
+            btn.dataset.originalColor = computed || '';
           }
           btn.disabled = true;
-          btn.innerHTML = '...';
+          btn.style.color = 'rgba(0,0,0,0.8)';
         } else {
           btn.disabled = false;
-          if (btn.dataset.originalHtml){
-            btn.innerHTML = btn.dataset.originalHtml;
-          }
+          btn.style.color = btn.dataset.originalColor || '';
         }
       }
 
@@ -462,6 +461,27 @@
         var nombre = (pedido.cliente && pedido.cliente.nombre) || '';
         var tel = (pedido.cliente && pedido.cliente.telefono) || '';
         var horario = pedido.horaEntrega || '--:--';
+        var estadoLabel = pedido.estado || 'Pendiente';
+
+        var cantidadNum = Number(pedido.cantidad || 0);
+        var totalNum = Number(pedido.total);
+        var unitCalc = (isFinite(totalNum) && isFinite(cantidadNum) && cantidadNum > 0)
+          ? totalNum / cantidadNum
+          : null;
+
+        var cantidadTxt = isFinite(cantidadNum) && cantidadNum > 0
+          ? (cantidadNum + (cantidadNum === 1 ? ' seco' : ' secos'))
+          : '';
+        var unitTxt = isFinite(unitCalc) ? unitCalc.toFixed(2).replace('.', ',') + ' $' : '';
+        var totalTxt = isFinite(totalNum) ? totalNum.toFixed(2).replace('.', ',') + ' $' : '';
+
+        var pricingLine = cantidadTxt;
+        if (unitTxt){ pricingLine += (pricingLine ? ' · ' : '') + 'Unit: ' + unitTxt; }
+        if (totalTxt){ pricingLine += (pricingLine ? ' · ' : '') + 'Total: ' + totalTxt; }
+
+        var idLine = pedido.idPedido ? ('ID: ' + pedido.idPedido) : '';
+        var notaHtml = note ? ('<div class="pedido-note">' + note + '</div>') : '';
+        var whatsappLine = tel ? ('WhatsApp: ' + tel) : 'WhatsApp: —';
 
         card.innerHTML = '
           <div class="pedido-main">
@@ -478,13 +498,15 @@
               <div class="pedido-left">
                 <div class="pedido-nom">' + nombre + '</div>
                 <div class="pedido-ligne">' + direccion + '</div>
-                <div class="pedido-note">' + (note || '') + '</div>
+                ' + notaHtml + '
+                ' + (idLine ? '<div class="pedido-ligne">' + idLine + '</div>' : '') + '
               </div>
             </div>
 
             <div class="pedido-row3">
               <div class="pedido-left">
-                <div class="pedido-total">WhatsApp: ' + tel + '</div>
+                <div class="pedido-total">' + whatsappLine + '</div>
+                ' + (pricingLine ? '<div class="pedido-total">' + pricingLine + '</div>' : '') + '
               </div>
               <div class="pedido-statuscell">
                 <div class="pedido-status-icon pedido-status--deleted">
@@ -493,6 +515,7 @@
                 <div class="pedido-status-icon pedido-status--delivered">
                   <img src="https://lh3.googleusercontent.com/d/1Pu07dgdIg8lA12EXzXxpznSE7FwQ9j8j" alt="Livré">
                 </div>
+                <div class="txt-mini">' + estadoLabel + '</div>
                 <button type="button" class="pedido-refresh" data-role="refresh">
                   <img src="https://lh3.googleusercontent.com/d/1rTlZ9aSk3_ay4lGH8EO3LOoHXk7f89Tq" alt="Reactivar">
                 </button>
@@ -575,7 +598,8 @@
             google.script.run.abrirRegistrarPedido({
               pedidoId: pedido.idPedido || '',
               origen: 'pedidosDelDia',
-              cliente: pedido.cliente
+              cliente: pedido.cliente,
+              idContacto: (pedido.cliente && pedido.cliente.idCliente) || ''
             });
           });
         }
@@ -615,7 +639,13 @@
         google.script.run
           .withSuccessHandler(function(resp){
             if (resp && resp.ok && resp.data && resp.data.pedidos){
-              pedidos = resp.data.pedidos;
+              pedidos = (resp.data.pedidos || []).slice();
+              pedidos.sort(function(a, b){
+                var ha = (a.horaEntrega || '').toString();
+                var hb = (b.horaEntrega || '').toString();
+                if (ha === hb) return 0;
+                return ha < hb ? -1 : 1;
+              });
             } else {
               pedidos = [];
             }
