@@ -401,7 +401,8 @@
       idContacto: '',
       clienteNombre: '',
       origen: '',
-      cliente: null
+      cliente: null,
+      precioUnitario: null
     };
 
     function obtenerCtxServidor(){
@@ -411,8 +412,19 @@
         idContacto: ctx.idContacto || (ctx.cliente && ctx.cliente.idCliente) || '',
         clienteNombre: ctx.clienteNombre || (ctx.cliente && ctx.cliente.nombre) || '',
         origen: ctx.origen || '',
-        cliente: ctx.cliente || null
+        cliente: ctx.cliente || null,
+        precioUnitario: (typeof ctx.precioBase === 'number' && !isNaN(ctx.precioBase))
+          ? Number(ctx.precioBase)
+          : null
       };
+
+      if ((!pedidoContext.precioUnitario || !isFinite(pedidoContext.precioUnitario)) && ctx.cliente && typeof ctx.cliente.precioBase === 'number'){
+        pedidoContext.precioUnitario = Number(ctx.cliente.precioBase);
+      }
+
+      if (!pedidoContext.precioUnitario || !isFinite(pedidoContext.precioUnitario)){
+        pedidoContext.precioUnitario = 1;
+      }
 
       window.pedidoContext = pedidoContext;
       return pedidoContext;
@@ -442,7 +454,7 @@
       var waEl = document.getElementById('contactoWhatsapp');
 
       if (nombreEl){ nombreEl.textContent = nombre || 'Contacto'; }
-      if (telEl){ telEl.textContent = telefono || nombre || '—'; }
+      if (telEl){ telEl.textContent = telefono || '—'; }
       if (sectorEl){ sectorEl.textContent = sector || '—'; }
       if (dirEl){ dirEl.textContent = direccion || '—'; }
       if (dirExtraEl){ dirExtraEl.textContent = ctx.idContacto ? ('ID: ' + ctx.idContacto) : ''; }
@@ -502,11 +514,25 @@
       return res;
     }
 
-    function updatePrecioYBoton(){
-      var precioBase = 1.00;
-      if (pedidoContext && typeof pedidoContext.precioBase === 'number' && !isNaN(pedidoContext.precioBase)) {
-        precioBase = Number(pedidoContext.precioBase);
+    function obtenerPrecioUnitario(){
+      if (pedidoContext && typeof pedidoContext.precioUnitario === 'number' && isFinite(pedidoContext.precioUnitario)){
+        return Number(pedidoContext.precioUnitario);
       }
+      return 1.00;
+    }
+
+    function normalizarFechaTexto(fechaTexto){
+      if (!fechaTexto) return '';
+      var m = fechaTexto.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+      if (!m) return '';
+      var dd = m[1];
+      var mm = m[2];
+      var yyyy = m[3];
+      return yyyy + '-' + mm + '-' + dd;
+    }
+
+    function updatePrecioYBoton(){
+      var precioBase = obtenerPrecioUnitario();
       var ddFecha    = document.querySelector('.dropdown[data-name="fecha"]');
       var ddHora     = document.querySelector('.dropdown[data-name="hora"]');
       var ddCantidad = document.querySelector('.dropdown[data-name="cantidad"]');
@@ -734,6 +760,59 @@
       sizeHeaderImage();
       initDropdowns();
       buildDatesAndCantidad();
+
+      var btnRegistrar = document.getElementById('btnRegistrar');
+      if (btnRegistrar){
+        btnRegistrar.addEventListener('click', function(){
+          if (btnRegistrar.disabled) return;
+
+          var ddFecha    = document.querySelector('.dropdown[data-name="fecha"]');
+          var ddHora     = document.querySelector('.dropdown[data-name="hora"]');
+          var ddCantidad = document.querySelector('.dropdown[data-name="cantidad"]');
+
+          var fechaTexto = ddFecha ? (ddFecha.dataset.value || '') : '';
+          var horaTexto  = ddHora ? (ddHora.dataset.value || '') : '';
+          var cantidadRaw = ddCantidad ? (ddCantidad.dataset.value || '') : '';
+          var cantidad = 1;
+          var m = cantidadRaw.match(/^(\d+)/);
+          if (m) cantidad = parseInt(m[1],10);
+          if (!isFinite(cantidad) || cantidad < 1) cantidad = 1;
+
+          var ctx = obtenerCtxServidor();
+          var telefono = (ctx.cliente && (ctx.cliente.telefono || ctx.cliente.whatsapp)) || '';
+
+          var payload = {
+            pedidoId: ctx.pedidoId || '',
+            idContacto: ctx.idContacto || '',
+            origen: ctx.origen || '',
+            clienteNombre: ctx.clienteNombre || (ctx.cliente && ctx.cliente.nombre) || '',
+            fechaTexto: fechaTexto,
+            fechaISO: normalizarFechaTexto(fechaTexto),
+            hora: horaTexto,
+            cantidad: cantidad,
+            precioUnitario: obtenerPrecioUnitario(),
+            totalCalculado: obtenerPrecioUnitario() * cantidad,
+            sector: (ctx.cliente && ctx.cliente.sector) || '',
+            nota: (ctx.cliente && ctx.cliente.nota) || '',
+            direccion: (ctx.cliente && ctx.cliente.direccion) || '',
+            whatsapp: telefono,
+            cliente: ctx.cliente || null
+          };
+
+          google.script.run
+            .withSuccessHandler(function(resp){
+              if (!resp || !resp.ok) {
+                var msg = (resp && resp.error) ? resp.error : 'No se pudo registrar el pedido.';
+                alert(msg);
+              }
+            })
+            .withFailureHandler(function(err){
+              var msg = (err && err.message) ? err.message : 'Error al registrar el pedido.';
+              alert(msg);
+            })
+            .registrarPedidoDesdeRegistrar(payload);
+        });
+      }
     }
 
     if (document.readyState === 'loading') {

@@ -1341,29 +1341,29 @@ function generarIdCliente_() {
 function leerSectores_() {
   var sheet = getSheet_('SECTORES');
   var lastRow = sheet.getLastRow();
+  var lastColumn = sheet.getLastColumn();
 
-  // Precios en fila 2, columnas A-C
-  var precios = sheet.getRange(2, 1, 1, 3).getValues()[0];
+  if (lastRow < 3 || lastColumn < 1) {
+    return [];
+  }
 
-  var filasSectores = Math.max(lastRow - 2, 0);
-  var valores = filasSectores > 0
-    ? sheet.getRange(3, 1, filasSectores, 3).getValues()
-    : [];
+  var preciosRow = sheet.getRange(2, 1, 1, lastColumn).getValues()[0];
+  var labelsRow = sheet.getRange(3, 1, 1, lastColumn).getValues()[0];
 
   var sectores = [];
-  var columnas = ['A', 'B', 'C'];
 
-  columnas.forEach(function (col, idx) {
-    var precioCol = precios[idx] || 0;
-    for (var i = 0; i < valores.length; i++) {
-      var val = (valores[i][idx] || '').toString().trim();
-      if (!val) continue;
-      sectores.push({
-        nombre: val,
-        columna: col,
-        precio: Number(precioCol) || 0
-      });
-    }
+  labelsRow.forEach(function (label, idx) {
+    var nombre = (label || '').toString().trim();
+    if (!nombre) return;
+
+    var precio = preciosRow[idx];
+    var colLetter = columnNumberToLetter_(idx + 1);
+
+    sectores.push({
+      nombre: nombre,
+      columna: colLetter,
+      precio: Number(precio) || 0
+    });
   });
 
   return sectores;
@@ -1391,6 +1391,42 @@ function obtenerPrecioYColumnaSector_(sectorNombre) {
   }
 
   return { precio: null, columna: null };
+}
+
+/**
+ * Convierte un número de columna (1 = A) a su letra correspondiente.
+ * @param {number} colNum
+ * @returns {string}
+ */
+function columnNumberToLetter_(colNum) {
+  var num = Math.max(1, Math.floor(colNum));
+  var letter = '';
+  while (num > 0) {
+    var rem = (num - 1) % 26;
+    letter = String.fromCharCode(65 + rem) + letter;
+    num = Math.floor((num - 1) / 26);
+  }
+  return letter;
+}
+
+/**
+ * Intenta convertir un texto "Lunes, 02/09/2025" o "02/09/2025" en un objeto Date.
+ * @param {string} textoFecha
+ * @returns {Date|null}
+ */
+function normalizarFechaDesdeTexto_(textoFecha) {
+  if (!textoFecha) return null;
+
+  var m = textoFecha.toString().match(/(\d{2})\/(\d{2})\/(\d{4})/);
+  if (!m) return null;
+
+  var dia = parseInt(m[1], 10);
+  var mes = parseInt(m[2], 10) - 1; // 0-indexed
+  var anio = parseInt(m[3], 10);
+
+  var d = new Date(anio, mes, dia);
+  if (isNaN(d.getTime())) return null;
+  return d;
 }
 
 
@@ -2055,10 +2091,10 @@ function inyectarContextoEnHtml_(htmlOutput, ctx, opciones) {
       + "var card=document.querySelector('.contact-card');"
       + "if(card){"
         + "var nombre=(ctx.cliente&&ctx.cliente.nombre)||ctx.clienteNombre||'';"
-        + "var telefono=(ctx.cliente&&ctx.cliente.telefono)||'';"
+        + "var telefono=(ctx.cliente&&(ctx.cliente.telefono||ctx.cliente.whatsapp))||'';"
         + "var headerLines=card.querySelectorAll('.contact-top .txt-body div');"
-        + "if(headerLines.length>0&&nombre){headerLines[0].textContent=nombre;}"
-        + "if(headerLines.length>1&&telefono){headerLines[1].textContent=telefono;}"
+        + "if(headerLines.length>0){headerLines[0].textContent=nombre||'Contacto';}"
+        + "if(headerLines.length>1){headerLines[1].textContent=telefono||'—';}"
         + "var labels=card.querySelectorAll('.label');"
         + "labels.forEach(function(lbl){var valueEl=lbl.nextElementSibling;if(!valueEl){return;}var key=lbl.textContent.trim().toLowerCase();"
           + "if(key==='sector'&&ctx.cliente&&ctx.cliente.sector){valueEl.textContent=ctx.cliente.sector;}"
@@ -2080,6 +2116,130 @@ function inyectarContextoEnHtml_(htmlOutput, ctx, opciones) {
   }
 
   htmlOutput.setContent(contenido);
+}
+
+/**
+ * Guarda el pedido recibido desde registrarPedido.html y abre la pantalla
+ * de confirmación pedidoRegistrado.html con el contexto cargado.
+ *
+ * @param {Object} payload
+ * @returns {{ok:boolean, error:string|null, data:Object|null}}
+ */
+function registrarPedidoDesdeRegistrar(payload) {
+  try {
+    payload = payload || {};
+
+    var cliente = payload.cliente || {};
+    var nombre = (cliente.nombre || payload.clienteNombre || '').toString().trim();
+    var telefono = (cliente.telefono || cliente.whatsapp || payload.whatsapp || '').toString().trim();
+    var direccion = (cliente.direccion || payload.direccion || '').toString().trim();
+    var sector = (cliente.sector || payload.sector || '').toString().trim();
+    var nota = (payload.nota || payload.notas || cliente.nota || '').toString().trim();
+
+    var fechaTexto = (payload.fechaTexto || payload.fechaEntrega || '').toString();
+    var fechaObj = normalizarFechaDesdeTexto_(fechaTexto);
+    if (!fechaObj && payload.fechaISO) {
+      var fAlt = normalizarFechaDesdeTexto_(payload.fechaISO);
+      if (fAlt) fechaObj = fAlt;
+      else {
+        var dTmp = new Date(payload.fechaISO);
+        if (!isNaN(dTmp.getTime())) fechaObj = dTmp;
+      }
+    }
+    if (!fechaObj) {
+      fechaObj = new Date();
+    }
+    var tz = Session.getScriptTimeZone();
+    var fechaISO = Utilities.formatDate(fechaObj, tz, 'yyyy-MM-dd');
+
+    var hora = (payload.hora || payload.horaEntrega || '').toString().trim();
+    var cantidad = Number(payload.cantidad || 1);
+    if (!isFinite(cantidad) || cantidad < 1) cantidad = 1;
+
+    var precioSector = obtenerPrecioYColumnaSector_(sector);
+    var unitPrice = (precioSector && typeof precioSector.precio === 'number' && !isNaN(precioSector.precio))
+      ? Number(precioSector.precio)
+      : null;
+    if (unitPrice === null && payload.precioUnitario !== undefined) {
+      var tmp = Number(payload.precioUnitario);
+      if (!isNaN(tmp)) unitPrice = tmp;
+    }
+    if (unitPrice === null || !isFinite(unitPrice)) {
+      unitPrice = 1;
+    }
+
+    var totalCalc = unitPrice * cantidad;
+    if (payload.totalCalculado !== undefined) {
+      var tTmp = Number(payload.totalCalculado);
+      if (!isNaN(tTmp)) totalCalc = tTmp;
+    }
+
+    var pedidoId = (payload.pedidoId || '').toString().trim();
+    if (!pedidoId) {
+      pedidoId = generarIdPedido_(fechaISO, nombre);
+    }
+
+    var sheet = getSheet_('PEDIDOS DIARIOS');
+    var row = getFirstEmptyRowInColumn_(sheet, 1);
+
+    sheet.getRange(row, 1).setValue(fechaObj);
+    sheet.getRange(row, 2).setValue(nombre);
+    sheet.getRange(row, 3).setValue(telefono);
+    sheet.getRange(row, 4).setValue(direccion);
+    sheet.getRange(row, 5).setValue(cantidad);
+    sheet.getRange(row, 6).setValue(totalCalc);
+    sheet.getRange(row, 7).setValue('No');
+    sheet.getRange(row, 8).setValue(hora);
+    sheet.getRange(row, 9).setValue(nota);
+    sheet.getRange(row, 10).setValue('Pendiente');
+    sheet.getRange(row, 11).setValue(pedidoId);
+
+    var ctx = {
+      pedidoId: pedidoId,
+      clienteNombre: nombre,
+      idContacto: payload.idContacto || cliente.idCliente || '',
+      origen: payload.origen || '',
+      fechaEntrega: fechaISO,
+      horaEntrega: hora,
+      cantidad: cantidad,
+      precioUnitario: unitPrice,
+      total: totalCalc,
+      sector: sector,
+      nota: nota,
+      cliente: {
+        idCliente: payload.idContacto || cliente.idCliente || '',
+        nombre: nombre,
+        telefono: telefono,
+        direccion: direccion,
+        sector: sector,
+        nota: nota,
+        whatsapp: telefono
+      }
+    };
+
+    var userProps = PropertiesService.getUserProperties();
+    userProps.setProperty('SECOMOVIL_CTX_NUEVO_PEDIDO', JSON.stringify(ctx));
+
+    var template = HtmlService.createTemplateFromFile('pedidoRegistrado');
+    var html = template.evaluate()
+      .setTitle('Pedido registrado');
+
+    inyectarContextoEnHtml_(html, ctx);
+    SpreadsheetApp.getUi().showSidebar(html);
+
+    return {
+      ok: true,
+      error: null,
+      data: { pedido: ctx }
+    };
+
+  } catch (e) {
+    return {
+      ok: false,
+      error: e && e.message ? e.message : 'Error desconocido al registrar el pedido.',
+      data: null
+    };
+  }
 }
 
 /**
