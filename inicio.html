@@ -279,11 +279,11 @@
   </header>
 
   <section class="double-actions">
-    <div class="half half--left">
+    <div class="half half--left" id="btnNuevoPedido">
       <img src="https://lh3.googleusercontent.com/d/1JD2tYd3TAtYAUEt56qEuvQpDeuoDEq2W" alt="Nuevo Pedido">
       <div>NUEVO</div><div>PEDIDO</div>
     </div>
-    <div class="half half--right">
+    <div class="half half--right" id="btnVentaDirecta">
       <img src="https://lh3.googleusercontent.com/d/17J2imVibMPuqjlgH9sDLqrI087b5N5zX" alt="Venta Directa">
       <div>VENTA</div><div>DIRECTA</div>
     </div>
@@ -293,18 +293,18 @@
 
     <div class="card-main">
       <div class="card-top">
-        <div class="heure meta" id="heureText">11:40</div>
-        <div class="secteur meta">MIRADOR</div>
+        <div class="heure meta" id="heureText">--:--</div>
+        <div class="secteur meta" id="sectorText">–</div>
         <div class="edit-cell">
           <img class="edit-img" src="https://lh3.googleusercontent.com/d/1IJOPYYBICvweVK9rn2mQqckhfyQOHvrJ" alt="Éditer">
         </div>
       </div>
 
       <div class="card-body">
-        <div class="card-name">LORENZO DESPACITO</div>
-        <div class="card-line">Al frente de la tienda Juanita</div>
-        <div class="card-line">Dejar a la puerta</div>
-        <div class="card-total">2 secos x 1,00 $ = <b>2,00 $</b></div>
+        <div class="card-name" id="clienteText">—</div>
+        <div class="card-line" id="direccionText">—</div>
+        <div class="card-line" id="notaText"></div>
+        <div class="card-total" id="extraText"></div>
       </div>
     </div>
 
@@ -357,7 +357,7 @@
   </div>
 
   <div class="stack">
-    <button class="btn btn--white">PEDIDOS DEL DIA</button>
+    <button class="btn btn--white" id="btnPedidosDelDia">PEDIDOS DEL DIA</button>
   </div>
   <div class="sep-black"></div>
 
@@ -387,7 +387,15 @@
     const btnConfirm = document.getElementById('btnConfirm');
     const btnDelay = document.getElementById('btnDelay');
     const heureText = document.getElementById('heureText');
+    const sectorText = document.getElementById('sectorText');
+    const clienteText = document.getElementById('clienteText');
+    const direccionText = document.getElementById('direccionText');
+    const notaText = document.getElementById('notaText');
+    const extraText = document.getElementById('extraText');
     const timeConfirmTitle = document.getElementById('timeConfirmTitle');
+    const btnNuevoPedido = document.getElementById('btnNuevoPedido');
+    const btnVentaDirecta = document.getElementById('btnVentaDirecta');
+    const btnPedidosDelDia = document.getElementById('btnPedidosDelDia');
 
     const overlay = document.getElementById('ddOverlay');
     const overlayList = document.getElementById('ddOverlayList');
@@ -402,6 +410,7 @@
     let normalHeight = null;
     let currentHour = null;
     let pendingHour = null;
+    let pedidoActual = null;
 
     function captureNormalHeight(){
       const wasConfirm       = card.classList.contains('is-confirm');
@@ -473,14 +482,86 @@
       card.classList.remove('is-confirm','is-deleted','is-timeconfirm','is-deliveryconfirm');
     }
 
+    function setButtonLoading(btn, isLoading){
+      if (!btn) return;
+      if (isLoading){
+        if (!btn.dataset.originalHtml){
+          btn.dataset.originalHtml = btn.innerHTML;
+        }
+        btn.disabled = true;
+        btn.innerHTML = '...';
+      } else {
+        btn.disabled = false;
+        if (btn.dataset.originalHtml){
+          btn.innerHTML = btn.dataset.originalHtml;
+        }
+      }
+    }
+
+    function renderPedido(pedido){
+      if (!pedido){
+        card.style.display = 'none';
+        pedidoActual = null;
+        return;
+      }
+      card.style.display = '';
+      pedidoActual = pedido;
+      heureText.textContent = pedido.horaEntrega || '--:--';
+      sectorText.textContent = (pedido.cliente && pedido.cliente.sector) || '—';
+      clienteText.textContent = (pedido.cliente && pedido.cliente.nombre) || '—';
+      direccionText.textContent = (pedido.cliente && pedido.cliente.direccion) || '';
+      notaText.textContent = pedido.notas || '';
+      extraText.textContent = pedido.cliente && pedido.cliente.telefono ? 'WhatsApp: ' + pedido.cliente.telefono : '';
+      currentHour = pedido.horaEntrega || '--:--';
+      captureNormalHeight();
+    }
+
+    function cargarProximoPedido(){
+      card.classList.remove('is-deleted','is-delivered');
+      google.script.run
+        .withSuccessHandler(function(resp){
+          if (resp && resp.ok && resp.data){
+            renderPedido(resp.data.pedido);
+          } else {
+            renderPedido(null);
+          }
+        })
+        .withFailureHandler(function(){ renderPedido(null); })
+        .getProximaEntrega();
+    }
+
+    function actualizarEstado(estado){
+      if (!pedidoActual || !pedidoActual.idPedido) return;
+      setButtonLoading(btnConfirm, true);
+      google.script.run
+        .withSuccessHandler(function(){
+          setButtonLoading(btnConfirm, false);
+          setNormal();
+          cargarProximoPedido();
+        })
+        .withFailureHandler(function(){ setButtonLoading(btnConfirm, false); })
+        .actualizarEstadoPedido({ idPedido: pedidoActual.idPedido, estado: estado });
+    }
+
+    function actualizarHora(nuevaHora){
+      if (!pedidoActual || !pedidoActual.idPedido || !nuevaHora) return;
+      setButtonLoading(btnConfirm, true);
+      google.script.run
+        .withSuccessHandler(function(resp){
+          setButtonLoading(btnConfirm, false);
+          if (resp && resp.ok && resp.data && resp.data.pedido){
+            renderPedido(resp.data.pedido);
+          }
+          setNormal();
+        })
+        .withFailureHandler(function(){ setButtonLoading(btnConfirm, false); setNormal(); })
+        .cambiarHoraPedido({ idPedido: pedidoActual.idPedido, nuevaHora: nuevaHora });
+    }
+
     btnDel.addEventListener('click', function(e){
       e.stopPropagation();
-      if (card.classList.contains('is-confirm')){
-        setNormal();
-      } else if (card.classList.contains('is-timeconfirm')){
-        pendingHour = null;
-        setNormal();
-      } else if (card.classList.contains('is-deliveryconfirm')){
+      if (!pedidoActual) return;
+      if (card.classList.contains('is-confirm') || card.classList.contains('is-timeconfirm') || card.classList.contains('is-deliveryconfirm')){
         setNormal();
       } else {
         setConfirm();
@@ -489,17 +570,16 @@
 
     btnConfirm.addEventListener('click', function(e){
       e.stopPropagation();
+      if (!pedidoActual) return;
       if (card.classList.contains('is-confirm')){
-        setDeleted();
+        actualizarEstado('Cancelado');
       } else if (card.classList.contains('is-timeconfirm')){
         if (pendingHour){
-          heureText.textContent = pendingHour;
-          currentHour = pendingHour;
+          actualizarHora(pendingHour);
           pendingHour = null;
         }
-        setNormal();
       } else if (card.classList.contains('is-deliveryconfirm')){
-        setDelivered();
+        actualizarEstado('Entregado');
       } else {
         setDeliveryConfirm();
       }
@@ -524,6 +604,7 @@
     }
 
     function openHoursOverlay(){
+      if (!pedidoActual) return;
       overlayList.innerHTML = '';
 
       const ph = document.createElement('li');
@@ -571,6 +652,7 @@
 
     btnDelay.addEventListener('click', function(e){
       e.stopPropagation();
+      if (!pedidoActual) return;
       openHoursOverlay();
     });
 
@@ -596,16 +678,30 @@
       setTimeout(captureNormalHeight, 0);
     }
 
+    btnNuevoPedido.addEventListener('click', function(){
+      google.script.run.abrirNuevoPedido();
+    });
+
+    btnVentaDirecta.addEventListener('click', function(){
+      google.script.run.abrirVentaDirecta();
+    });
+
+    btnPedidosDelDia.addEventListener('click', function(){
+      google.script.run.abrirPedidosDelDia();
+    });
+
     if (document.readyState === 'loading'){
       document.addEventListener('DOMContentLoaded', ()=>{
         currentHour = heureText.textContent.trim();
         applyScaleFix();
         captureNormalHeight();
+        cargarProximoPedido();
       });
     } else {
       currentHour = heureText.textContent.trim();
       applyScaleFix();
       captureNormalHeight();
+      cargarProximoPedido();
     }
 
     window.addEventListener('resize', ()=>{
