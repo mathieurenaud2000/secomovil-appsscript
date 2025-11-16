@@ -1341,30 +1341,32 @@ function generarIdCliente_() {
 function leerSectores_() {
   var sheet = getSheet_('SECTORES');
   var lastRow = sheet.getLastRow();
-  var lastColumn = sheet.getLastColumn();
+  var lastColumn = Math.min(3, sheet.getLastColumn()); // Solo A–C
 
   if (lastRow < 3 || lastColumn < 1) {
     return [];
   }
 
   var preciosRow = sheet.getRange(2, 1, 1, lastColumn).getValues()[0];
-  var labelsRow = sheet.getRange(3, 1, 1, lastColumn).getValues()[0];
+  var etiquetas = sheet.getRange(3, 1, lastRow - 2, lastColumn).getValues();
 
   var sectores = [];
 
-  labelsRow.forEach(function (label, idx) {
-    var nombre = (label || '').toString().trim();
-    if (!nombre) return;
+  for (var col = 0; col < lastColumn; col++) {
+    var precio = Number(preciosRow[col]) || 0;
+    var colLetter = columnNumberToLetter_(col + 1);
 
-    var precio = preciosRow[idx];
-    var colLetter = columnNumberToLetter_(idx + 1);
+    for (var row = 0; row < etiquetas.length; row++) {
+      var nombre = (etiquetas[row][col] || '').toString().trim();
+      if (!nombre) continue;
 
-    sectores.push({
-      nombre: nombre,
-      columna: colLetter,
-      precio: Number(precio) || 0
-    });
-  });
+      sectores.push({
+        nombre: nombre,
+        columna: colLetter,
+        precio: precio
+      });
+    }
+  }
 
   return sectores;
 }
@@ -2002,6 +2004,9 @@ function registrarNuevoContacto(data, payload) {
     var sector = (data.sector || '').toString().trim();
     var nota = (data.nota || '').toString().trim();
     var idContacto = (data.idContacto || payload.idContacto || '').toString().trim();
+    if (!idContacto) {
+      idContacto = generarIdCliente_();
+    }
     var pedidoId = (data.pedidoId || payload.pedidoId || '').toString().trim();
 
     var sectorInfo = obtenerPrecioYColumnaSector_(sector);
