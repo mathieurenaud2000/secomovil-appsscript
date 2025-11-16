@@ -230,16 +230,7 @@
         <button type="button" class="dd-button" id="contactBtn" data-placeholder="true">
           <span class="dd-label">Elegir un contacto</span><span class="dd-caret"></span>
         </button>
-        <script type="application/json" class="dd-data">
-          [
-            "Nuevo contacto",
-            "Alberto Díaz",
-            "Carlos Mena",
-            "Lorenzo Despacito",
-            "María González",
-            "Tienda Juanita"
-          ]
-        </script>
+        <script type="application/json" class="dd-data">[]</script>
       </div>
 
       <!-- SÉPARATEUR GRIS DIRECTEMENT APRÈS -->
@@ -291,40 +282,60 @@
     var btnOK       = document.getElementById('btnOK');
     var pedidoIdEl  = document.getElementById('pedidoIdHeader');
 
-    function cargarPedidoId(){
-      if (!pedidoIdEl || typeof google === 'undefined' || !google.script || !google.script.run) return;
+    var contactosOpciones = [];
+    var contactoSeleccionado = null;
 
-      google.script.run
-        .withSuccessHandler(function(id){
-          if (id) {
-            pedidoIdEl.textContent = id;
-          }
-        })
-        .generarIdPedido();
+    function obtenerCtxServidor(){
+      return (typeof window !== 'undefined' && window.SECO_CTX) ? window.SECO_CTX : {};
+    }
+
+    function construirOpcionesContactos(){
+      var ctx = obtenerCtxServidor();
+      var clientes = Array.isArray(ctx.clientes) ? ctx.clientes : [];
+      var opciones = [{ label: 'Nuevo contacto', isNuevo: true }];
+
+      clientes.forEach(function(cli){
+        opciones.push({
+          label: cli && cli.nombre ? cli.nombre : 'Contacto',
+          idCliente: (cli && cli.idCliente) ? cli.idCliente : '',
+          cliente: cli || null
+        });
+      });
+
+      contactosOpciones = opciones;
+    }
+
+    function renderPedidoId(){
+      var ctx = obtenerCtxServidor();
+      var id = (ctx && ctx.idPedido) ? ctx.idPedido : '';
+      if (pedidoIdEl && id){
+        pedidoIdEl.textContent = id;
+      }
+    }
+
+    function actualizarEstadoBtnOK(){
+      var habilitado = !!contactoSeleccionado;
+      btnOK.disabled = !habilitado;
+      btnOK.classList.toggle('btn-noir', habilitado);
+      btnOK.classList.toggle('btn-desactive', !habilitado);
     }
 
     contactBtn.addEventListener('click', function(){
-      var dataScript = this.parentNode.querySelector('.dd-data');
-      var data = [];
-      if (dataScript){
-        try{ data = JSON.parse(dataScript.textContent.trim()); }catch(e){ data = []; }
-      }
+      construirOpcionesContactos();
       overlayList.innerHTML = "";
 
-      data.forEach(function(txt){
+      contactosOpciones.forEach(function(opt){
         var li = document.createElement('li');
         li.className = "dd-overlay-option";
-        li.textContent = txt;
+        li.textContent = opt.label;
+        li.dataset.isNuevo = opt.isNuevo ? '1' : '0';
         li.addEventListener('click', function(){
-          contactBtn.querySelector('.dd-label').textContent = txt;
+          contactoSeleccionado = opt;
+          contactBtn.querySelector('.dd-label').textContent = opt.label;
           contactBtn.removeAttribute('data-placeholder');
           overlay.setAttribute('data-open','false');
           document.body.style.overflow = '';
-
-          // activer bouton OK
-          btnOK.disabled = false;
-          btnOK.classList.remove('btn-desactive');
-          btnOK.classList.add('btn-noir');
+          actualizarEstadoBtnOK();
         });
         overlayList.appendChild(li);
       });
@@ -344,20 +355,24 @@
     btnOK.addEventListener('click', function(){
       if (btnOK.disabled) return;
 
-      var labelEl = contactBtn.querySelector('.dd-label');
-      var seleccion = labelEl ? labelEl.textContent.trim() : '';
-      var pedidoId  = pedidoIdEl ? pedidoIdEl.textContent.trim() : '';
+      var ctx = obtenerCtxServidor();
+      var pedidoId = (ctx && ctx.idPedido) ? ctx.idPedido : '';
 
       var payload = {
         pedidoId: pedidoId || '',
-        clienteNombre: seleccion === 'Nuevo contacto' ? '' : seleccion,
+        clienteNombre: '',
+        idCliente: '',
         origen: 'nuevoPedido'
       };
 
-      if (seleccion === 'Nuevo contacto'){
+      if (contactoSeleccionado && contactoSeleccionado.isNuevo){
         // Ouvrir la page NUEVO CONTACTO
         google.script.run.abrirNuevoContacto(payload);
       } else {
+        var cli = contactoSeleccionado && contactoSeleccionado.cliente ? contactoSeleccionado.cliente : null;
+        payload.clienteNombre = contactoSeleccionado ? contactoSeleccionado.label : '';
+        payload.idCliente = (contactoSeleccionado && contactoSeleccionado.idCliente) ? contactoSeleccionado.idCliente : '';
+        payload.cliente = cli;
         // Ouvrir directement la page REGISTRAR PEDIDO pour ce client
         google.script.run.abrirRegistrarPedido(payload);
       }
@@ -366,7 +381,8 @@
     function init(){
       applyScaleFix();
       sizeHeaderImage();
-      cargarPedidoId();
+      renderPedidoId();
+      actualizarEstadoBtnOK();
     }
     if (document.readyState === 'loading'){
       document.addEventListener('DOMContentLoaded', init);

@@ -504,6 +504,9 @@
 
     function updatePrecioYBoton(){
       var precioBase = 1.00;
+      if (pedidoContext && typeof pedidoContext.precioBase === 'number' && !isNaN(pedidoContext.precioBase)) {
+        precioBase = Number(pedidoContext.precioBase);
+      }
       var ddFecha    = document.querySelector('.dropdown[data-name="fecha"]');
       var ddHora     = document.querySelector('.dropdown[data-name="hora"]');
       var ddCantidad = document.querySelector('.dropdown[data-name="cantidad"]');
