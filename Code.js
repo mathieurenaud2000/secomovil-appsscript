@@ -76,6 +76,7 @@ function abrirVentaDirecta() {
     var ui = SpreadsheetApp.getUi();
     var menu = ui.createMenu('SecoMobil');
 
+    menu.addItem('Inicio', 'abrirInicio');
     menu.addItem('Nuevo pedido', 'abrirNuevoPedido');
 
     menu.addToUi();
