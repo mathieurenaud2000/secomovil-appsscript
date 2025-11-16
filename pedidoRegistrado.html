@@ -274,9 +274,9 @@
       var precioEl = document.getElementById('confirmPrecio');
 
       var nombre = ctx.clienteNombre || (ctx.cliente && ctx.cliente.nombre) || '';
-      var telefono = (ctx.cliente && (ctx.cliente.telefono || ctx.cliente.whatsapp)) || '';
+      var telefono = (ctx.cliente && (ctx.cliente.telefono || ctx.cliente.whatsapp)) || ctx.whatsapp || '';
       var sector = ctx.sector || (ctx.cliente && ctx.cliente.sector) || '';
-      var direccion = (ctx.cliente && ctx.cliente.direccion) || '';
+      var direccion = ctx.direccion || (ctx.cliente && ctx.cliente.direccion) || '';
       var nota = ctx.nota || (ctx.cliente && ctx.cliente.nota) || '';
 
       var cantidad = Number(ctx.cantidad || 1);

@@ -1341,7 +1341,7 @@ function generarIdCliente_() {
 function leerSectores_() {
   var sheet = getSheet_('SECTORES');
   var lastRow = sheet.getLastRow();
-  var lastColumn = Math.min(3, sheet.getLastColumn()); // Solo A–C
+  var lastColumn = sheet.getLastColumn();
 
   if (lastRow < 3 || lastColumn < 1) {
     return [];
@@ -1353,7 +1353,12 @@ function leerSectores_() {
   var sectores = [];
 
   for (var col = 0; col < lastColumn; col++) {
-    var precio = Number(preciosRow[col]) || 0;
+    var precioBruto = preciosRow[col];
+    var precio = null;
+    if (precioBruto !== '' && precioBruto !== null && precioBruto !== undefined) {
+      var parsed = Number(precioBruto);
+      precio = isNaN(parsed) ? null : parsed;
+    }
     var colLetter = columnNumberToLetter_(col + 1);
 
     for (var row = 0; row < etiquetas.length; row++) {
@@ -2096,16 +2101,17 @@ function inyectarContextoEnHtml_(htmlOutput, ctx, opciones) {
       + "var card=document.querySelector('.contact-card');"
       + "if(card){"
         + "var nombre=(ctx.cliente&&ctx.cliente.nombre)||ctx.clienteNombre||'';"
-        + "var telefono=(ctx.cliente&&(ctx.cliente.telefono||ctx.cliente.whatsapp))||'';"
+        + "var whatsapp=(ctx.cliente&&(ctx.cliente.telefono||ctx.cliente.whatsapp))||ctx.whatsapp||'';"
+        + "var subline=nombre?'':'Selecciona o crea un contacto';"
         + "var headerLines=card.querySelectorAll('.contact-top .txt-body div');"
         + "if(headerLines.length>0){headerLines[0].textContent=nombre||'Contacto';}"
-        + "if(headerLines.length>1){headerLines[1].textContent=telefono||'—';}"
+        + "if(headerLines.length>1){headerLines[1].textContent=subline;}"
         + "var labels=card.querySelectorAll('.label');"
         + "labels.forEach(function(lbl){var valueEl=lbl.nextElementSibling;if(!valueEl){return;}var key=lbl.textContent.trim().toLowerCase();"
           + "if(key==='sector'&&ctx.cliente&&ctx.cliente.sector){valueEl.textContent=ctx.cliente.sector;}"
           + "else if(key==='direccion'&&ctx.cliente&&ctx.cliente.direccion){valueEl.textContent=ctx.cliente.direccion;}"
           + "else if(key==='nota'&&ctx.cliente&&ctx.cliente.nota){valueEl.textContent=ctx.cliente.nota;}"
-          + "else if(key==='whatsapp'&&ctx.cliente&&(ctx.cliente.telefono||ctx.cliente.whatsapp)){valueEl.textContent=ctx.cliente.telefono||ctx.cliente.whatsapp;}"
+          + "else if(key==='whatsapp'&&whatsapp){valueEl.textContent=whatsapp;}"
         + "});"
       + "}"
     + "}catch(e){}})();";
@@ -2211,6 +2217,8 @@ function registrarPedidoDesdeRegistrar(payload) {
       total: totalCalc,
       sector: sector,
       nota: nota,
+      direccion: direccion,
+      whatsapp: telefono,
       cliente: {
         idCliente: payload.idContacto || cliente.idCliente || '',
         nombre: nombre,
