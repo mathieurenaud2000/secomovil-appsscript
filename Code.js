@@ -9,7 +9,22 @@
     // Elle permet également d'étendre la navigation ultérieurement via le paramètre "page".
     var requestedPage = (e && e.parameter && e.parameter.page) || 'inicio';
     var pages = {
-      inicio: 'Inicio'
+      inicio: 'Inicio',
+      nuevoPedido: 'Nuevo pedido',
+      ventaDirecta: 'Venta directa',
+      registrarPedido: 'Registrar pedido',
+      registrarGasto: 'Registrar gasto',
+      pedidoRegistrado: 'Pedido registrado',
+      pedidoActualizado: 'Pedido actualizado',
+      ventaRegistrada: 'Venta registrada',
+      cerrarElDia: 'Cerrar el día',
+      diaCerrado: 'Día cerrado',
+      sistemaConfigurado: 'Sistema configurado',
+      'configuracionDelSistema-p': 'Configuración del sistema',
+      editarPedido: 'Editar pedido',
+      editarContacto: 'Editar contacto',
+      nuevoContacto: 'Nuevo contacto',
+      pedidosDelDia: 'Pedidos del día'
     };
 
     var page = pages.hasOwnProperty(requestedPage) ? requestedPage : 'inicio';

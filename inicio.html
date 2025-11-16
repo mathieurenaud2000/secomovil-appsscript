@@ -53,11 +53,19 @@
     display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
     padding: calc(10px * var(--fix)) calc(12px * var(--fix));
     text-align:center; text-transform:uppercase; font-weight:700; line-height:0.95; user-select:none;
+    position:relative; overflow:hidden;
   }
   .double-actions .half--left{ border-top-left-radius: var(--radius); border-bottom-left-radius: var(--radius); border-top-right-radius:0; border-bottom-right-radius:0; }
   .double-actions .half--right{ border-top-right-radius: var(--radius); border-bottom-right-radius: var(--radius); border-top-left-radius:0; border-bottom-left-radius:0; }
   .double-actions .half img{ display:block; width:50%; height:auto; object-fit:contain; margin-bottom: calc(4px * var(--fix)); }
   .double-actions .half div{ font-size: calc(var(--font-body) * var(--fix)); }
+  .double-actions .half.is-loading img,
+  .double-actions .half.is-loading div{ visibility:hidden; }
+  .double-actions .half .half-spinner{
+    position:absolute; inset:0; display:none;
+    align-items:center; justify-content:center;
+  }
+  .double-actions .half.is-loading .half-spinner{ display:flex; }
 
   .sep-black{ height:5px; background:#000; border:0; margin: calc(var(--gap) * var(--fix)) 0; }
 
@@ -188,12 +196,16 @@
   }
   .card:not(.is-loading) .card-loading{ display:none; }
   .spinner{
-    width:42px;
-    height:42px;
+    width: calc(42px * var(--fix));
+    height: calc(42px * var(--fix));
     border-radius:50%;
-    border:5px solid rgba(0,0,0,0.1);
+    border: calc(5px * var(--fix)) solid rgba(0,0,0,0.1);
     border-top-color:#000;
     animation:spin 1s linear infinite;
+  }
+  .spinner--invert{
+    border-color: rgba(255,255,255,0.3);
+    border-top-color:#fff;
   }
   @keyframes spin{
     from{ transform:rotate(0deg); }
@@ -526,26 +538,24 @@
 
     function setHalfLoading(el, isLoading){
       if (!el) return;
-      var loadingColor = 'rgba(255,255,255,0.5)';
-      var icon = el.querySelector('img');
+      var spinner = el.querySelector('.half-spinner');
+      if (!spinner){
+        spinner = document.createElement('div');
+        spinner.className = 'half-spinner';
+        var sp = document.createElement('div');
+        sp.className = 'spinner spinner--invert';
+        spinner.appendChild(sp);
+        el.appendChild(spinner);
+      }
+
       if (isLoading){
-        if (!el.dataset.originalColor){
-          var computed = window.getComputedStyle ? getComputedStyle(el).color : el.style.color;
-          el.dataset.originalColor = computed || '';
-        }
-        if (icon && !icon.dataset.originalOpacity){
-          var iconOpacity = window.getComputedStyle ? getComputedStyle(icon).opacity : icon.style.opacity;
-          icon.dataset.originalOpacity = iconOpacity || '';
-        }
         el.dataset.loading = '1';
-        el.style.color = loadingColor;
+        el.classList.add('is-loading');
         el.style.pointerEvents = 'none';
-        if (icon){ icon.style.opacity = '0.5'; }
       } else {
         el.dataset.loading = '0';
-        el.style.color = el.dataset.originalColor || '';
+        el.classList.remove('is-loading');
         el.style.pointerEvents = '';
-        if (icon){ icon.style.opacity = icon.dataset.originalOpacity || ''; }
       }
     }
 
@@ -650,6 +660,7 @@
 
     function actualizarEstado(estado){
       if (!pedidoActual || !pedidoActual.idPedido) return;
+      setCardLoading(true);
       setButtonLoading(btnConfirm, true);
       google.script.run
         .withSuccessHandler(function(){
@@ -657,12 +668,13 @@
           setNormal();
           cargarProximoPedido();
         })
-        .withFailureHandler(function(){ setButtonLoading(btnConfirm, false); })
+        .withFailureHandler(function(){ setButtonLoading(btnConfirm, false); setCardLoading(false); })
         .actualizarEstadoPedido({ idPedido: pedidoActual.idPedido, estado: estado });
     }
 
     function actualizarHora(nuevaHora){
       if (!pedidoActual || !pedidoActual.idPedido || !nuevaHora) return;
+      setCardLoading(true);
       setButtonLoading(btnConfirm, true);
       google.script.run
         .withSuccessHandler(function(resp){
@@ -671,8 +683,9 @@
             renderPedido(resp.data.pedido);
           }
           setNormal();
+          setCardLoading(false);
         })
-        .withFailureHandler(function(){ setButtonLoading(btnConfirm, false); setNormal(); })
+        .withFailureHandler(function(){ setButtonLoading(btnConfirm, false); setNormal(); setCardLoading(false); })
         .cambiarHoraPedido({ idPedido: pedidoActual.idPedido, nuevaHora: nuevaHora });
     }
 
@@ -796,26 +809,45 @@
       setTimeout(captureNormalHeight, 0);
     }
 
+    function navigateToPage(pageName){
+      var base = window.location.origin + window.location.pathname;
+      window.location.href = `${base}?page=${encodeURIComponent(pageName)}`;
+    }
+
+    function openPageWithFallback(runMethod, pageName, triggerEl){
+      if (triggerEl && triggerEl.dataset.loading === '1') return;
+      if (triggerEl){
+        setHalfLoading(triggerEl, true);
+      }
+
+      var canRun = (typeof google !== 'undefined' && google.script && google.script.run &&
+                   runMethod && typeof google.script.run[runMethod] === 'function');
+
+      if (canRun){
+        google.script.run
+          .withSuccessHandler(function(){ if (triggerEl){ setHalfLoading(triggerEl, false); } })
+          .withFailureHandler(function(){ if (triggerEl){ setHalfLoading(triggerEl, false); } navigateToPage(pageName); })
+          [runMethod]();
+      } else {
+        navigateToPage(pageName);
+      }
+    }
+
     btnNuevoPedido.addEventListener('click', function(){
-      if (btnNuevoPedido.dataset.loading === '1') return;
-      setHalfLoading(btnNuevoPedido, true);
-      google.script.run
-        .withSuccessHandler(function(){ setHalfLoading(btnNuevoPedido, false); })
-        .withFailureHandler(function(){ setHalfLoading(btnNuevoPedido, false); })
-        .abrirNuevoPedido();
+      openPageWithFallback('abrirNuevoPedido', 'nuevoPedido', btnNuevoPedido);
     });
 
     btnVentaDirecta.addEventListener('click', function(){
-      if (btnVentaDirecta.dataset.loading === '1') return;
-      setHalfLoading(btnVentaDirecta, true);
-      google.script.run
-        .withSuccessHandler(function(){ setHalfLoading(btnVentaDirecta, false); })
-        .withFailureHandler(function(){ setHalfLoading(btnVentaDirecta, false); })
-        .abrirVentaDirecta();
+      openPageWithFallback('abrirVentaDirecta', 'ventaDirecta', btnVentaDirecta);
     });
 
     btnPedidosDelDia.addEventListener('click', function(){
-      google.script.run.abrirPedidosDelDia();
+      var hasRun = (typeof google !== 'undefined' && google.script && google.script.run && typeof google.script.run.abrirPedidosDelDia === 'function');
+      if (hasRun){
+        google.script.run.abrirPedidosDelDia();
+      } else {
+        navigateToPage('pedidosDelDia');
+      }
     });
 
     if (document.readyState === 'loading'){
