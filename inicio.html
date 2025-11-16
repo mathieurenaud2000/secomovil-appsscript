@@ -514,6 +514,21 @@
       }
     }
 
+    function formatHour(hora){
+      if (!hora) return '--:--';
+      const parts = String(hora).split(':');
+      const h = parts[0] || '';
+      const m = parts[1] || '';
+      const hh = h.padStart(2, '0');
+      const mm = m.padStart(2, '0');
+      return `${hh}:${mm}`;
+    }
+
+    function formatMoney(value){
+      if (typeof value !== 'number' || !isFinite(value)) return null;
+      return value.toFixed(2).replace('.', ',');
+    }
+
     function renderPedido(pedido){
       card.style.display = '';
 
@@ -531,14 +546,33 @@
         return;
       }
 
+      const sector = pedido.cliente && pedido.cliente.sector ? pedido.cliente.sector : '—';
+      const nombre = pedido.cliente && pedido.cliente.nombre ? pedido.cliente.nombre.toUpperCase() : '—';
+      const direccion = pedido.cliente && pedido.cliente.direccion ? pedido.cliente.direccion : '—';
+      const notas = pedido.notas ? `Nota : ${pedido.notas}` : '';
+
+      const cantidadValida = typeof pedido.cantidad === 'number' && isFinite(pedido.cantidad) && pedido.cantidad > 0;
+      const totalValido = typeof pedido.total === 'number' && isFinite(pedido.total);
+      let resumenExtra = '';
+      if (cantidadValida && totalValido){
+        const unitPrice = pedido.total / pedido.cantidad;
+        const cantidadTxt = `${pedido.cantidad} seco${pedido.cantidad === 1 ? '' : 's'}`;
+        const unitTxt = formatMoney(unitPrice);
+        const totalTxt = formatMoney(pedido.total);
+        if (unitTxt && totalTxt){
+          resumenExtra = `${cantidadTxt} x ${unitTxt} $ = ${totalTxt} $`;
+        }
+      }
+
       pedidoActual = pedido;
-      heureText.textContent = pedido.horaEntrega || '--:--';
-      sectorText.textContent = (pedido.cliente && pedido.cliente.sector) || '—';
-      clienteText.textContent = (pedido.cliente && pedido.cliente.nombre) || '—';
-      direccionText.textContent = (pedido.cliente && pedido.cliente.direccion) || '—';
-      notaText.textContent = pedido.notas || '';
-      extraText.textContent = pedido.cliente && pedido.cliente.telefono ? 'WhatsApp: ' + pedido.cliente.telefono : '';
-      currentHour = pedido.horaEntrega || '--:--';
+      const horaFormateada = formatHour(pedido.horaEntrega);
+      heureText.textContent = horaFormateada;
+      sectorText.textContent = sector || '—';
+      clienteText.textContent = nombre || '—';
+      direccionText.textContent = direccion || '—';
+      notaText.textContent = notas;
+      extraText.textContent = resumenExtra;
+      currentHour = horaFormateada;
       setNormal();
       captureNormalHeight();
     }
