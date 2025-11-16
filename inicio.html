@@ -66,6 +66,10 @@
     align-items:center; justify-content:center;
   }
   .double-actions .half.is-loading .half-spinner{ display:flex; }
+  .double-actions .half .half-spinner .spinner{
+    border-color: rgba(255,255,255,0.3);
+    border-top-color:#fff;
+  }
 
   .sep-black{ height:5px; background:#000; border:0; margin: calc(var(--gap) * var(--fix)) 0; }
 
@@ -191,7 +195,7 @@
     display:flex;
     align-items:center;
     justify-content:center;
-    background:rgba(255,255,255,0.9);
+    background:#fff;
     z-index:5;
   }
   .card:not(.is-loading) .card-loading{ display:none; }
@@ -300,6 +304,10 @@
   }
   .dd-grid-option.placeholder{
     grid-column: 1/-1; color:var(--gray25);
+  }
+  .dd-grid-option.is-selected{
+    background:#000;
+    color:#fff;
   }
   .dd-grid-sep-black{
     grid-column: 1/-1; border-top:5px solid var(--black);
@@ -738,6 +746,15 @@
       if (!pedidoActual) return;
       overlayList.innerHTML = '';
 
+      function markSelectedOption(optionEl){
+        overlayList.querySelectorAll('.dd-grid-option.is-selected').forEach(function(node){
+          node.classList.remove('is-selected');
+        });
+        if (optionEl){
+          optionEl.classList.add('is-selected');
+        }
+      }
+
       const ph = document.createElement('li');
       ph.className = 'dd-grid-option placeholder';
       ph.textContent = 'Heure';
@@ -755,8 +772,13 @@
         li.textContent = txt;
         li.addEventListener('click', () => {
           pendingHour = txt;
-          closeOverlay();
-          setTimeConfirm();
+          markSelectedOption(li);
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              closeOverlay();
+              setTimeConfirm();
+            }, 80);
+          });
         });
         overlayList.appendChild(li);
 
@@ -810,8 +832,20 @@
     }
 
     function navigateToPage(pageName){
-      var base = window.location.origin + window.location.pathname;
-      window.location.href = `${base}?page=${encodeURIComponent(pageName)}`;
+      var path = window.location.pathname || '';
+      var isHtmlPath = /\.html(?:#.*)?$/i.test(path);
+      var targetUrl;
+
+      if (isHtmlPath){
+        var parts = path.split('/');
+        parts[parts.length - 1] = `${pageName}.html`;
+        targetUrl = window.location.origin + parts.join('/');
+      } else {
+        var base = window.location.origin + path;
+        targetUrl = `${base}?page=${encodeURIComponent(pageName)}`;
+      }
+
+      window.location.href = targetUrl;
     }
 
     function openPageWithFallback(runMethod, pageName, triggerEl){
