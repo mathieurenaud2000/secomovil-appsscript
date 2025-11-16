@@ -510,13 +510,14 @@
 
     function setButtonLoading(btn, isLoading){
       if (!btn) return;
+      var loadingColor = 'rgba(255,255,255,0.2)';
       if (isLoading){
         if (!btn.dataset.originalColor){
           var computed = window.getComputedStyle ? getComputedStyle(btn).color : btn.style.color;
           btn.dataset.originalColor = computed || '';
         }
         btn.disabled = true;
-        btn.style.color = 'rgba(0,0,0,0.8)';
+        btn.style.color = loadingColor;
       } else {
         btn.disabled = false;
         btn.style.color = btn.dataset.originalColor || '';
@@ -525,18 +526,26 @@
 
     function setHalfLoading(el, isLoading){
       if (!el) return;
+      var loadingColor = 'rgba(255,255,255,0.2)';
+      var icon = el.querySelector('img');
       if (isLoading){
         if (!el.dataset.originalColor){
           var computed = window.getComputedStyle ? getComputedStyle(el).color : el.style.color;
           el.dataset.originalColor = computed || '';
         }
+        if (icon && !icon.dataset.originalOpacity){
+          var iconOpacity = window.getComputedStyle ? getComputedStyle(icon).opacity : icon.style.opacity;
+          icon.dataset.originalOpacity = iconOpacity || '';
+        }
         el.dataset.loading = '1';
-        el.style.color = 'rgba(0,0,0,0.8)';
+        el.style.color = loadingColor;
         el.style.pointerEvents = 'none';
+        if (icon){ icon.style.opacity = '0.2'; }
       } else {
         el.dataset.loading = '0';
         el.style.color = el.dataset.originalColor || '';
         el.style.pointerEvents = '';
+        if (icon){ icon.style.opacity = icon.dataset.originalOpacity || ''; }
       }
     }
 
