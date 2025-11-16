@@ -284,13 +284,33 @@
 
     var contactosOpciones = [];
     var contactoSeleccionado = null;
+    var ctxCache = null;
 
     function obtenerCtxServidor(){
-      return (typeof window !== 'undefined' && window.SECO_CTX) ? window.SECO_CTX : {};
+      if (ctxCache) return ctxCache;
+      if (typeof window !== 'undefined' && window.SECO_CTX) {
+        ctxCache = window.SECO_CTX;
+        return ctxCache;
+      }
+      return null;
+    }
+
+    function cuandoCtxListo(callback, intento){
+      var ctx = obtenerCtxServidor();
+      if (ctx) {
+        callback(ctx);
+        return;
+      }
+      var intentoActual = intento || 0;
+      if (intentoActual >= 50) return; // ~4s
+      setTimeout(function(){
+        cuandoCtxListo(callback, intentoActual + 1);
+      }, 80);
     }
 
     function construirOpcionesContactos(){
       var ctx = obtenerCtxServidor();
+      if (!ctx) return;
       var clientes = Array.isArray(ctx.clientes) ? ctx.clientes : [];
       var opciones = [{ label: 'Nuevo contacto', isNuevo: true }];
 
@@ -321,27 +341,29 @@
     }
 
     contactBtn.addEventListener('click', function(){
-      construirOpcionesContactos();
-      overlayList.innerHTML = "";
+      cuandoCtxListo(function(){
+        construirOpcionesContactos();
+        overlayList.innerHTML = "";
 
-      contactosOpciones.forEach(function(opt){
-        var li = document.createElement('li');
-        li.className = "dd-overlay-option";
-        li.textContent = opt.label;
-        li.dataset.isNuevo = opt.isNuevo ? '1' : '0';
-        li.addEventListener('click', function(){
-          contactoSeleccionado = opt;
-          contactBtn.querySelector('.dd-label').textContent = opt.label;
-          contactBtn.removeAttribute('data-placeholder');
-          overlay.setAttribute('data-open','false');
-          document.body.style.overflow = '';
-          actualizarEstadoBtnOK();
+        contactosOpciones.forEach(function(opt){
+          var li = document.createElement('li');
+          li.className = "dd-overlay-option";
+          li.textContent = opt.label;
+          li.dataset.isNuevo = opt.isNuevo ? '1' : '0';
+          li.addEventListener('click', function(){
+            contactoSeleccionado = opt;
+            contactBtn.querySelector('.dd-label').textContent = opt.label;
+            contactBtn.removeAttribute('data-placeholder');
+            overlay.setAttribute('data-open','false');
+            document.body.style.overflow = '';
+            actualizarEstadoBtnOK();
+          });
+          overlayList.appendChild(li);
         });
-        overlayList.appendChild(li);
-      });
 
-      overlay.setAttribute('data-open','true');
-      document.body.style.overflow = 'hidden';
+        overlay.setAttribute('data-open','true');
+        document.body.style.overflow = 'hidden';
+      });
     });
 
     overlay.addEventListener('click', function(e){
@@ -381,8 +403,12 @@
     function init(){
       applyScaleFix();
       sizeHeaderImage();
-      renderPedidoId();
-      actualizarEstadoBtnOK();
+
+      cuandoCtxListo(function(){
+        renderPedidoId();
+        construirOpcionesContactos();
+        actualizarEstadoBtnOK();
+      });
     }
     if (document.readyState === 'loading'){
       document.addEventListener('DOMContentLoaded', init);
