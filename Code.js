@@ -4,10 +4,19 @@
 
 
 
-  function doGet() {
-    // Cette fonction rend directement la page uikit.html quand l’URL publique est ouverte
-    return HtmlService.createHtmlOutputFromFile('uikit')
-      .setTitle('SecoMóvil — UI Kit');
+  function doGet(e) {
+    // Cette fonction rend directement la page inicio.html quand l’URL publique est ouverte.
+    // Elle permet également d'étendre la navigation ultérieurement via le paramètre "page".
+    var requestedPage = (e && e.parameter && e.parameter.page) || 'inicio';
+    var pages = {
+      inicio: 'Inicio'
+    };
+
+    var page = pages.hasOwnProperty(requestedPage) ? requestedPage : 'inicio';
+
+    return HtmlService.createTemplateFromFile(page)
+      .evaluate()
+      .setTitle(pages[page]);
   }
 
 function abrirInicio() {
