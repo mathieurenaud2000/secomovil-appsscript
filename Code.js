@@ -11,8 +11,26 @@
   }
 
   function abrirNuevoPedido() {
-    var html = HtmlService.createHtmlOutputFromFile('nuevoPedido')
+    var init = initNuevoPedido();
+    if (!init || !init.ok || !init.data) {
+      SpreadsheetApp.getUi().alert((init && init.error) || 'No se pudo inicializar Nuevo pedido.');
+      return;
+    }
+
+    var ctx = {
+      idPedido: init.data.idPedido || '',
+      clientes: init.data.clientes || [],
+      nextIdCliente: init.data.nextIdCliente || ''
+    };
+
+    var userProps = PropertiesService.getUserProperties();
+    userProps.setProperty('SECOMOVIL_CTX_NUEVO_PEDIDO', JSON.stringify(ctx));
+
+    var template = HtmlService.createTemplateFromFile('nuevoPedido');
+    var html = template.evaluate()
       .setTitle('Nuevo pedido');
+
+    inyectarContextoEnHtml_(html, ctx);
     SpreadsheetApp.getUi().showSidebar(html);
   }
 
@@ -1316,6 +1334,65 @@ function generarIdCliente_() {
   return Utilities.formatString('C-%05d', nextNum); // C-00001, C-00002, ...
 }
 
+/**
+ * Lee los sectores disponibles desde la hoja SECTORES.
+ * Devuelve un arreglo de objetos con nombre, columna y precio base.
+ */
+function leerSectores_() {
+  var sheet = getSheet_('SECTORES');
+  var lastRow = sheet.getLastRow();
+
+  // Precios en fila 2, columnas A-C
+  var precios = sheet.getRange(2, 1, 1, 3).getValues()[0];
+
+  var filasSectores = Math.max(lastRow - 2, 0);
+  var valores = filasSectores > 0
+    ? sheet.getRange(3, 1, filasSectores, 3).getValues()
+    : [];
+
+  var sectores = [];
+  var columnas = ['A', 'B', 'C'];
+
+  columnas.forEach(function (col, idx) {
+    var precioCol = precios[idx] || 0;
+    for (var i = 0; i < valores.length; i++) {
+      var val = (valores[i][idx] || '').toString().trim();
+      if (!val) continue;
+      sectores.push({
+        nombre: val,
+        columna: col,
+        precio: Number(precioCol) || 0
+      });
+    }
+  });
+
+  return sectores;
+}
+
+/**
+ * Busca el precio y la columna de un sector dado (insensible a mayúsculas/minúsculas).
+ * @param {string} sectorNombre
+ * @returns {{precio:number|null, columna:string|null}}
+ */
+function obtenerPrecioYColumnaSector_(sectorNombre) {
+  var sector = (sectorNombre || '').toString().trim().toLowerCase();
+  if (!sector) {
+    return { precio: null, columna: null };
+  }
+
+  var lista = leerSectores_();
+  for (var i = 0; i < lista.length; i++) {
+    if ((lista[i].nombre || '').toString().trim().toLowerCase() === sector) {
+      return {
+        precio: typeof lista[i].precio === 'number' ? lista[i].precio : null,
+        columna: lista[i].columna || null
+      };
+    }
+  }
+
+  return { precio: null, columna: null };
+}
+
 
 
 
@@ -1759,12 +1836,17 @@ function abrirRegistrarPedido(desdeNuevoPedidoPayload) {
       ? desdeNuevoPedidoPayload.cliente
       : null;
 
+    var sectorInfo = obtenerPrecioYColumnaSector_(clienteObj && clienteObj.sector);
+    var precioBase = (clienteObj && clienteObj.precioBase !== undefined && clienteObj.precioBase !== null)
+      ? Number(clienteObj.precioBase)
+      : sectorInfo.precio;
+
     var ctx = {
       pedidoId: (desdeNuevoPedidoPayload && desdeNuevoPedidoPayload.pedidoId)
         ? desdeNuevoPedidoPayload.pedidoId.toString().trim()
         : '',
-      idContacto: (desdeNuevoPedidoPayload && desdeNuevoPedidoPayload.idContacto)
-        ? desdeNuevoPedidoPayload.idContacto.toString().trim()
+      idContacto: (desdeNuevoPedidoPayload && (desdeNuevoPedidoPayload.idContacto || desdeNuevoPedidoPayload.idCliente))
+        ? (desdeNuevoPedidoPayload.idContacto || desdeNuevoPedidoPayload.idCliente).toString().trim()
         : (clienteObj && clienteObj.idCliente) ? clienteObj.idCliente.toString().trim() : '',
       clienteNombre: (desdeNuevoPedidoPayload && desdeNuevoPedidoPayload.clienteNombre)
         ? desdeNuevoPedidoPayload.clienteNombre.toString().trim()
@@ -1772,7 +1854,11 @@ function abrirRegistrarPedido(desdeNuevoPedidoPayload) {
       origen: (desdeNuevoPedidoPayload && desdeNuevoPedidoPayload.origen)
         ? desdeNuevoPedidoPayload.origen.toString().trim()
         : '',
-      cliente: clienteObj
+      cliente: clienteObj,
+      precioBase: (typeof precioBase === 'number' && !isNaN(precioBase)) ? precioBase : null,
+      columnaSector: (clienteObj && clienteObj.columnaSector)
+        ? clienteObj.columnaSector
+        : (sectorInfo && sectorInfo.columna) ? sectorInfo.columna : ''
     };
 
     var userProps = PropertiesService.getUserProperties();
@@ -1817,6 +1903,7 @@ function abrirRegistrarPedido(desdeNuevoPedidoPayload) {
 function abrirNuevoContacto(desdeNuevoPedidoPayload) {
   try {
     var idContacto = generarIdCliente_();
+    var sectores = leerSectores_();
     var ctx = {
       pedidoId: (desdeNuevoPedidoPayload && desdeNuevoPedidoPayload.pedidoId)
         ? desdeNuevoPedidoPayload.pedidoId.toString().trim()
@@ -1827,7 +1914,8 @@ function abrirNuevoContacto(desdeNuevoPedidoPayload) {
       idContacto: idContacto,
       cliente: (desdeNuevoPedidoPayload && desdeNuevoPedidoPayload.cliente)
         ? desdeNuevoPedidoPayload.cliente
-        : null
+        : null,
+      sectores: sectores
     };
 
     var userProps = PropertiesService.getUserProperties();
@@ -1880,6 +1968,8 @@ function registrarNuevoContacto(data, payload) {
     var idContacto = (data.idContacto || payload.idContacto || '').toString().trim();
     var pedidoId = (data.pedidoId || payload.pedidoId || '').toString().trim();
 
+    var sectorInfo = obtenerPrecioYColumnaSector_(sector);
+
     if (!nombre || !telefono || !direccion || !sector || !idContacto) {
       return {
         ok: false,
@@ -1914,7 +2004,9 @@ function registrarNuevoContacto(data, payload) {
       telefono: telefono,
       direccion: direccion,
       sector: sector,
-      nota: nota
+      nota: nota,
+      columnaSector: sectorInfo && sectorInfo.columna ? sectorInfo.columna : '',
+      precioBase: sectorInfo && sectorInfo.precio !== null ? sectorInfo.precio : null
     };
 
     return {
@@ -1925,7 +2017,9 @@ function registrarNuevoContacto(data, payload) {
         cliente: cliente,
         idContacto: idContacto,
         pedidoId: pedidoId,
-        clienteNombre: nombre
+        clienteNombre: nombre,
+        columnaSector: cliente.columnaSector,
+        precioBase: cliente.precioBase
       }
     };
 

@@ -245,9 +245,7 @@
         <button type="button" class="dd-button" id="sectorBtn" data-placeholder="true">
           <span class="dd-label">Elegir un sector</span><span class="dd-caret" aria-hidden="true"></span>
         </button>
-        <script type="application/json" class="dd-data">
-          ["Centro","Mirador","Puerto Misahuallí","San Pablo","Otro"]
-        </script>
+        <script type="application/json" class="dd-data">[]</script>
       </div>
 
       <!-- Direccion -->
@@ -319,12 +317,12 @@
     function obtenerCtxServidor(){
       return (typeof window !== 'undefined' && window.SECO_CTX) ? window.SECO_CTX : {};
     }
-    var ctxServidor = obtenerCtxServidor();
 
     function setContactoIdDesdeCtx(){
       var idEl = document.getElementById('contactoId');
       if (!idEl) return;
-      var idContacto = (ctxServidor && ctxServidor.idContacto) ? ctxServidor.idContacto : '';
+      var ctx = obtenerCtxServidor();
+      var idContacto = (ctx && ctx.idContacto) ? ctx.idContacto : '';
       if (idContacto){
         idEl.textContent = idContacto;
       }
@@ -372,13 +370,15 @@
       }
     }
 
+    function obtenerSectoresDesdeCtx(){
+      var ctx = obtenerCtxServidor();
+      var sectores = Array.isArray(ctx.sectores) ? ctx.sectores : [];
+      return sectores.map(function(sec){ return (sec && sec.nombre) ? sec.nombre : sec; }).filter(Boolean);
+    }
+
     /* Dropdown simple pour "Sector" */
     function openSectorDropdown(){
-      var dataScript = sectorBtn.parentNode.querySelector('.dd-data');
-      var data = [];
-      if (dataScript){
-        try{ data = JSON.parse(dataScript.textContent.trim()); }catch(e){ data = []; }
-      }
+      var data = obtenerSectoresDesdeCtx();
       overlayList.innerHTML = "";
 
       data.forEach(function(txt){
@@ -430,9 +430,11 @@
         ? sectorBtn.querySelector('.dd-label').textContent.trim()
         : '';
 
+      var ctxActual = obtenerCtxServidor();
+
       var datosCliente = {
-        idContacto: (ctxServidor && ctxServidor.idContacto) ? ctxServidor.idContacto : '',
-        pedidoId:   (ctxServidor && ctxServidor.pedidoId) ? ctxServidor.pedidoId : '',
+        idContacto: (ctxActual && ctxActual.idContacto) ? ctxActual.idContacto : '',
+        pedidoId:   (ctxActual && ctxActual.pedidoId) ? ctxActual.pedidoId : '',
         nombre:    nombreEl.value.trim(),
         direccion: dirEl.value.trim(),
         telefono:  whatsappEl.value.trim(),
@@ -462,7 +464,7 @@
 
           google.script.run.abrirRegistrarPedido(payload);
         })
-        .registrarNuevoContacto(datosCliente, ctxServidor);
+        .registrarNuevoContacto(datosCliente, ctxActual);
     });
 
     /* Clic sur VOLVER AL INICIO : reset + abrirInicio() */
