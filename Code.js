@@ -27,10 +27,24 @@ function abrirPedidosDelDia() {
 }
 
 function abrirVentaDirecta() {
+  var init = initVentaDirecta();
+  if (!init || !init.ok || !init.data) {
+    SpreadsheetApp.getUi().alert((init && init.error) || 'No se pudo inicializar Venta directa.');
+    return;
+  }
+
+  var ctx = {
+    idVenta: init.data.idVenta || ''
+  };
+
+  var userProps = PropertiesService.getUserProperties();
+  userProps.setProperty('SECOMOVIL_CTX_VENTA_DIRECTA', JSON.stringify(ctx));
+
   var template = HtmlService.createTemplateFromFile('ventaDirecta');
   var html = template.evaluate()
     .setTitle('Venta directa');
 
+  inyectarContextoEnHtml_(html, ctx);
   SpreadsheetApp.getUi().showSidebar(html);
 }
 
@@ -1290,6 +1304,33 @@ function generarIdPedido_(fecha, cliente) {
  */
 function generarIdPedido() {
   return generarIdPedido_();
+}
+
+/**
+ * Genera el próximo ID secuencial para VENTAS DIRECTAS.
+ * Formato: V-00001, V-00002, ...
+ */
+function generarIdVentaDirecta_() {
+  var sheet = getSheet_('VENTAS DIRECTAS');
+  var lastRow = sheet.getLastRow();
+  var maxNum = 0;
+
+  if (lastRow > 1) {
+    var ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+    ids.forEach(function (row) {
+      var id = (row[0] || '').toString().trim();
+      if (!id) return;
+      var match = id.match(/^V-(\d+)$/);
+      if (!match) return;
+      var n = parseInt(match[1], 10);
+      if (!isNaN(n) && n > maxNum) {
+        maxNum = n;
+      }
+    });
+  }
+
+  var nextNum = maxNum + 1;
+  return Utilities.formatString('V-%05d', nextNum);
 }
 
 /**
@@ -4037,6 +4078,40 @@ function reactivarPedido(data) {
 
 
 
+function initVentaDirecta() {
+  try {
+    var idVenta = generarIdVentaDirecta_();
+    return {
+      ok: true,
+      error: null,
+      data: { idVenta: idVenta }
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e && e.message ? e.message : 'Error al inicializar Venta directa.',
+      data: null
+    };
+  }
+}
+
+function abrirVentaRegistrada(ctxVenta) {
+  var ctx = ctxVenta || {};
+
+  var template = HtmlService.createTemplateFromFile('ventaRegistrada');
+  var html = template.evaluate()
+    .setTitle('Venta registrada');
+
+  inyectarContextoEnHtml_(html, ctx);
+  SpreadsheetApp.getUi().showSidebar(html);
+
+  return {
+    ok: true,
+    error: null,
+    data: ctx
+  };
+}
+
 
 /**
  * Registra una venta directa en la hoja VENTAS DIRECTAS.
@@ -4128,29 +4203,9 @@ function registrarVentaDirecta(data) {
     // F Notas
     var sheet = getSheet_('VENTAS DIRECTAS');
     var newRow = getFirstEmptyRowInColumn_(sheet, 1);
-    var lastRow = sheet.getLastRow();
 
     // 4.a) Generar nuevo ID de venta: V-00001, V-00002, ...
-    var nuevoId = 'V-00001';
-    if (lastRow > 1) {
-      // Leemos la columna A (ID Venta) desde la fila 2
-      var idValues = sheet.getRange(2, 1, lastRow - 1, 1).getValues()
-        .map(function (r) { return r[0]; })
-        .filter(function (v) { return v; });
-
-      if (idValues.length > 0) {
-        var ultimoId = idValues[idValues.length - 1].toString();
-        var num = 0;
-        if (ultimoId.indexOf('V-') === 0) {
-          num = parseInt(ultimoId.replace('V-', ''), 10);
-          if (isNaN(num)) {
-            num = 0;
-          }
-        }
-        num++;
-        nuevoId = Utilities.formatString('V-%05d', num);
-      }
-    }
+    var nuevoId = generarIdVentaDirecta_();
 
     // 4.b) Escritura de la fila
     sheet.getRange(newRow, 1).setValue(nuevoId);   // A ID Venta
@@ -4185,6 +4240,16 @@ function registrarVentaDirecta(data) {
       data: null
     };
   }
+}
+
+function registrarVentaDirectaDesdeUI(payload) {
+  var resp = registrarVentaDirecta(payload);
+  if (!resp || !resp.ok || !resp.data || !resp.data.venta) {
+    return resp || { ok: false, error: 'No se pudo registrar la venta.', data: null };
+  }
+
+  abrirVentaRegistrada(resp.data.venta);
+  return resp;
 }
 
 

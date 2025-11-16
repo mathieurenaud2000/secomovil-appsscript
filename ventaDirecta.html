@@ -62,6 +62,23 @@
       text-align:right; align-self:end;
       font-size: calc(8px * var(--fix)); color:#111; white-space:nowrap;
     }
+    .venta-id-loader{
+      display:inline-flex; align-items:flex-end; justify-content:flex-end;
+      gap: calc(3px * var(--fix));
+      min-width: calc(64px * var(--fix));
+      height: calc(12px * var(--fix));
+    }
+    .venta-id-loader .dot{
+      width: calc(5px * var(--fix)); height: calc(5px * var(--fix));
+      border-radius:50%; background:#111; opacity:0.3;
+      animation: ventaIdPulse 1s infinite ease-in-out;
+    }
+    .venta-id-loader .dot:nth-child(2){ animation-delay:0.15s; }
+    .venta-id-loader .dot:nth-child(3){ animation-delay:0.30s; }
+    @keyframes ventaIdPulse{
+      0%, 80%, 100%{ opacity:0.25; transform: translateY(0); }
+      40%{ opacity:0.8; transform: translateY(-1px); }
+    }
 
     /* ===== CONTENU ===== */
     .stack { display:flex; flex-direction:column; gap: calc(var(--gap) * var(--fix)); }
@@ -187,7 +204,13 @@
           <span>VENTA</span>
           <span>DIRECTA</span>
         </div>
-        <div class="header-id">V-00001</div>
+        <div class="header-id" id="ventaIdHeader">
+          <span class="venta-id-loader" aria-label="Cargando ID" role="status">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+          </span>
+        </div>
       </div>
 
       <div class="sep-black"></div>
@@ -261,19 +284,73 @@
       }
     }
 
-    /* ===== CALCUL TOTAL + BOUTON ===== */
-    function updateTotalYBoton(){
-      var input = document.getElementById('precio');
-      var ddCantidad = document.querySelector('.dropdown[data-name="cantidad"]');
-      var totalEl = document.getElementById('totalMonto');
-      var btn = document.getElementById('btnRegistrar');
+    function setButtonLoading(btn, isLoading){
+      if (!btn) return;
+      if (isLoading){
+        if (!btn.dataset.originalHtml){
+          btn.dataset.originalHtml = btn.innerHTML;
+        }
+        btn.disabled = true;
+        btn.innerHTML = '...';
+      } else {
+        btn.disabled = false;
+        if (btn.dataset.originalHtml){
+          btn.innerHTML = btn.dataset.originalHtml;
+        }
+      }
+    }
 
+    var ctxCache = null;
+    function obtenerCtxServidor(){
+      if (ctxCache) return ctxCache;
+      if (typeof window !== 'undefined' && window.SECO_CTX) {
+        ctxCache = window.SECO_CTX;
+        return ctxCache;
+      }
+      return null;
+    }
+
+    function cuandoCtxListo(callback, intento){
+      var ctx = obtenerCtxServidor();
+      if (ctx){
+        callback(ctx);
+        return;
+      }
+      var intentoActual = intento || 0;
+      if (intentoActual >= 50) return;
+      setTimeout(function(){
+        cuandoCtxListo(callback, intentoActual + 1);
+      }, 80);
+    }
+
+    function renderVentaId(){
+      var el = document.getElementById('ventaIdHeader');
+      if (!el) return;
+      var ctx = obtenerCtxServidor();
+      var idVenta = (ctx && ctx.idVenta) ? ctx.idVenta : '';
+      if (idVenta){
+        el.textContent = idVenta;
+      }
+    }
+
+    function parsePrecio(){
+      var input = document.getElementById('precio');
       var raw = (input && input.value ? input.value.trim() : '');
       raw = raw.replace(',', '.');
       var precio = parseFloat(raw);
       if (!isFinite(precio) || precio <= 0){
-        precio = NaN;
+        return NaN;
       }
+      return precio;
+    }
+
+    /* ===== CALCUL TOTAL + BOUTON ===== */
+    function updateTotalYBoton(){
+      var ddCantidad = document.querySelector('.dropdown[data-name="cantidad"]');
+      var totalEl = document.getElementById('totalMonto');
+      var btn = document.getElementById('btnRegistrar');
+
+      var precio = parsePrecio();
 
       var cantidad = 1;
       if (ddCantidad){
@@ -301,6 +378,25 @@
         btn.classList.toggle('btn-noir', ok);
         btn.classList.toggle('btn-desactive', !ok);
       }
+    }
+
+    var formatTimeout = null;
+    function programarFormateoPrecio(){
+      if (formatTimeout){
+        clearTimeout(formatTimeout);
+      }
+      formatTimeout = setTimeout(formatearPrecio, 2000);
+    }
+
+    function formatearPrecio(){
+      formatTimeout = null;
+      var input = document.getElementById('precio');
+      if (!input) return;
+      var precio = parsePrecio();
+      if (!isFinite(precio) || precio <= 0) return;
+      var txt = precio.toFixed(2).replace('.', ',') + ' $';
+      input.value = txt;
+      updateTotalYBoton();
     }
 
     /* ===== DROPDOWN ===== */
@@ -407,8 +503,58 @@
 
       var input = document.getElementById('precio');
       if (input){
-        input.addEventListener('input', updateTotalYBoton);
+        input.addEventListener('input', function(){
+          updateTotalYBoton();
+          programarFormateoPrecio();
+        });
+        input.addEventListener('blur', formatearPrecio);
       }
+
+      var btnRegistrar = document.getElementById('btnRegistrar');
+      if (btnRegistrar){
+        btnRegistrar.addEventListener('click', function(){
+          if (btnRegistrar.disabled) return;
+          var precio = parsePrecio();
+          var ddCantidad = document.querySelector('.dropdown[data-name="cantidad"]');
+          var cantidad = 1;
+          if (ddCantidad){
+            var val = ddCantidad.dataset.value || '';
+            var m = val.match(/^(\d+)/);
+            if (m){
+              cantidad = parseInt(m[1], 10);
+            }
+          }
+          if (!isFinite(cantidad) || cantidad < 1) cantidad = 1;
+
+          setButtonLoading(btnRegistrar, true);
+          google.script.run
+            .withSuccessHandler(function(resp){
+              setButtonLoading(btnRegistrar, false);
+              if (!resp || !resp.ok){
+                alert((resp && resp.error) || 'No se pudo registrar la venta.');
+              }
+            })
+            .withFailureHandler(function(err){
+              setButtonLoading(btnRegistrar, false);
+              alert('No se pudo registrar la venta directa.');
+            })
+            .registrarVentaDirectaDesdeUI({
+              cantidad: cantidad,
+              precio: precio
+            });
+        });
+      }
+
+      var btnVolver = document.getElementById('btnVolver');
+      if (btnVolver){
+        btnVolver.addEventListener('click', function(){
+          google.script.run.abrirInicio();
+        });
+      }
+
+      cuandoCtxListo(function(){
+        renderVentaId();
+      });
 
       updateTotalYBoton();
     }
