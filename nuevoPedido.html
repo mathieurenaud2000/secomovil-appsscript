@@ -279,6 +279,52 @@
       }
     }
 
+    function getWebAppBaseUrl(){
+      var base = '';
+      if (typeof window !== 'undefined'){
+        base = window.webAppUrl || window.SECO_WEBAPP_BASE_URL || '';
+      }
+      if (!base){
+        var path = window.location.pathname || '';
+        var origin = window.location.origin || '';
+        base = origin + path;
+      }
+      return base;
+    }
+
+    function buildWebAppUrl(pageName){
+      var base = getWebAppBaseUrl();
+
+      var params = new URLSearchParams();
+      params.set('page', pageName);
+
+      return `${base}?${params.toString()}`;
+    }
+
+    function isSidebarContext(){
+      var hasHostClose = (typeof google !== 'undefined'
+        && google.script
+        && google.script.host
+        && typeof google.script.host.close === 'function');
+
+      return hasHostClose && window.top !== window.self;
+    }
+
+    function openInBrowser(pageName){
+      var targetUrl = buildWebAppUrl(pageName);
+
+      if (isSidebarContext()){
+        window.open(targetUrl, '_blank');
+        if (google && google.script && google.script.host && typeof google.script.host.close === 'function'){
+          google.script.host.close();
+        }
+        return;
+      }
+
+      var navTarget = window.top && window.top.location ? window.top.location : window.location;
+      navTarget.href = targetUrl;
+    }
+
     var overlay     = document.getElementById('ddOverlay');
     var overlayList = document.getElementById('ddOverlayList');
     var contactBtn  = document.getElementById('contactBtn');
@@ -410,7 +456,10 @@
       if (contactoSeleccionado && contactoSeleccionado.isNuevo){
         // Ouvrir la page NUEVO CONTACTO
         google.script.run
-          .withSuccessHandler(function(){ setButtonLoading(btnOK, false); })
+          .withSuccessHandler(function(){
+            setButtonLoading(btnOK, false);
+            openInBrowser('nuevoContacto');
+          })
           .withFailureHandler(function(){ setButtonLoading(btnOK, false); })
           .abrirNuevoContacto(payload);
       } else {
@@ -420,7 +469,10 @@
         payload.cliente = cli;
         // Ouvrir directement la page REGISTRAR PEDIDO pour ce client
         google.script.run
-          .withSuccessHandler(function(){ setButtonLoading(btnOK, false); })
+          .withSuccessHandler(function(){
+            setButtonLoading(btnOK, false);
+            openInBrowser('registrarPedido');
+          })
           .withFailureHandler(function(){ setButtonLoading(btnOK, false); })
           .abrirRegistrarPedido(payload);
       }
@@ -428,7 +480,7 @@
 
     if (btnVolver){
       btnVolver.addEventListener('click', function(){
-        google.script.run.abrirInicio();
+        openInBrowser('inicio');
       });
     }
 
