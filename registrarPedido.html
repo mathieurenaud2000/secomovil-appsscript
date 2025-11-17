@@ -422,41 +422,6 @@
       }
     }
 
-    function getWebAppBaseUrl(){
-      var base = '';
-      if (typeof window !== 'undefined'){
-        base = window.webAppUrl || window.SECO_WEBAPP_BASE_URL || '';
-      }
-      if (!base){
-        var path = window.location.pathname || '';
-        var origin = window.location.origin || '';
-        base = origin + path;
-      }
-      return base;
-    }
-
-    function buildWebAppUrl(pageName){
-      var base = getWebAppBaseUrl();
-
-      var params = new URLSearchParams();
-      params.set('page', pageName);
-
-      return `${base}?${params.toString()}`;
-    }
-
-    function isSidebarContext(){
-      var hasHostClose = (typeof google !== 'undefined'
-        && google.script
-        && google.script.host
-        && typeof google.script.host.close === 'function');
-
-      return hasHostClose && window.top !== window.self;
-    }
-
-    function openInBrowser(pageName){
-      go(pageName);
-    }
-
     function obtenerCtxServidor(){
       var ctx = window.SECO_CTX || {};
       pedidoContext = {
@@ -506,7 +471,7 @@
       var waEl = document.getElementById('contactoWhatsapp');
 
       if (nombreEl){ nombreEl.textContent = nombre || 'Contacto'; }
-      if (telEl){ telEl.textContent = whatsapp || (nombre ? '' : 'Selecciona o crea un contacto'); }
+      if (telEl){ telEl.textContent = nombre ? '' : 'Selecciona o crea un contacto'; }
       if (sectorEl){ sectorEl.textContent = sector || '—'; }
       if (dirEl){ dirEl.textContent = direccion || '—'; }
       if (dirExtraEl){ dirExtraEl.textContent = ctx.idContacto ? ('ID: ' + ctx.idContacto) : ''; }
@@ -524,9 +489,6 @@
         document.documentElement.style.setProperty('--fix', '1');
       }
     }
-
-    // Aplicar el corrector de escala de inmediato para cargar el texto al tamaño correcto
-    applyScaleFix();
 
     function sizeHeaderImage(){
       var img = document.getElementById('headerImg');
@@ -890,19 +852,13 @@
             cliente: ctx.cliente || null
           };
 
-          google.script.run
-            .withSuccessHandler(function(){
-            })
-            .withFailureHandler(function(){
-              // Si falla, se mantiene en la página actual.
-            })
-            .abrirEditarContacto(payload);
+          google.script.run.abrirEditarContacto(payload);
         });
       }
 
       if (btnVolver){
         btnVolver.addEventListener('click', function(){
-          go('inicio');
+          google.script.run.abrirInicio();
         });
       }
     }

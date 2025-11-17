@@ -4,28 +4,6 @@
 
 
 
-   var WEB_APP_URL_FALLBACK = 'https://script.google.com/macros/s/AKfycby6eNfpcV2earU4bffOgKqib2KC1s8g4crRcJkQYRcc7D8VFx6geM28K0RriIf8FQDs/exec';
-
-   function touchAllScopes_() {
-     try {
-       // getActiveSpreadsheet() ne lance pas d'erreur quand aucun classeur n'est ouvert,
-       // ce qui évite de casser l'affichage de la page d'accueil en web app.
-       var ss = SpreadsheetApp.getActiveSpreadsheet();
-       if (ss) {
-         ss.getId();
-       }
-     } catch (err) {
-       // Ignoré : l'objectif est uniquement de préparer les scopes.
-     }
-
-     var userProps = PropertiesService.getUserProperties();
-     userProps.getProperty('SECOMOVIL_CTX_NUEVO_PEDIDO');
-     userProps.getProperty('SECOMOVIL_CTX_VENTA_DIRECTA');
-     userProps.getProperty('SECOMOVIL_CTX_PEDIDOS_DEL_DIA');
-
-     return true;
-   }
-
   function doGet(e) {
     // Cette fonction rend directement la page inicio.html quand l’URL publique est ouverte.
     // Elle permet également d'étendre la navigation ultérieurement via le paramètre "page".
@@ -46,144 +24,59 @@
       editarPedido: 'Editar pedido',
       editarContacto: 'Editar contacto',
       nuevoContacto: 'Nuevo contacto',
-      pedidosDelDia: 'Pedidos del día',
-      abrirNuevoPedido: 'Nuevo pedido',
-      abrirVentaDirecta: 'Venta directa'
+      pedidosDelDia: 'Pedidos del día'
     };
 
-      var page = pages.hasOwnProperty(requestedPage) ? requestedPage : 'inicio';
+    var page = pages.hasOwnProperty(requestedPage) ? requestedPage : 'inicio';
 
-      // === INICIO : tratamiento dedicado ===
-      if (page === 'inicio') {
-        touchAllScopes_();
-        var template = HtmlService.createTemplateFromFile('inicio');
-        var html = template.evaluate().setTitle('Inicio');
-        inyectarBaseUrlEnHtml_(html);
-        return html;
-      }
-
-    if (page === 'nuevoPedido' || page === 'abrirNuevoPedido') {
-      var respNuevo = prepareNuevoPedido();
-      if (!respNuevo.ok) {
-        return HtmlService.createHtmlOutput((respNuevo && respNuevo.error) || 'No se pudo inicializar Nuevo pedido.');
-      }
-      return respNuevo.html;
-    }
-
-    if (page === 'ventaDirecta' || page === 'abrirVentaDirecta') {
-      var respVenta = prepareVentaDirecta();
-      if (!respVenta.ok) {
-        return HtmlService.createHtmlOutput((respVenta && respVenta.error) || 'No se pudo inicializar Venta directa.');
-      }
-      return respVenta.html;
-    }
-
-    if (page === 'pedidosDelDia') {
-      var respPedidos = preparePedidosDelDia();
-      if (!respPedidos.ok) {
-        return HtmlService.createHtmlOutput((respPedidos && respPedidos.error) || 'No se pudo abrir Pedidos del día.');
-      }
-      return respPedidos.html;
-    }
-
-    var html = HtmlService.createTemplateFromFile(page)
+    return HtmlService.createTemplateFromFile(page)
       .evaluate()
       .setTitle(pages[page]);
-
-    inyectarBaseUrlEnHtml_(html);
-
-    return html;
   }
 
-  function obtenerUrlWebApp_() {
-    var serviceUrl = ScriptApp.getService().getUrl();
-    var baseUrl = (serviceUrl && serviceUrl.trim()) || WEB_APP_URL_FALLBACK;
+function abrirInicio() {
+  var template = HtmlService.createTemplateFromFile('inicio');
+  var html = template.evaluate()
+    .setTitle('Inicio');
 
-    if (baseUrl && /\/usercallback$/i.test(baseUrl)) {
-      baseUrl = baseUrl.replace(/\/usercallback$/i, '/exec');
-    }
+  SpreadsheetApp.getUi().showSidebar(html);
+}
 
-    return baseUrl || '';
+function abrirPedidosDelDia() {
+  var template = HtmlService.createTemplateFromFile('pedidosDelDia');
+  var html = template.evaluate()
+    .setTitle('Pedidos del día');
+
+  SpreadsheetApp.getUi().showSidebar(html);
+}
+
+function abrirVentaDirecta() {
+  var init = initVentaDirecta();
+  if (!init || !init.ok || !init.data) {
+    SpreadsheetApp.getUi().alert((init && init.error) || 'No se pudo inicializar Venta directa.');
+    return;
   }
 
-  function inyectarBaseUrlEnHtml_(htmlOutput) {
-    if (!htmlOutput || typeof htmlOutput.getContent !== 'function') return;
+  var ctx = {
+    idVenta: init.data.idVenta || ''
+  };
 
-    var baseUrl = obtenerUrlWebApp_();
-    var script = '<script>'
-      + '(function(){'
-      + 'var base=' + JSON.stringify(baseUrl || '') + ';'
-      + 'window.SECO_WEBAPP_BASE_URL=base;'
-      + 'if(typeof window!=="undefined"){window.webAppUrl=window.webAppUrl||base;}'
-      + 'function isSidebar() {'
-      + '  return typeof google !== "undefined" &&'
-      + '         typeof google.script !== "undefined" &&'
-      + '         typeof google.script.host !== "undefined";'
-      + '}'
-      + 'window.isSidebar=isSidebar;'
-      + 'function go(page) {'
-      + '  if (isSidebar()) {'
-      + '    // Contexte sidebar Google Sheets'
-      + '    google.script.run.abrirPage(page);'
-      + '  } else {'
-      + '    // Contexte web app'
-      + '    if (!window.webAppUrl) {'
-      + '      console.error("webAppUrl is not defined");'
-      + '      return;'
-      + '    }'
-      + '    window.location.href = window.webAppUrl + "?page=" + page;'
-      + '  }'
-      + '}'
-      + 'window.go=go;'
-      + '})();'
-      + '</script>';
-    var content = htmlOutput.getContent();
+  var userProps = PropertiesService.getUserProperties();
+  userProps.setProperty('SECOMOVIL_CTX_VENTA_DIRECTA', JSON.stringify(ctx));
 
-    if (content.indexOf('</head>') !== -1) {
-      content = content.replace('</head>', script + '</head>');
-    } else if (content.indexOf('</body>') !== -1) {
-      content = content.replace('</body>', script + '</body>');
-    } else {
-      content += script;
-    }
+  var template = HtmlService.createTemplateFromFile('ventaDirecta');
+  var html = template.evaluate()
+    .setTitle('Venta directa');
 
-    htmlOutput.setContent(content);
-  }
+  inyectarContextoEnHtml_(html, ctx);
+  SpreadsheetApp.getUi().showSidebar(html);
+}
 
-  function abrirPage(page, payload) {
-    var map = {
-      inicio: abrirInicio,
-      nuevoPedido: abrirNuevoPedido,
-      ventaDirecta: abrirVentaDirecta,
-      pedidosDelDia: abrirPedidosDelDia,
-      registrarGasto: abrirRegistrarGasto,
-      configuracionDelSistema: abrirConfiguracionDelSistema,
-      cerrarElDia: abrirCerrarElDia,
-      registrarPedido: abrirRegistrarPedido,
-      nuevoContacto: abrirNuevoContacto,
-      editarContacto: abrirEditarContacto,
-      pedidoActualizado: abrirPedidoActualizado,
-      pedidoRegistrado: abrirPedidoRegistrado,
-      ventaRegistrada: abrirVentaRegistrada,
-      sistemaConfigurado: abrirSistemaConfigurado,
-      gastoRegistrado: abrirGastoRegistrado,
-      diaCerrado: abrirDiaCerrado
-    };
-
-    var fn = map[page];
-    if (typeof fn === 'function') {
-      fn(payload);
-    } else {
-      if (typeof abrirInicio === 'function') {
-        abrirInicio();
-      }
-    }
-  }
-
-  function prepareNuevoPedido() {
+  function abrirNuevoPedido() {
     var init = initNuevoPedido();
     if (!init || !init.ok || !init.data) {
-      return { ok: false, error: (init && init.error) || 'No se pudo inicializar Nuevo pedido.', html: null };
+      SpreadsheetApp.getUi().alert((init && init.error) || 'No se pudo inicializar Nuevo pedido.');
+      return;
     }
 
     var ctx = {
@@ -199,154 +92,9 @@
     var html = template.evaluate()
       .setTitle('Nuevo pedido');
 
-    inyectarBaseUrlEnHtml_(html);
     inyectarContextoEnHtml_(html, ctx);
-
-    return { ok: true, error: null, html: html };
+    SpreadsheetApp.getUi().showSidebar(html);
   }
-
-  function prepareVentaDirecta() {
-    var init = initVentaDirecta();
-    if (!init || !init.ok || !init.data) {
-      return { ok: false, error: (init && init.error) || 'No se pudo inicializar Venta directa.', html: null };
-    }
-
-    var ctx = {
-      idVenta: init.data.idVenta || ''
-    };
-
-    var userProps = PropertiesService.getUserProperties();
-    userProps.setProperty('SECOMOVIL_CTX_VENTA_DIRECTA', JSON.stringify(ctx));
-
-    var template = HtmlService.createTemplateFromFile('ventaDirecta');
-    var html = template.evaluate()
-      .setTitle('Venta directa');
-
-    inyectarBaseUrlEnHtml_(html);
-    inyectarContextoEnHtml_(html, ctx);
-
-    return { ok: true, error: null, html: html };
-  }
-
-  function preparePedidosDelDia() {
-    var template = HtmlService.createTemplateFromFile('pedidosDelDia');
-    var html = template.evaluate()
-      .setTitle('Pedidos del día');
-
-    inyectarBaseUrlEnHtml_(html);
-
-    return { ok: true, error: null, html: html };
-  }
-
-  function abrirInicio() {
-  var template = HtmlService.createTemplateFromFile('inicio');
-  var html = template.evaluate()
-    .setTitle('Inicio');
-
-  inyectarBaseUrlEnHtml_(html);
-  SpreadsheetApp.getUi().showSidebar(html);
-}
-
-function abrirTemplateSidebar_(fileName, title) {
-  var template = HtmlService.createTemplateFromFile(fileName);
-  var html = template.evaluate()
-    .setTitle(title || fileName);
-
-  inyectarBaseUrlEnHtml_(html);
-  SpreadsheetApp.getUi().showSidebar(html);
-}
-
-function abrirPedidosDelDia() {
-  var resp = preparePedidosDelDia();
-  if (!resp.ok) {
-    SpreadsheetApp.getUi().alert((resp && resp.error) || 'No se pudo abrir Pedidos del día.');
-    return;
-  }
-
-  SpreadsheetApp.getUi().showSidebar(resp.html);
-}
-
-function abrirVentaDirecta() {
-  var resp = prepareVentaDirecta();
-  if (!resp.ok) {
-    SpreadsheetApp.getUi().alert((resp && resp.error) || 'No se pudo inicializar Venta directa.');
-    return;
-  }
-
-  SpreadsheetApp.getUi().showSidebar(resp.html);
-}
-
-  function abrirNuevoPedido() {
-    var resp = prepareNuevoPedido();
-  if (!resp.ok) {
-    SpreadsheetApp.getUi().alert((resp && resp.error) || 'No se pudo inicializar Nuevo pedido.');
-    return;
-  }
-
-  SpreadsheetApp.getUi().showSidebar(resp.html);
-}
-
-function abrirRegistrarGasto() {
-  abrirTemplateSidebar_('registrarGasto', 'Registrar gasto');
-}
-
-function abrirConfiguracionDelSistema() {
-  abrirTemplateSidebar_('configuracionDelSistema-p', 'Configuración del sistema');
-}
-
-function abrirCerrarElDia() {
-  abrirTemplateSidebar_('cerrarElDia', 'Cerrar el día');
-}
-
-function abrirPedidoRegistrado(ctx) {
-  var html = HtmlService.createTemplateFromFile('pedidoRegistrado')
-    .evaluate()
-    .setTitle('Pedido registrado');
-
-  inyectarBaseUrlEnHtml_(html);
-  inyectarContextoEnHtml_(html, ctx);
-  SpreadsheetApp.getUi().showSidebar(html);
-}
-
-function abrirPedidoActualizado(ctx) {
-  var html = HtmlService.createTemplateFromFile('pedidoActualizado')
-    .evaluate()
-    .setTitle('Pedido actualizado');
-
-  inyectarBaseUrlEnHtml_(html);
-  inyectarContextoEnHtml_(html, ctx);
-  SpreadsheetApp.getUi().showSidebar(html);
-}
-
-function abrirSistemaConfigurado(ctx) {
-  var html = HtmlService.createTemplateFromFile('sistemaConfigurado')
-    .evaluate()
-    .setTitle('Sistema configurado');
-
-  inyectarBaseUrlEnHtml_(html);
-  inyectarContextoEnHtml_(html, ctx);
-  SpreadsheetApp.getUi().showSidebar(html);
-}
-
-function abrirGastoRegistrado(ctx) {
-  var html = HtmlService.createTemplateFromFile('gastoRegistrado')
-    .evaluate()
-    .setTitle('Gasto registrado');
-
-  inyectarBaseUrlEnHtml_(html);
-  inyectarContextoEnHtml_(html, ctx);
-  SpreadsheetApp.getUi().showSidebar(html);
-}
-
-function abrirDiaCerrado(ctx) {
-  var html = HtmlService.createTemplateFromFile('diaCerrado')
-    .evaluate()
-    .setTitle('Día cerrado');
-
-  inyectarBaseUrlEnHtml_(html);
-  inyectarContextoEnHtml_(html, ctx);
-  SpreadsheetApp.getUi().showSidebar(html);
-}
 
   function onOpen(e) {
     var ui = SpreadsheetApp.getUi();
@@ -360,7 +108,7 @@ function abrirDiaCerrado(ctx) {
 
   function ouvrirPage() {
   // Ouvre la page HTML complète dans un nouvel onglet plein écran
-  const url = obtenerUrlWebApp_();
+  const url = 'https://script.google.com/macros/s/AKfycby6eNfpcV2earU4bffOgKqib2KC1s8g4crRcJkQYRcc7D8VFx6geM28K0RriIf8FQDs/exec';
   const html = HtmlService.createHtmlOutput(
     '<script>window.open("' + url + '", "_blank");google.script.host.close();</script>'
   );
@@ -2296,7 +2044,6 @@ function abrirRegistrarPedido(desdeNuevoPedidoPayload) {
     var html = template.evaluate()
       .setTitle('Registrar pedido');
 
-    inyectarBaseUrlEnHtml_(html);
     inyectarContextoEnHtml_(html, ctx, { aplicarContextoRegistrar: true });
     SpreadsheetApp.getUi().showSidebar(html);
 
@@ -2354,7 +2101,6 @@ function abrirNuevoContacto(desdeNuevoPedidoPayload) {
     var html = template.evaluate()
       .setTitle('Nuevo contacto');
 
-    inyectarBaseUrlEnHtml_(html);
     inyectarContextoEnHtml_(html, ctx);
     SpreadsheetApp.getUi().showSidebar(html);
 
@@ -2416,7 +2162,6 @@ function abrirEditarContacto(payload) {
     var html = template.evaluate()
       .setTitle('Editar contacto');
 
-    inyectarBaseUrlEnHtml_(html);
     inyectarContextoEnHtml_(html, ctx);
     SpreadsheetApp.getUi().showSidebar(html);
 
@@ -2758,7 +2503,6 @@ function registrarPedidoDesdeRegistrar(payload) {
     var html = template.evaluate()
       .setTitle('Pedido registrado');
 
-    inyectarBaseUrlEnHtml_(html);
     inyectarContextoEnHtml_(html, ctx);
     SpreadsheetApp.getUi().showSidebar(html);
 
@@ -4512,7 +4256,6 @@ function abrirVentaRegistrada(ctxVenta) {
   var html = template.evaluate()
     .setTitle('Venta registrada');
 
-  inyectarBaseUrlEnHtml_(html);
   inyectarContextoEnHtml_(html, ctx);
   SpreadsheetApp.getUi().showSidebar(html);
 
