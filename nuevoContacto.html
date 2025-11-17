@@ -366,6 +366,23 @@
     var ctxCache = null;
     var sectoresOpciones = [];
 
+    function leerSectoresDesdeData(){
+      var dataEl = sectorBtn && sectorBtn.parentNode
+        ? sectorBtn.parentNode.querySelector('.dd-data')
+        : null;
+      if (!dataEl) return [];
+
+      try {
+        var parsed = JSON.parse(dataEl.textContent || '[]');
+        if (Array.isArray(parsed)){
+          return parsed.filter(Boolean);
+        }
+      } catch (e) {
+        // Ignorer les erreurs de parsing et retourner un tableau vide
+      }
+      return [];
+    }
+
     function setButtonLoading(btn, isLoading){
       if (!btn) return;
       if (isLoading){
@@ -459,10 +476,21 @@
       sectoresOpciones = sectores
         .map(function(sec){ return (sec && sec.nombre) ? sec.nombre : sec; })
         .filter(Boolean);
+
+      var dataEl = sectorBtn && sectorBtn.parentNode
+        ? sectorBtn.parentNode.querySelector('.dd-data')
+        : null;
+      if (dataEl){
+        dataEl.textContent = JSON.stringify(sectoresOpciones);
+      }
     }
 
     /* Dropdown simple pour "Sector" */
     function openSectorDropdown(){
+      if (!sectoresOpciones.length){
+        sectoresOpciones = leerSectoresDesdeData();
+      }
+
       if (!sectoresOpciones.length) {
         cuandoCtxListo(function(ctx){
           sincronizarSectoresDesdeCtx(ctx);

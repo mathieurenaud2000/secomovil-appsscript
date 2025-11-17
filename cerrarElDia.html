@@ -243,13 +243,59 @@
 
       <!-- Boutons -->
       <button class="btn btn-desactive" id="btnCerrar" disabled>CERRAR EL DÍA</button>
-      <button class="btn btn-blanc">VOLVER AL INICIO</button>
+      <button class="btn btn-blanc" id="btnVolverInicio">VOLVER AL INICIO</button>
 
       <div class="footer-gap"></div>
     </div>
   </div>
 
   <script>
+    function getWebAppBaseUrl(){
+      var base = '';
+      if (typeof window !== 'undefined'){
+        base = window.webAppUrl || window.SECO_WEBAPP_BASE_URL || '';
+      }
+      if (!base){
+        var path = window.location.pathname || '';
+        var origin = window.location.origin || '';
+        base = origin + path;
+      }
+      return base;
+    }
+
+    function buildWebAppUrl(pageName){
+      var base = getWebAppBaseUrl();
+
+      var params = new URLSearchParams();
+      params.set('page', pageName);
+
+      return `${base}?${params.toString()}`;
+    }
+
+    function isSidebarContext(){
+      var hasHostClose = (typeof google !== 'undefined'
+        && google.script
+        && google.script.host
+        && typeof google.script.host.close === 'function');
+
+      return hasHostClose && window.top !== window.self;
+    }
+
+    function openInBrowser(pageName){
+      var targetUrl = buildWebAppUrl(pageName);
+
+      if (isSidebarContext()){
+        window.open(targetUrl, '_blank');
+        if (google && google.script && google.script.host && typeof google.script.host.close === 'function'){
+          google.script.host.close();
+        }
+        return;
+      }
+
+      var navTarget = window.top && window.top.location ? window.top.location : window.location;
+      navTarget.href = targetUrl;
+    }
+
     function applyScaleFix(){
       var cssW = window.innerWidth;
       var screenW = Math.min(window.screen.width, window.screen.height);
@@ -296,6 +342,13 @@
       applyScaleFix();
       sizeHeaderImage();
       setupConfirm();
+
+      var btnVolver = document.getElementById('btnVolverInicio');
+      if (btnVolver){
+        btnVolver.addEventListener('click', function(){
+          openInBrowser('inicio');
+        });
+      }
     }
 
     if(document.readyState === 'loading'){

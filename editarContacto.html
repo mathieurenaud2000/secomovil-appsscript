@@ -298,6 +298,52 @@
       }
     }
 
+    function getWebAppBaseUrl(){
+      var base = '';
+      if (typeof window !== 'undefined'){
+        base = window.webAppUrl || window.SECO_WEBAPP_BASE_URL || '';
+      }
+      if (!base){
+        var path = window.location.pathname || '';
+        var origin = window.location.origin || '';
+        base = origin + path;
+      }
+      return base;
+    }
+
+    function buildWebAppUrl(pageName){
+      var base = getWebAppBaseUrl();
+
+      var params = new URLSearchParams();
+      params.set('page', pageName);
+
+      return `${base}?${params.toString()}`;
+    }
+
+    function isSidebarContext(){
+      var hasHostClose = (typeof google !== 'undefined'
+        && google.script
+        && google.script.host
+        && typeof google.script.host.close === 'function');
+
+      return hasHostClose && window.top !== window.self;
+    }
+
+    function openInBrowser(pageName){
+      var targetUrl = buildWebAppUrl(pageName);
+
+      if (isSidebarContext()){
+        window.open(targetUrl, '_blank');
+        if (google && google.script && google.script.host && typeof google.script.host.close === 'function'){
+          google.script.host.close();
+        }
+        return;
+      }
+
+      var navTarget = window.top && window.top.location ? window.top.location : window.location;
+      navTarget.href = targetUrl;
+    }
+
     var overlay      = document.getElementById('ddOverlay');
     var overlayList  = document.getElementById('ddOverlayList');
     var sectorBtn    = document.getElementById('sectorBtn');
@@ -498,7 +544,7 @@
     });
 
     btnVolverIni.addEventListener('click', function(){
-      google.script.run.abrirInicio();
+      openInBrowser('inicio');
     });
 
     function init(){
