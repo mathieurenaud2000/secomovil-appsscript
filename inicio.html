@@ -326,10 +326,12 @@
     <div class="half half--left" id="btnNuevoPedido">
       <img src="https://lh3.googleusercontent.com/d/1JD2tYd3TAtYAUEt56qEuvQpDeuoDEq2W" alt="Nuevo Pedido">
       <div>NUEVO</div><div>PEDIDO</div>
+      <div class="half-spinner" aria-hidden="true"><div class="spinner spinner--invert" aria-label="Cargando"></div></div>
     </div>
     <div class="half half--right" id="btnVentaDirecta">
       <img src="https://lh3.googleusercontent.com/d/17J2imVibMPuqjlgH9sDLqrI087b5N5zX" alt="Venta Directa">
       <div>VENTA</div><div>DIRECTA</div>
+      <div class="half-spinner" aria-hidden="true"><div class="spinner spinner--invert" aria-label="Cargando"></div></div>
     </div>
   </section>
 
@@ -833,6 +835,7 @@
 
     function navigateToPage(pageName){
       var path = window.location.pathname || '';
+      var search = window.location.search || '';
       var isHtmlPath = /\.html(?:#.*)?$/i.test(path);
       var targetUrl;
 
@@ -842,10 +845,20 @@
         targetUrl = window.location.origin + parts.join('/');
       } else {
         var base = window.location.origin + path;
-        targetUrl = `${base}?page=${encodeURIComponent(pageName)}`;
+        var params = new URLSearchParams(search);
+        params.set('page', pageName);
+        var query = params.toString();
+        targetUrl = query ? `${base}?${query}` : base;
       }
 
       window.location.href = targetUrl;
+    }
+
+    function isSidebarContext(){
+      return (typeof google !== 'undefined' &&
+              google.script &&
+              google.script.host &&
+              typeof google.script.host.close === 'function');
     }
 
     function openPageWithFallback(runMethod, pageName, triggerEl){
@@ -854,7 +867,8 @@
         setHalfLoading(triggerEl, true);
       }
 
-      var canRun = (typeof google !== 'undefined' && google.script && google.script.run &&
+      var canRun = (isSidebarContext() &&
+                   typeof google !== 'undefined' && google.script && google.script.run &&
                    runMethod && typeof google.script.run[runMethod] === 'function');
 
       if (canRun){
@@ -876,7 +890,7 @@
     });
 
     btnPedidosDelDia.addEventListener('click', function(){
-      var hasRun = (typeof google !== 'undefined' && google.script && google.script.run && typeof google.script.run.abrirPedidosDelDia === 'function');
+      var hasRun = (isSidebarContext() && typeof google !== 'undefined' && google.script && google.script.run && typeof google.script.run.abrirPedidosDelDia === 'function');
       if (hasRun){
         google.script.run.abrirPedidosDelDia();
       } else {
