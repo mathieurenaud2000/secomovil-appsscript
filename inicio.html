@@ -882,13 +882,17 @@
     btnNuevoPedido.addEventListener('click', function(){
       if (btnNuevoPedido.dataset.loading === '1') return;
       setHalfLoading(btnNuevoPedido, true);
-      openInBrowser('nuevoPedido');
+      requestAnimationFrame(function(){
+        openInBrowser('nuevoPedido');
+      });
     });
 
     btnVentaDirecta.addEventListener('click', function(){
       if (btnVentaDirecta.dataset.loading === '1') return;
       setHalfLoading(btnVentaDirecta, true);
-      openInBrowser('ventaDirecta');
+      requestAnimationFrame(function(){
+        openInBrowser('ventaDirecta');
+      });
     });
 
     btnPedidosDelDia.addEventListener('click', function(){
