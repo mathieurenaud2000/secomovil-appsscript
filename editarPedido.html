@@ -467,18 +467,7 @@
     }
 
     function openInBrowser(pageName){
-      var targetUrl = buildWebAppUrl(pageName);
-
-      if (isSidebarContext()){
-        window.open(targetUrl, '_blank');
-        if (google && google.script && google.script.host && typeof google.script.host.close === 'function'){
-          google.script.host.close();
-        }
-        return;
-      }
-
-      var navTarget = window.top && window.top.location ? window.top.location : window.location;
-      navTarget.href = targetUrl;
+      go(pageName);
     }
 
     /* Génère 06:00 → 18:55 par pas de 5 min */
@@ -758,7 +747,7 @@
       var btnVolver = document.getElementById('btnVolver');
       if (btnVolver){
         btnVolver.addEventListener('click', function(){
-          openInBrowser('inicio');
+          go('inicio');
         });
       }
     }

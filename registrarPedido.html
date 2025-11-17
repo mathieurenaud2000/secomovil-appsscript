@@ -454,18 +454,7 @@
     }
 
     function openInBrowser(pageName){
-      var targetUrl = buildWebAppUrl(pageName);
-
-      if (isSidebarContext()){
-        window.open(targetUrl, '_blank');
-        if (google && google.script && google.script.host && typeof google.script.host.close === 'function'){
-          google.script.host.close();
-        }
-        return;
-      }
-
-      var navTarget = window.top && window.top.location ? window.top.location : window.location;
-      navTarget.href = targetUrl;
+      go(pageName);
     }
 
     function obtenerCtxServidor(){
@@ -903,7 +892,7 @@
 
           google.script.run
             .withSuccessHandler(function(){
-              openInBrowser('editarContacto');
+              go('editarContacto');
             })
             .withFailureHandler(function(){
               // Si falla, se mantiene en la página actual.
@@ -914,7 +903,7 @@
 
       if (btnVolver){
         btnVolver.addEventListener('click', function(){
-          openInBrowser('inicio');
+          go('inicio');
         });
       }
     }

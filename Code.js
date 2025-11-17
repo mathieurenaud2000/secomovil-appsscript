@@ -101,6 +101,26 @@
       + 'var base=' + JSON.stringify(baseUrl || '') + ';'
       + 'window.SECO_WEBAPP_BASE_URL=base;'
       + 'if(typeof window!=="undefined"){window.webAppUrl=window.webAppUrl||base;}'
+      + 'function isSidebar() {'
+      + '  return typeof google !== "undefined" &&'
+      + '         typeof google.script !== "undefined" &&'
+      + '         typeof google.script.host !== "undefined";'
+      + '}'
+      + 'window.isSidebar=isSidebar;'
+      + 'function go(page) {'
+      + '  if (isSidebar()) {'
+      + '    // Contexte sidebar Google Sheets'
+      + '    google.script.run.abrirPage(page);'
+      + '  } else {'
+      + '    // Contexte web app'
+      + '    if (!window.webAppUrl) {'
+      + '      console.error("webAppUrl is not defined");'
+      + '      return;'
+      + '    }'
+      + '    window.location.href = window.webAppUrl + "?page=" + page;'
+      + '  }'
+      + '}'
+      + 'window.go=go;'
       + '})();'
       + '</script>';
     var content = htmlOutput.getContent();
@@ -114,6 +134,36 @@
     }
 
     htmlOutput.setContent(content);
+  }
+
+  function abrirPage(page, payload) {
+    var map = {
+      inicio: abrirInicio,
+      nuevoPedido: abrirNuevoPedido,
+      ventaDirecta: abrirVentaDirecta,
+      pedidosDelDia: abrirPedidosDelDia,
+      registrarGasto: abrirRegistrarGasto,
+      configuracionDelSistema: abrirConfiguracionDelSistema,
+      cerrarElDia: abrirCerrarElDia,
+      registrarPedido: abrirRegistrarPedido,
+      nuevoContacto: abrirNuevoContacto,
+      editarContacto: abrirEditarContacto,
+      pedidoActualizado: abrirPedidoActualizado,
+      pedidoRegistrado: abrirPedidoRegistrado,
+      ventaRegistrada: abrirVentaRegistrada,
+      sistemaConfigurado: abrirSistemaConfigurado,
+      gastoRegistrado: abrirGastoRegistrado,
+      diaCerrado: abrirDiaCerrado
+    };
+
+    var fn = map[page];
+    if (typeof fn === 'function') {
+      fn(payload);
+    } else {
+      if (typeof abrirInicio === 'function') {
+        abrirInicio();
+      }
+    }
   }
 
   function prepareNuevoPedido() {
@@ -183,6 +233,15 @@
   SpreadsheetApp.getUi().showSidebar(html);
 }
 
+function abrirTemplateSidebar_(fileName, title) {
+  var template = HtmlService.createTemplateFromFile(fileName);
+  var html = template.evaluate()
+    .setTitle(title || fileName);
+
+  inyectarBaseUrlEnHtml_(html);
+  SpreadsheetApp.getUi().showSidebar(html);
+}
+
 function abrirPedidosDelDia() {
   var resp = preparePedidosDelDia();
   if (!resp.ok) {
@@ -211,6 +270,68 @@ function abrirVentaDirecta() {
   }
 
   SpreadsheetApp.getUi().showSidebar(resp.html);
+}
+
+function abrirRegistrarGasto() {
+  abrirTemplateSidebar_('registrarGasto', 'Registrar gasto');
+}
+
+function abrirConfiguracionDelSistema() {
+  abrirTemplateSidebar_('configuracionDelSistema-p', 'Configuración del sistema');
+}
+
+function abrirCerrarElDia() {
+  abrirTemplateSidebar_('cerrarElDia', 'Cerrar el día');
+}
+
+function abrirPedidoRegistrado(ctx) {
+  var html = HtmlService.createTemplateFromFile('pedidoRegistrado')
+    .evaluate()
+    .setTitle('Pedido registrado');
+
+  inyectarBaseUrlEnHtml_(html);
+  inyectarContextoEnHtml_(html, ctx);
+  SpreadsheetApp.getUi().showSidebar(html);
+}
+
+function abrirPedidoActualizado(ctx) {
+  var html = HtmlService.createTemplateFromFile('pedidoActualizado')
+    .evaluate()
+    .setTitle('Pedido actualizado');
+
+  inyectarBaseUrlEnHtml_(html);
+  inyectarContextoEnHtml_(html, ctx);
+  SpreadsheetApp.getUi().showSidebar(html);
+}
+
+function abrirSistemaConfigurado(ctx) {
+  var html = HtmlService.createTemplateFromFile('sistemaConfigurado')
+    .evaluate()
+    .setTitle('Sistema configurado');
+
+  inyectarBaseUrlEnHtml_(html);
+  inyectarContextoEnHtml_(html, ctx);
+  SpreadsheetApp.getUi().showSidebar(html);
+}
+
+function abrirGastoRegistrado(ctx) {
+  var html = HtmlService.createTemplateFromFile('gastoRegistrado')
+    .evaluate()
+    .setTitle('Gasto registrado');
+
+  inyectarBaseUrlEnHtml_(html);
+  inyectarContextoEnHtml_(html, ctx);
+  SpreadsheetApp.getUi().showSidebar(html);
+}
+
+function abrirDiaCerrado(ctx) {
+  var html = HtmlService.createTemplateFromFile('diaCerrado')
+    .evaluate()
+    .setTitle('Día cerrado');
+
+  inyectarBaseUrlEnHtml_(html);
+  inyectarContextoEnHtml_(html, ctx);
+  SpreadsheetApp.getUi().showSidebar(html);
 }
 
   function onOpen(e) {
