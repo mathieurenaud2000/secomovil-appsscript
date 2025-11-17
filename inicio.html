@@ -834,9 +834,9 @@
     }
 
     function navigateToPage(pageName){
-      const url = new URL(window.location.href);
-      url.searchParams.set('page', pageName);
-      window.location.href = url.toString();
+      const currentUrl = new URL(window.location.href);
+      currentUrl.searchParams.set('page', pageName);
+      window.location.href = currentUrl.toString();
     }
 
     btnNuevoPedido.addEventListener('click', function(){
