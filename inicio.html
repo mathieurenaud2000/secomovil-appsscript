@@ -833,69 +833,23 @@
       setTimeout(captureNormalHeight, 0);
     }
 
+    var WEBAPP_BASE_URL = 'https://script.google.com/macros/s/AKfycbzbcAbAsKnW7tDSQVcV-Jxar0V9NDwVNObudDFSEx2S346xhxujTP8Cee_hb7mYJ9k/exec';
+
     function navigateToPage(pageName){
-      var path = window.location.pathname || '';
-      var search = window.location.search || '';
-      var isHtmlPath = /\.html(?:#.*)?$/i.test(path);
-      var targetUrl;
-
-      if (isHtmlPath){
-        var parts = path.split('/');
-        parts[parts.length - 1] = `${pageName}.html`;
-        targetUrl = window.location.origin + parts.join('/');
-      } else {
-        var base = window.location.origin + path;
-        var params = new URLSearchParams(search);
-        params.set('page', pageName);
-        var query = params.toString();
-        targetUrl = query ? `${base}?${query}` : base;
-      }
-
-      window.location.href = targetUrl;
-    }
-
-    function isSidebarContext(){
-      return (typeof google !== 'undefined' &&
-              google.script &&
-              google.script.host &&
-              typeof google.script.host.close === 'function');
-    }
-
-    function openPageWithFallback(runMethod, pageName, triggerEl){
-      if (triggerEl && triggerEl.dataset.loading === '1') return;
-      if (triggerEl){
-        setHalfLoading(triggerEl, true);
-      }
-
-      var canRun = (isSidebarContext() &&
-                   typeof google !== 'undefined' && google.script && google.script.run &&
-                   runMethod && typeof google.script.run[runMethod] === 'function');
-
-      if (canRun){
-        google.script.run
-          .withSuccessHandler(function(){ if (triggerEl){ setHalfLoading(triggerEl, false); } })
-          .withFailureHandler(function(){ if (triggerEl){ setHalfLoading(triggerEl, false); } navigateToPage(pageName); })
-          [runMethod]();
-      } else {
-        navigateToPage(pageName);
-      }
+      var params = new URLSearchParams({ page: pageName });
+      window.location.href = `${WEBAPP_BASE_URL}?${params.toString()}`;
     }
 
     btnNuevoPedido.addEventListener('click', function(){
-      openPageWithFallback('abrirNuevoPedido', 'nuevoPedido', btnNuevoPedido);
+      navigateToPage('nuevoPedido');
     });
 
     btnVentaDirecta.addEventListener('click', function(){
-      openPageWithFallback('abrirVentaDirecta', 'ventaDirecta', btnVentaDirecta);
+      navigateToPage('ventaDirecta');
     });
 
     btnPedidosDelDia.addEventListener('click', function(){
-      var hasRun = (isSidebarContext() && typeof google !== 'undefined' && google.script && google.script.run && typeof google.script.run.abrirPedidosDelDia === 'function');
-      if (hasRun){
-        google.script.run.abrirPedidosDelDia();
-      } else {
-        navigateToPage('pedidosDelDia');
-      }
+      navigateToPage('pedidosDelDia');
     });
 
     if (document.readyState === 'loading'){
