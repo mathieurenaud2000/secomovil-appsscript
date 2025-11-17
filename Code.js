@@ -29,54 +29,31 @@
 
     var page = pages.hasOwnProperty(requestedPage) ? requestedPage : 'inicio';
 
+    if (page === 'nuevoPedido') {
+      var respNuevo = prepararNuevoPedido_();
+      if (!respNuevo.ok) {
+        return HtmlService.createHtmlOutput((respNuevo && respNuevo.error) || 'No se pudo inicializar Nuevo pedido.');
+      }
+      return respNuevo.html;
+    }
+
+    if (page === 'ventaDirecta') {
+      var respVenta = prepararVentaDirecta_();
+      if (!respVenta.ok) {
+        return HtmlService.createHtmlOutput((respVenta && respVenta.error) || 'No se pudo inicializar Venta directa.');
+      }
+      return respVenta.html;
+    }
+
     return HtmlService.createTemplateFromFile(page)
       .evaluate()
       .setTitle(pages[page]);
   }
 
-function abrirInicio() {
-  var template = HtmlService.createTemplateFromFile('inicio');
-  var html = template.evaluate()
-    .setTitle('Inicio');
-
-  SpreadsheetApp.getUi().showSidebar(html);
-}
-
-function abrirPedidosDelDia() {
-  var template = HtmlService.createTemplateFromFile('pedidosDelDia');
-  var html = template.evaluate()
-    .setTitle('Pedidos del día');
-
-  SpreadsheetApp.getUi().showSidebar(html);
-}
-
-function abrirVentaDirecta() {
-  var init = initVentaDirecta();
-  if (!init || !init.ok || !init.data) {
-    SpreadsheetApp.getUi().alert((init && init.error) || 'No se pudo inicializar Venta directa.');
-    return;
-  }
-
-  var ctx = {
-    idVenta: init.data.idVenta || ''
-  };
-
-  var userProps = PropertiesService.getUserProperties();
-  userProps.setProperty('SECOMOVIL_CTX_VENTA_DIRECTA', JSON.stringify(ctx));
-
-  var template = HtmlService.createTemplateFromFile('ventaDirecta');
-  var html = template.evaluate()
-    .setTitle('Venta directa');
-
-  inyectarContextoEnHtml_(html, ctx);
-  SpreadsheetApp.getUi().showSidebar(html);
-}
-
-  function abrirNuevoPedido() {
+  function prepararNuevoPedido_() {
     var init = initNuevoPedido();
     if (!init || !init.ok || !init.data) {
-      SpreadsheetApp.getUi().alert((init && init.error) || 'No se pudo inicializar Nuevo pedido.');
-      return;
+      return { ok: false, error: (init && init.error) || 'No se pudo inicializar Nuevo pedido.', html: null };
     }
 
     var ctx = {
@@ -93,7 +70,66 @@ function abrirVentaDirecta() {
       .setTitle('Nuevo pedido');
 
     inyectarContextoEnHtml_(html, ctx);
-    SpreadsheetApp.getUi().showSidebar(html);
+
+    return { ok: true, error: null, html: html };
+  }
+
+  function prepararVentaDirecta_() {
+    var init = initVentaDirecta();
+    if (!init || !init.ok || !init.data) {
+      return { ok: false, error: (init && init.error) || 'No se pudo inicializar Venta directa.', html: null };
+    }
+
+    var ctx = {
+      idVenta: init.data.idVenta || ''
+    };
+
+    var userProps = PropertiesService.getUserProperties();
+    userProps.setProperty('SECOMOVIL_CTX_VENTA_DIRECTA', JSON.stringify(ctx));
+
+    var template = HtmlService.createTemplateFromFile('ventaDirecta');
+    var html = template.evaluate()
+      .setTitle('Venta directa');
+
+    inyectarContextoEnHtml_(html, ctx);
+
+    return { ok: true, error: null, html: html };
+  }
+
+  function abrirInicio() {
+  var template = HtmlService.createTemplateFromFile('inicio');
+  var html = template.evaluate()
+    .setTitle('Inicio');
+
+  SpreadsheetApp.getUi().showSidebar(html);
+}
+
+function abrirPedidosDelDia() {
+  var template = HtmlService.createTemplateFromFile('pedidosDelDia');
+  var html = template.evaluate()
+    .setTitle('Pedidos del día');
+
+  SpreadsheetApp.getUi().showSidebar(html);
+}
+
+function abrirVentaDirecta() {
+  var resp = prepararVentaDirecta_();
+  if (!resp.ok) {
+    SpreadsheetApp.getUi().alert((resp && resp.error) || 'No se pudo inicializar Venta directa.');
+    return;
+  }
+
+  SpreadsheetApp.getUi().showSidebar(resp.html);
+}
+
+  function abrirNuevoPedido() {
+    var resp = prepararNuevoPedido_();
+    if (!resp.ok) {
+      SpreadsheetApp.getUi().alert((resp && resp.error) || 'No se pudo inicializar Nuevo pedido.');
+      return;
+    }
+
+    SpreadsheetApp.getUi().showSidebar(resp.html);
   }
 
   function onOpen(e) {
