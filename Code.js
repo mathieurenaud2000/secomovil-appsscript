@@ -24,12 +24,14 @@
       editarPedido: 'Editar pedido',
       editarContacto: 'Editar contacto',
       nuevoContacto: 'Nuevo contacto',
-      pedidosDelDia: 'Pedidos del día'
+      pedidosDelDia: 'Pedidos del día',
+      abrirNuevoPedido: 'Nuevo pedido',
+      abrirVentaDirecta: 'Venta directa'
     };
 
     var page = pages.hasOwnProperty(requestedPage) ? requestedPage : 'inicio';
 
-    if (page === 'nuevoPedido') {
+    if (page === 'nuevoPedido' || page === 'abrirNuevoPedido') {
       var respNuevo = prepararNuevoPedido_();
       if (!respNuevo.ok) {
         return HtmlService.createHtmlOutput((respNuevo && respNuevo.error) || 'No se pudo inicializar Nuevo pedido.');
@@ -37,7 +39,7 @@
       return respNuevo.html;
     }
 
-    if (page === 'ventaDirecta') {
+    if (page === 'ventaDirecta' || page === 'abrirVentaDirecta') {
       var respVenta = prepararVentaDirecta_();
       if (!respVenta.ok) {
         return HtmlService.createHtmlOutput((respVenta && respVenta.error) || 'No se pudo inicializar Venta directa.');
