@@ -44,8 +44,13 @@
 
       var page = pages.hasOwnProperty(requestedPage) ? requestedPage : 'inicio';
 
+      // === INICIO : tratamiento dedicado ===
       if (page === 'inicio') {
         touchAllScopes_();
+        var template = HtmlService.createTemplateFromFile('inicio');
+        var html = template.evaluate().setTitle('Inicio');
+        inyectarBaseUrlEnHtml_(html);
+        return html;
       }
 
     if (page === 'nuevoPedido' || page === 'abrirNuevoPedido') {
