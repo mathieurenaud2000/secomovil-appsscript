@@ -34,7 +34,7 @@
     var page = pages.hasOwnProperty(requestedPage) ? requestedPage : 'inicio';
 
     if (page === 'nuevoPedido' || page === 'abrirNuevoPedido') {
-      var respNuevo = prepararNuevoPedido_();
+      var respNuevo = prepareNuevoPedido();
       if (!respNuevo.ok) {
         return HtmlService.createHtmlOutput((respNuevo && respNuevo.error) || 'No se pudo inicializar Nuevo pedido.');
       }
@@ -42,11 +42,19 @@
     }
 
     if (page === 'ventaDirecta' || page === 'abrirVentaDirecta') {
-      var respVenta = prepararVentaDirecta_();
+      var respVenta = prepareVentaDirecta();
       if (!respVenta.ok) {
         return HtmlService.createHtmlOutput((respVenta && respVenta.error) || 'No se pudo inicializar Venta directa.');
       }
       return respVenta.html;
+    }
+
+    if (page === 'pedidosDelDia') {
+      var respPedidos = preparePedidosDelDia();
+      if (!respPedidos.ok) {
+        return HtmlService.createHtmlOutput((respPedidos && respPedidos.error) || 'No se pudo abrir Pedidos del día.');
+      }
+      return respPedidos.html;
     }
 
     var html = HtmlService.createTemplateFromFile(page)
@@ -73,7 +81,13 @@
     if (!htmlOutput || typeof htmlOutput.getContent !== 'function') return;
 
     var baseUrl = obtenerUrlWebApp_();
-    var script = '<script>window.SECO_WEBAPP_BASE_URL = ' + JSON.stringify(baseUrl || '') + ';</script>';
+    var script = '<script>'
+      + '(function(){'
+      + 'var base=' + JSON.stringify(baseUrl || '') + ';'
+      + 'window.SECO_WEBAPP_BASE_URL=base;'
+      + 'if(typeof window!=="undefined"){window.webAppUrl=window.webAppUrl||base;}'
+      + '})();'
+      + '</script>';
     var content = htmlOutput.getContent();
 
     if (content.indexOf('</head>') !== -1) {
@@ -87,7 +101,7 @@
     htmlOutput.setContent(content);
   }
 
-  function prepararNuevoPedido_() {
+  function prepareNuevoPedido() {
     var init = initNuevoPedido();
     if (!init || !init.ok || !init.data) {
       return { ok: false, error: (init && init.error) || 'No se pudo inicializar Nuevo pedido.', html: null };
@@ -112,7 +126,7 @@
     return { ok: true, error: null, html: html };
   }
 
-  function prepararVentaDirecta_() {
+  function prepareVentaDirecta() {
     var init = initVentaDirecta();
     if (!init || !init.ok || !init.data) {
       return { ok: false, error: (init && init.error) || 'No se pudo inicializar Venta directa.', html: null };
@@ -135,6 +149,16 @@
     return { ok: true, error: null, html: html };
   }
 
+  function preparePedidosDelDia() {
+    var template = HtmlService.createTemplateFromFile('pedidosDelDia');
+    var html = template.evaluate()
+      .setTitle('Pedidos del día');
+
+    inyectarBaseUrlEnHtml_(html);
+
+    return { ok: true, error: null, html: html };
+  }
+
   function abrirInicio() {
   var template = HtmlService.createTemplateFromFile('inicio');
   var html = template.evaluate()
@@ -145,33 +169,32 @@
 }
 
 function abrirPedidosDelDia() {
-  var template = HtmlService.createTemplateFromFile('pedidosDelDia');
-  var html = template.evaluate()
-    .setTitle('Pedidos del día');
+  var resp = preparePedidosDelDia();
+  if (!resp.ok) {
+    SpreadsheetApp.getUi().alert((resp && resp.error) || 'No se pudo abrir Pedidos del día.');
+    return;
+  }
 
-  inyectarBaseUrlEnHtml_(html);
-  SpreadsheetApp.getUi().showSidebar(html);
+  SpreadsheetApp.getUi().showSidebar(resp.html);
 }
 
 function abrirVentaDirecta() {
-  var resp = prepararVentaDirecta_();
+  var resp = prepareVentaDirecta();
   if (!resp.ok) {
     SpreadsheetApp.getUi().alert((resp && resp.error) || 'No se pudo inicializar Venta directa.');
     return;
   }
 
-  inyectarBaseUrlEnHtml_(resp.html);
   SpreadsheetApp.getUi().showSidebar(resp.html);
 }
 
   function abrirNuevoPedido() {
-    var resp = prepararNuevoPedido_();
+    var resp = prepareNuevoPedido();
   if (!resp.ok) {
     SpreadsheetApp.getUi().alert((resp && resp.error) || 'No se pudo inicializar Nuevo pedido.');
     return;
   }
 
-  inyectarBaseUrlEnHtml_(resp.html);
   SpreadsheetApp.getUi().showSidebar(resp.html);
 }
 
