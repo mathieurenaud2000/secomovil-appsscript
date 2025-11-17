@@ -4,6 +4,8 @@
 
 
 
+  var WEB_APP_URL_FALLBACK = 'https://script.google.com/macros/s/AKfycby6eNfpcV2earU4bffOgKqib2KC1s8g4crRcJkQYRcc7D8VFx6geM28K0RriIf8FQDs/exec';
+
   function doGet(e) {
     // Cette fonction rend directement la page inicio.html quand l’URL publique est ouverte.
     // Elle permet également d'étendre la navigation ultérieurement via le paramètre "page".
@@ -47,9 +49,42 @@
       return respVenta.html;
     }
 
-    return HtmlService.createTemplateFromFile(page)
+    var html = HtmlService.createTemplateFromFile(page)
       .evaluate()
       .setTitle(pages[page]);
+
+    inyectarBaseUrlEnHtml_(html);
+
+    return html;
+  }
+
+  function obtenerUrlWebApp_() {
+    var serviceUrl = ScriptApp.getService().getUrl();
+    var baseUrl = (serviceUrl && serviceUrl.trim()) || WEB_APP_URL_FALLBACK;
+
+    if (baseUrl && /\/usercallback$/i.test(baseUrl)) {
+      baseUrl = baseUrl.replace(/\/usercallback$/i, '/exec');
+    }
+
+    return baseUrl || '';
+  }
+
+  function inyectarBaseUrlEnHtml_(htmlOutput) {
+    if (!htmlOutput || typeof htmlOutput.getContent !== 'function') return;
+
+    var baseUrl = obtenerUrlWebApp_();
+    var script = '<script>window.SECO_WEBAPP_BASE_URL = ' + JSON.stringify(baseUrl || '') + ';</script>';
+    var content = htmlOutput.getContent();
+
+    if (content.indexOf('</head>') !== -1) {
+      content = content.replace('</head>', script + '</head>');
+    } else if (content.indexOf('</body>') !== -1) {
+      content = content.replace('</body>', script + '</body>');
+    } else {
+      content += script;
+    }
+
+    htmlOutput.setContent(content);
   }
 
   function prepararNuevoPedido_() {
@@ -71,6 +106,7 @@
     var html = template.evaluate()
       .setTitle('Nuevo pedido');
 
+    inyectarBaseUrlEnHtml_(html);
     inyectarContextoEnHtml_(html, ctx);
 
     return { ok: true, error: null, html: html };
@@ -93,6 +129,7 @@
     var html = template.evaluate()
       .setTitle('Venta directa');
 
+    inyectarBaseUrlEnHtml_(html);
     inyectarContextoEnHtml_(html, ctx);
 
     return { ok: true, error: null, html: html };
@@ -103,6 +140,7 @@
   var html = template.evaluate()
     .setTitle('Inicio');
 
+  inyectarBaseUrlEnHtml_(html);
   SpreadsheetApp.getUi().showSidebar(html);
 }
 
@@ -111,6 +149,7 @@ function abrirPedidosDelDia() {
   var html = template.evaluate()
     .setTitle('Pedidos del día');
 
+  inyectarBaseUrlEnHtml_(html);
   SpreadsheetApp.getUi().showSidebar(html);
 }
 
@@ -121,18 +160,20 @@ function abrirVentaDirecta() {
     return;
   }
 
+  inyectarBaseUrlEnHtml_(resp.html);
   SpreadsheetApp.getUi().showSidebar(resp.html);
 }
 
   function abrirNuevoPedido() {
     var resp = prepararNuevoPedido_();
-    if (!resp.ok) {
-      SpreadsheetApp.getUi().alert((resp && resp.error) || 'No se pudo inicializar Nuevo pedido.');
-      return;
-    }
-
-    SpreadsheetApp.getUi().showSidebar(resp.html);
+  if (!resp.ok) {
+    SpreadsheetApp.getUi().alert((resp && resp.error) || 'No se pudo inicializar Nuevo pedido.');
+    return;
   }
+
+  inyectarBaseUrlEnHtml_(resp.html);
+  SpreadsheetApp.getUi().showSidebar(resp.html);
+}
 
   function onOpen(e) {
     var ui = SpreadsheetApp.getUi();
@@ -146,7 +187,7 @@ function abrirVentaDirecta() {
 
   function ouvrirPage() {
   // Ouvre la page HTML complète dans un nouvel onglet plein écran
-  const url = 'https://script.google.com/macros/s/AKfycby6eNfpcV2earU4bffOgKqib2KC1s8g4crRcJkQYRcc7D8VFx6geM28K0RriIf8FQDs/exec';
+  const url = obtenerUrlWebApp_();
   const html = HtmlService.createHtmlOutput(
     '<script>window.open("' + url + '", "_blank");google.script.host.close();</script>'
   );
@@ -2082,6 +2123,7 @@ function abrirRegistrarPedido(desdeNuevoPedidoPayload) {
     var html = template.evaluate()
       .setTitle('Registrar pedido');
 
+    inyectarBaseUrlEnHtml_(html);
     inyectarContextoEnHtml_(html, ctx, { aplicarContextoRegistrar: true });
     SpreadsheetApp.getUi().showSidebar(html);
 
@@ -2139,6 +2181,7 @@ function abrirNuevoContacto(desdeNuevoPedidoPayload) {
     var html = template.evaluate()
       .setTitle('Nuevo contacto');
 
+    inyectarBaseUrlEnHtml_(html);
     inyectarContextoEnHtml_(html, ctx);
     SpreadsheetApp.getUi().showSidebar(html);
 
@@ -2200,6 +2243,7 @@ function abrirEditarContacto(payload) {
     var html = template.evaluate()
       .setTitle('Editar contacto');
 
+    inyectarBaseUrlEnHtml_(html);
     inyectarContextoEnHtml_(html, ctx);
     SpreadsheetApp.getUi().showSidebar(html);
 
@@ -2541,6 +2585,7 @@ function registrarPedidoDesdeRegistrar(payload) {
     var html = template.evaluate()
       .setTitle('Pedido registrado');
 
+    inyectarBaseUrlEnHtml_(html);
     inyectarContextoEnHtml_(html, ctx);
     SpreadsheetApp.getUi().showSidebar(html);
 
@@ -4294,6 +4339,7 @@ function abrirVentaRegistrada(ctxVenta) {
   var html = template.evaluate()
     .setTitle('Venta registrada');
 
+  inyectarBaseUrlEnHtml_(html);
   inyectarContextoEnHtml_(html, ctx);
   SpreadsheetApp.getUi().showSidebar(html);
 

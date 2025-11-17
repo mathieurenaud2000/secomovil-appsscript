@@ -833,22 +833,29 @@
       setTimeout(captureNormalHeight, 0);
     }
 
-    function navigateToPage(pageName){
-      var path = window.location.pathname || '';
-      var search = window.location.search || '';
-      var isHtmlPath = /\.html(?:#.*)?$/i.test(path);
-      var targetUrl;
+    function buildWebAppUrl(pageName){
+      var base = (typeof window !== 'undefined' && window.SECO_WEBAPP_BASE_URL) || '';
+      if (!base){
+        var path = window.location.pathname || '';
+        var origin = window.location.origin || '';
+        base = origin + path;
+      }
 
-      if (isHtmlPath){
-        var parts = path.split('/');
-        parts[parts.length - 1] = `${pageName}.html`;
-        targetUrl = window.location.origin + parts.join('/');
-      } else {
-        var base = window.location.origin + path;
-        var params = new URLSearchParams(search);
-        params.set('page', pageName);
-        var query = params.toString();
-        targetUrl = query ? `${base}?${query}` : base;
+      var params = new URLSearchParams();
+      params.set('page', pageName);
+
+      return `${base}?${params.toString()}`;
+    }
+
+    function navigateToPage(pageName){
+      var targetUrl = buildWebAppUrl(pageName);
+
+      if (isSidebarContext()){
+        window.open(targetUrl, '_blank');
+        if (google && google.script && google.script.host && typeof google.script.host.close === 'function'){
+          google.script.host.close();
+        }
+        return;
       }
 
       window.location.href = targetUrl;
