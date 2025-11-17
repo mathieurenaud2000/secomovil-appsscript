@@ -106,12 +106,7 @@ function abrirVentaDirecta() {
   }
 
 function abrirWebAppSecoMobil() {
-  var url = ScriptApp.getService().getUrl();
-  if (!url) {
-    SpreadsheetApp.getUi().alert('No se pudo obtener la URL de la webapp.');
-    return;
-  }
-
+  var url = 'https://script.google.com/macros/s/AKfycbzbcAbAsKnW7tDSQVcV-Jxar0V9NDwVNObudDFSEx2S346xhxujTP8Cee_hb7mYJ9k/exec';
   var html = HtmlService.createHtmlOutput(
     '<script>' +
       '(function() {' +
