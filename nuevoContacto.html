@@ -551,7 +551,6 @@
 
           google.script.run
             .withSuccessHandler(function(){
-              go('registrarPedido');
             })
             .withFailureHandler(function(){
               // En cas d'échec, rester sur la page actuelle.

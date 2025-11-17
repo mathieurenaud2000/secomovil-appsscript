@@ -450,7 +450,6 @@
         google.script.run
           .withSuccessHandler(function(){
             setButtonLoading(btnOK, false);
-            go('nuevoContacto');
           })
           .withFailureHandler(function(){ setButtonLoading(btnOK, false); })
           .abrirNuevoContacto(payload);
@@ -463,7 +462,6 @@
         google.script.run
           .withSuccessHandler(function(){
             setButtonLoading(btnOK, false);
-            go('registrarPedido');
           })
           .withFailureHandler(function(){ setButtonLoading(btnOK, false); })
           .abrirRegistrarPedido(payload);
