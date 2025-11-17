@@ -866,14 +866,17 @@
         return;
       }
 
-      window.location.href = targetUrl;
+      var navTarget = window.top && window.top.location ? window.top.location : window.location;
+      navTarget.href = targetUrl;
     }
 
     function isSidebarContext(){
-      return (typeof google !== 'undefined' &&
-              google.script &&
-              google.script.host &&
-              typeof google.script.host.close === 'function');
+      var hasHostClose = (typeof google !== 'undefined'
+        && google.script
+        && google.script.host
+        && typeof google.script.host.close === 'function');
+
+      return hasHostClose && window.top !== window.self;
     }
 
     btnNuevoPedido.addEventListener('click', function(){
