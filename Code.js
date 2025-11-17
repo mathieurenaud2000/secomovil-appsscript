@@ -7,7 +7,16 @@
    var WEB_APP_URL_FALLBACK = 'https://script.google.com/macros/s/AKfycby6eNfpcV2earU4bffOgKqib2KC1s8g4crRcJkQYRcc7D8VFx6geM28K0RriIf8FQDs/exec';
 
    function touchAllScopes_() {
-     SpreadsheetApp.getActive();
+     try {
+       // getActiveSpreadsheet() ne lance pas d'erreur quand aucun classeur n'est ouvert,
+       // ce qui évite de casser l'affichage de la page d'accueil en web app.
+       var ss = SpreadsheetApp.getActiveSpreadsheet();
+       if (ss) {
+         ss.getId();
+       }
+     } catch (err) {
+       // Ignoré : l'objectif est uniquement de préparer les scopes.
+     }
 
      var userProps = PropertiesService.getUserProperties();
      userProps.getProperty('SECOMOVIL_CTX_NUEVO_PEDIDO');
