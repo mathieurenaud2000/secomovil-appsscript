@@ -293,6 +293,9 @@
       }
     }
 
+    // Ajuste inmediato para evitar textos diminutos en el primer renderizado
+    applyScaleFix();
+
     function sizeHeaderImage(){
       var img = document.getElementById('headerImg');
       var wrap = document.querySelector('.wrapper');
@@ -365,6 +368,13 @@
 
     var ctxCache = null;
     var sectoresOpciones = [];
+
+    // Intentar hidratar el contexto apenas se defina el DOM
+    var ctxInicial = obtenerCtxServidor();
+    if (ctxInicial){
+      setContactoIdDesdeCtx(ctxInicial);
+      sincronizarSectoresDesdeCtx(ctxInicial);
+    }
 
     function leerSectoresDesdeData(){
       var dataEl = sectorBtn && sectorBtn.parentNode

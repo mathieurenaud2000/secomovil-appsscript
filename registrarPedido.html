@@ -517,7 +517,7 @@
       var waEl = document.getElementById('contactoWhatsapp');
 
       if (nombreEl){ nombreEl.textContent = nombre || 'Contacto'; }
-      if (telEl){ telEl.textContent = nombre ? '' : 'Selecciona o crea un contacto'; }
+      if (telEl){ telEl.textContent = whatsapp || (nombre ? '' : 'Selecciona o crea un contacto'); }
       if (sectorEl){ sectorEl.textContent = sector || '—'; }
       if (dirEl){ dirEl.textContent = direccion || '—'; }
       if (dirExtraEl){ dirExtraEl.textContent = ctx.idContacto ? ('ID: ' + ctx.idContacto) : ''; }
@@ -535,6 +535,9 @@
         document.documentElement.style.setProperty('--fix', '1');
       }
     }
+
+    // Aplicar el corrector de escala de inmediato para cargar el texto al tamaño correcto
+    applyScaleFix();
 
     function sizeHeaderImage(){
       var img = document.getElementById('headerImg');

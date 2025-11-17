@@ -267,6 +267,9 @@
       }
     }
 
+    // Aplicar inmediatamente para evitar tamaños diminutos al cargar
+    applyScaleFix();
+
     function sizeHeaderImage(){
       var img = document.getElementById('headerImg');
       var wrap = document.querySelector('.wrapper');
