@@ -267,9 +267,6 @@
       }
     }
 
-    // Aplicar inmediatamente para evitar tamaños diminutos al cargar
-    applyScaleFix();
-
     function sizeHeaderImage(){
       var img = document.getElementById('headerImg');
       var wrap = document.querySelector('.wrapper');
@@ -280,41 +277,6 @@
         img.style.maxWidth = '100%';
         img.removeAttribute('height');
       }
-    }
-
-    function getWebAppBaseUrl(){
-      var base = '';
-      if (typeof window !== 'undefined'){
-        base = window.webAppUrl || window.SECO_WEBAPP_BASE_URL || '';
-      }
-      if (!base){
-        var path = window.location.pathname || '';
-        var origin = window.location.origin || '';
-        base = origin + path;
-      }
-      return base;
-    }
-
-    function buildWebAppUrl(pageName){
-      var base = getWebAppBaseUrl();
-
-      var params = new URLSearchParams();
-      params.set('page', pageName);
-
-      return `${base}?${params.toString()}`;
-    }
-
-    function isSidebarContext(){
-      var hasHostClose = (typeof google !== 'undefined'
-        && google.script
-        && google.script.host
-        && typeof google.script.host.close === 'function');
-
-      return hasHostClose && window.top !== window.self;
-    }
-
-    function openInBrowser(pageName){
-      go(pageName);
     }
 
     var overlay     = document.getElementById('ddOverlay');
@@ -448,9 +410,7 @@
       if (contactoSeleccionado && contactoSeleccionado.isNuevo){
         // Ouvrir la page NUEVO CONTACTO
         google.script.run
-          .withSuccessHandler(function(){
-            setButtonLoading(btnOK, false);
-          })
+          .withSuccessHandler(function(){ setButtonLoading(btnOK, false); })
           .withFailureHandler(function(){ setButtonLoading(btnOK, false); })
           .abrirNuevoContacto(payload);
       } else {
@@ -460,9 +420,7 @@
         payload.cliente = cli;
         // Ouvrir directement la page REGISTRAR PEDIDO pour ce client
         google.script.run
-          .withSuccessHandler(function(){
-            setButtonLoading(btnOK, false);
-          })
+          .withSuccessHandler(function(){ setButtonLoading(btnOK, false); })
           .withFailureHandler(function(){ setButtonLoading(btnOK, false); })
           .abrirRegistrarPedido(payload);
       }
@@ -470,7 +428,7 @@
 
     if (btnVolver){
       btnVolver.addEventListener('click', function(){
-        go('inicio');
+        google.script.run.abrirInicio();
       });
     }
 

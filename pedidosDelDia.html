@@ -595,18 +595,12 @@
         if (btnEdit){
           btnEdit.addEventListener('click', function(e){
             e.stopPropagation();
-            google.script.run
-              .withSuccessHandler(function(){
-              })
-              .withFailureHandler(function(){
-                // Si falla la preparación, permanecer en la página.
-              })
-              .abrirRegistrarPedido({
-                pedidoId: pedido.idPedido || '',
-                origen: 'pedidosDelDia',
-                cliente: pedido.cliente,
-                idContacto: (pedido.cliente && pedido.cliente.idCliente) || ''
-              });
+            google.script.run.abrirRegistrarPedido({
+              pedidoId: pedido.idPedido || '',
+              origen: 'pedidosDelDia',
+              cliente: pedido.cliente,
+              idContacto: (pedido.cliente && pedido.cliente.idCliente) || ''
+            });
           });
         }
 
@@ -705,7 +699,9 @@
 
       if (btnVolver){
         btnVolver.addEventListener('click', function(){
-          go('inicio');
+          if (google && google.script && google.script.host && google.script.host.close){
+            google.script.host.close();
+          }
         });
       }
     })();

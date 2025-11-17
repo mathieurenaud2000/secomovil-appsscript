@@ -245,7 +245,7 @@
       <div class="sep-gray"></div>
 
       <!-- Boutons -->
-      <button class="btn btn-desactive" id="btnRegistrar" type="button" disabled>REGISTRAR</button>
+      <button class="btn btn-desactive" id="btnRegistrar" disabled>REGISTRAR</button>
       <button class="btn btn-blanc" id="btnVolver">VOLVER AL INICIO</button>
 
       <div style="height:0;"></div>
@@ -273,9 +273,6 @@
       }
     }
 
-    // Garantizar el factor de escala correcto antes de cualquier interacción
-    applyScaleFix();
-
     function sizeHeaderImage(){
       var img = document.getElementById('headerImg');
       var wrapper = document.querySelector('.wrapper');
@@ -286,41 +283,6 @@
         img.style.maxWidth = '100%';
         img.removeAttribute('height');
       }
-    }
-
-    function getWebAppBaseUrl(){
-      var base = '';
-      if (typeof window !== 'undefined'){
-        base = window.webAppUrl || window.SECO_WEBAPP_BASE_URL || '';
-      }
-      if (!base){
-        var path = window.location.pathname || '';
-        var origin = window.location.origin || '';
-        base = origin + path;
-      }
-      return base;
-    }
-
-    function buildWebAppUrl(pageName){
-      var base = getWebAppBaseUrl();
-
-      var params = new URLSearchParams();
-      params.set('page', pageName);
-
-      return `${base}?${params.toString()}`;
-    }
-
-    function isSidebarContext(){
-      var hasHostClose = (typeof google !== 'undefined'
-        && google.script
-        && google.script.host
-        && typeof google.script.host.close === 'function');
-
-      return hasHostClose && window.top !== window.self;
-    }
-
-    function openInBrowser(pageName){
-      go(pageName);
     }
 
     function setButtonLoading(btn, isLoading){
@@ -551,8 +513,7 @@
 
       var btnRegistrar = document.getElementById('btnRegistrar');
       if (btnRegistrar){
-        btnRegistrar.addEventListener('click', function(evt){
-          if (evt && typeof evt.preventDefault === 'function') evt.preventDefault();
+        btnRegistrar.addEventListener('click', function(){
           if (btnRegistrar.disabled) return;
           var precio = parsePrecio();
           var ddCantidad = document.querySelector('.dropdown[data-name="cantidad"]');
@@ -572,7 +533,6 @@
               setButtonLoading(btnRegistrar, false);
               if (!resp || !resp.ok){
                 alert((resp && resp.error) || 'No se pudo registrar la venta.');
-                return;
               }
             })
             .withFailureHandler(function(err){
@@ -589,7 +549,7 @@
       var btnVolver = document.getElementById('btnVolver');
       if (btnVolver){
         btnVolver.addEventListener('click', function(){
-          go('inicio');
+          google.script.run.abrirInicio();
         });
       }
 

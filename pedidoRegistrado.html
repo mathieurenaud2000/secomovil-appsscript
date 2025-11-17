@@ -233,41 +233,6 @@
   </div>
 
   <script>
-    function getWebAppBaseUrl(){
-      var base = '';
-      if (typeof window !== 'undefined'){
-        base = window.webAppUrl || window.SECO_WEBAPP_BASE_URL || '';
-      }
-      if (!base){
-        var path = window.location.pathname || '';
-        var origin = window.location.origin || '';
-        base = origin + path;
-      }
-      return base;
-    }
-
-    function buildWebAppUrl(pageName){
-      var base = getWebAppBaseUrl();
-
-      var params = new URLSearchParams();
-      params.set('page', pageName);
-
-      return `${base}?${params.toString()}`;
-    }
-
-    function isSidebarContext(){
-      var hasHostClose = (typeof google !== 'undefined'
-        && google.script
-        && google.script.host
-        && typeof google.script.host.close === 'function');
-
-      return hasHostClose && window.top !== window.self;
-    }
-
-    function openInBrowser(pageName){
-      go(pageName);
-    }
-
     function applyScaleFix(){
       var cssW = window.innerWidth || document.documentElement.clientWidth;
       var screenW = Math.min(window.screen.width || 375, window.screen.height || 812);
@@ -388,7 +353,7 @@
                   alert(msgErr);
                   return;
                 }
-                go('inicio');
+                google.script.run.abrirInicio();
               })
               .withFailureHandler(function(err){
                 setButtonLoading(btnOk, false);
@@ -397,7 +362,10 @@
               })
               .enviarWhatsappPedidoRegistrado(payload);
           } else {
-            go('inicio');
+            google.script.run
+              .withSuccessHandler(function(){ setButtonLoading(btnOk, false); })
+              .withFailureHandler(function(){ setButtonLoading(btnOk, false); })
+              .abrirInicio();
           }
         });
       }

@@ -293,9 +293,6 @@
       }
     }
 
-    // Ajuste inmediato para evitar textos diminutos en el primer renderizado
-    applyScaleFix();
-
     function sizeHeaderImage(){
       var img = document.getElementById('headerImg');
       var wrap = document.querySelector('.wrapper');
@@ -322,30 +319,6 @@
 
     var ctxCache = null;
     var sectoresOpciones = [];
-
-    // Intentar hidratar el contexto apenas se defina el DOM
-    var ctxInicial = obtenerCtxServidor();
-    if (ctxInicial){
-      setContactoIdDesdeCtx(ctxInicial);
-      sincronizarSectoresDesdeCtx(ctxInicial);
-    }
-
-    function leerSectoresDesdeData(){
-      var dataEl = sectorBtn && sectorBtn.parentNode
-        ? sectorBtn.parentNode.querySelector('.dd-data')
-        : null;
-      if (!dataEl) return [];
-
-      try {
-        var parsed = JSON.parse(dataEl.textContent || '[]');
-        if (Array.isArray(parsed)){
-          return parsed.filter(Boolean);
-        }
-      } catch (e) {
-        // Ignorer les erreurs de parsing et retourner un tableau vide
-      }
-      return [];
-    }
 
     function setButtonLoading(btn, isLoading){
       if (!btn) return;
@@ -440,21 +413,10 @@
       sectoresOpciones = sectores
         .map(function(sec){ return (sec && sec.nombre) ? sec.nombre : sec; })
         .filter(Boolean);
-
-      var dataEl = sectorBtn && sectorBtn.parentNode
-        ? sectorBtn.parentNode.querySelector('.dd-data')
-        : null;
-      if (dataEl){
-        dataEl.textContent = JSON.stringify(sectoresOpciones);
-      }
     }
 
     /* Dropdown simple pour "Sector" */
     function openSectorDropdown(){
-      if (!sectoresOpciones.length){
-        sectoresOpciones = leerSectoresDesdeData();
-      }
-
       if (!sectoresOpciones.length) {
         cuandoCtxListo(function(ctx){
           sincronizarSectoresDesdeCtx(ctx);
@@ -549,13 +511,7 @@
             cliente: cliente
           };
 
-          google.script.run
-            .withSuccessHandler(function(){
-            })
-            .withFailureHandler(function(){
-              // En cas d'échec, rester sur la page actuelle.
-            })
-            .abrirRegistrarPedido(payload);
+          google.script.run.abrirRegistrarPedido(payload);
         })
         .withFailureHandler(function(err){
           setButtonLoading(btnGuardar, false);
@@ -583,7 +539,7 @@
       majBoutonGuardar();
 
       // Ouvrir la page inicio.html côté serveur
-      go('inicio');
+      google.script.run.abrirInicio();
     });
 
     function init(){
