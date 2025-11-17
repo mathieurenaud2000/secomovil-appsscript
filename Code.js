@@ -100,11 +100,32 @@ function abrirVentaDirecta() {
     var ui = SpreadsheetApp.getUi();
     var menu = ui.createMenu('SecoMobil');
 
-    menu.addItem('Inicio', 'abrirInicio');
-    menu.addItem('Nuevo pedido', 'abrirNuevoPedido');
+    menu.addItem('Abrir SecoMobil (web)', 'abrirWebAppSecoMobil');
 
     menu.addToUi();
   }
+
+function abrirWebAppSecoMobil() {
+  var url = ScriptApp.getService().getUrl();
+  if (!url) {
+    SpreadsheetApp.getUi().alert('No se pudo obtener la URL de la webapp.');
+    return;
+  }
+
+  var html = HtmlService.createHtmlOutput(
+    '<script>' +
+      '(function() {' +
+        'var u = ' + JSON.stringify(url) + ';' +
+        "try { window.open(u, '_blank'); } catch (e) {}" +
+        'google.script.host.close();' +
+      '})();' +
+    '</script>'
+  )
+    .setWidth(10)
+    .setHeight(10);
+
+  SpreadsheetApp.getUi().showSidebar(html);
+}
 
   function ouvrirPage() {
   // Ouvre la page HTML complète dans un nouvel onglet plein écran
