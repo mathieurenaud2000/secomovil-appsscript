@@ -597,7 +597,6 @@
             e.stopPropagation();
             google.script.run
               .withSuccessHandler(function(){
-                go('registrarPedido');
               })
               .withFailureHandler(function(){
                 // Si falla la preparación, permanecer en la página.

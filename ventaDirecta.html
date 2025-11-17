@@ -574,8 +574,6 @@
                 alert((resp && resp.error) || 'No se pudo registrar la venta.');
                 return;
               }
-
-              go('ventaRegistrada');
             })
             .withFailureHandler(function(err){
               setButtonLoading(btnRegistrar, false);
