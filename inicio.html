@@ -833,13 +833,21 @@
       setTimeout(captureNormalHeight, 0);
     }
 
-    function buildWebAppUrl(pageName){
-      var base = (typeof window !== 'undefined' && window.SECO_WEBAPP_BASE_URL) || '';
+    function getWebAppBaseUrl(){
+      var base = '';
+      if (typeof window !== 'undefined'){
+        base = window.webAppUrl || window.SECO_WEBAPP_BASE_URL || '';
+      }
       if (!base){
         var path = window.location.pathname || '';
         var origin = window.location.origin || '';
         base = origin + path;
       }
+      return base;
+    }
+
+    function buildWebAppUrl(pageName){
+      var base = getWebAppBaseUrl();
 
       var params = new URLSearchParams();
       params.set('page', pageName);
@@ -847,7 +855,7 @@
       return `${base}?${params.toString()}`;
     }
 
-    function navigateToPage(pageName){
+    function openInBrowser(pageName){
       var targetUrl = buildWebAppUrl(pageName);
 
       if (isSidebarContext()){
@@ -868,41 +876,20 @@
               typeof google.script.host.close === 'function');
     }
 
-    function openPageWithFallback(runMethod, pageName, triggerEl){
-      if (triggerEl && triggerEl.dataset.loading === '1') return;
-      if (triggerEl){
-        setHalfLoading(triggerEl, true);
-      }
-
-      var canRun = (isSidebarContext() &&
-                   typeof google !== 'undefined' && google.script && google.script.run &&
-                   runMethod && typeof google.script.run[runMethod] === 'function');
-
-      if (canRun){
-        google.script.run
-          .withSuccessHandler(function(){ if (triggerEl){ setHalfLoading(triggerEl, false); } })
-          .withFailureHandler(function(){ if (triggerEl){ setHalfLoading(triggerEl, false); } navigateToPage(pageName); })
-          [runMethod]();
-      } else {
-        navigateToPage(pageName);
-      }
-    }
-
     btnNuevoPedido.addEventListener('click', function(){
-      openPageWithFallback('abrirNuevoPedido', 'nuevoPedido', btnNuevoPedido);
+      if (btnNuevoPedido.dataset.loading === '1') return;
+      setHalfLoading(btnNuevoPedido, true);
+      openInBrowser('nuevoPedido');
     });
 
     btnVentaDirecta.addEventListener('click', function(){
-      openPageWithFallback('abrirVentaDirecta', 'ventaDirecta', btnVentaDirecta);
+      if (btnVentaDirecta.dataset.loading === '1') return;
+      setHalfLoading(btnVentaDirecta, true);
+      openInBrowser('ventaDirecta');
     });
 
     btnPedidosDelDia.addEventListener('click', function(){
-      var hasRun = (isSidebarContext() && typeof google !== 'undefined' && google.script && google.script.run && typeof google.script.run.abrirPedidosDelDia === 'function');
-      if (hasRun){
-        google.script.run.abrirPedidosDelDia();
-      } else {
-        navigateToPage('pedidosDelDia');
-      }
+      openInBrowser('pedidosDelDia');
     });
 
     if (document.readyState === 'loading'){
