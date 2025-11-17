@@ -176,18 +176,7 @@
     }
 
     function openInBrowser(pageName){
-      var targetUrl = buildWebAppUrl(pageName);
-
-      if (isSidebarContext()){
-        window.open(targetUrl, '_blank');
-        if (google && google.script && google.script.host && typeof google.script.host.close === 'function'){
-          google.script.host.close();
-        }
-        return;
-      }
-
-      var navTarget = window.top && window.top.location ? window.top.location : window.location;
-      navTarget.href = targetUrl;
+      go(pageName);
     }
 
     function applyScaleFix(){
@@ -220,7 +209,7 @@
       var btnOk = document.getElementById('btnOk');
       if (btnOk){
         btnOk.addEventListener('click', function(){
-          openInBrowser('inicio');
+          go('inicio');
         });
       }
     }
