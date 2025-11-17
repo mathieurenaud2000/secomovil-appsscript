@@ -833,11 +833,8 @@
       setTimeout(captureNormalHeight, 0);
     }
 
-    var WEBAPP_BASE_URL = window.location.origin + window.location.pathname;
-
     function navigateToPage(pageName){
-      var params = new URLSearchParams({ page: pageName });
-      window.top.location.href = `${WEBAPP_BASE_URL}?${params.toString()}`;
+      window.top.location.href = `${pageName}.html`;
     }
 
     btnNuevoPedido.addEventListener('click', function(){
