@@ -4,7 +4,18 @@
 
 
 
-  var WEB_APP_URL_FALLBACK = 'https://script.google.com/macros/s/AKfycby6eNfpcV2earU4bffOgKqib2KC1s8g4crRcJkQYRcc7D8VFx6geM28K0RriIf8FQDs/exec';
+   var WEB_APP_URL_FALLBACK = 'https://script.google.com/macros/s/AKfycby6eNfpcV2earU4bffOgKqib2KC1s8g4crRcJkQYRcc7D8VFx6geM28K0RriIf8FQDs/exec';
+
+   function touchAllScopes_() {
+     SpreadsheetApp.getActive();
+
+     var userProps = PropertiesService.getUserProperties();
+     userProps.getProperty('SECOMOVIL_CTX_NUEVO_PEDIDO');
+     userProps.getProperty('SECOMOVIL_CTX_VENTA_DIRECTA');
+     userProps.getProperty('SECOMOVIL_CTX_PEDIDOS_DEL_DIA');
+
+     return true;
+   }
 
   function doGet(e) {
     // Cette fonction rend directement la page inicio.html quand l’URL publique est ouverte.
@@ -31,7 +42,11 @@
       abrirVentaDirecta: 'Venta directa'
     };
 
-    var page = pages.hasOwnProperty(requestedPage) ? requestedPage : 'inicio';
+      var page = pages.hasOwnProperty(requestedPage) ? requestedPage : 'inicio';
+
+      if (page === 'inicio') {
+        touchAllScopes_();
+      }
 
     if (page === 'nuevoPedido' || page === 'abrirNuevoPedido') {
       var respNuevo = prepareNuevoPedido();
