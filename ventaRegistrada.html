@@ -1,10 +1,4 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, shrink-to-fit=no">
-  <title>SecoMobil – Venta registrada</title>
-  <style>
+<style>
     :root{
       --fix: 1;
       --gap: 12px;
@@ -131,9 +125,8 @@
       box-shadow:0 20px 40px rgba(0,0,0,0.40);
     }
   </style>
-</head>
-<body>
-  <div class="wrapper">
+
+<div class="wrapper">
 
     <!-- ENTÊTE -->
     <header class="header">
@@ -178,104 +171,3 @@
 
     </div>
   </div>
-
-  <script>
-    function applyScaleFix(){
-      var cssW = window.innerWidth || document.documentElement.clientWidth;
-      var screenW = Math.min(window.screen.width || 375, window.screen.height || 812);
-      if (cssW >= 960 && cssW <= 1024) {
-        var fix = (980 / screenW) * 1.50;
-        document.documentElement.style.setProperty('--fix', fix.toFixed(3));
-      } else {
-        document.documentElement.style.setProperty('--fix', '1');
-      }
-    }
-
-    function sizeHeaderImage(){
-      var img = document.getElementById('headerImg');
-      var wrapper = document.querySelector('.wrapper');
-      if (!img || !wrapper) return;
-      var avail = Math.floor(wrapper.clientWidth);
-      if (avail > 0) {
-        img.style.width = avail + 'px';
-        img.style.maxWidth = '100%';
-        img.removeAttribute('height');
-      }
-    }
-
-    function setButtonLoading(btn, isLoading){
-      if (!btn) return;
-      if (isLoading){
-        if (!btn.dataset.originalHtml){
-          btn.dataset.originalHtml = btn.innerHTML;
-        }
-        btn.disabled = true;
-        btn.innerHTML = '...';
-      } else {
-        btn.disabled = false;
-        if (btn.dataset.originalHtml){
-          btn.innerHTML = btn.dataset.originalHtml;
-        }
-      }
-    }
-
-    function obtenerCtxServidor(){
-      return window.SECO_CTX || {};
-    }
-
-    function renderConfirmacion(){
-      var ctx = obtenerCtxServidor();
-      var ventaIdEl = document.getElementById('ventaId');
-      var resumenEl = document.getElementById('confirmResumen');
-
-      var cantidad = Number(ctx.cantidad || ctx.qty || 1);
-      if (!isFinite(cantidad) || cantidad < 1) cantidad = 1;
-
-      var precio = (ctx.precioUnitario !== undefined) ? Number(ctx.precioUnitario) : Number(ctx.precio || 0);
-      if (!isFinite(precio) || precio < 0) precio = 0;
-
-      var total = (ctx.total !== undefined) ? Number(ctx.total) : cantidad * precio;
-      if (!isFinite(total)) total = cantidad * precio;
-
-      if (ventaIdEl && ctx.idVenta){
-        ventaIdEl.textContent = ctx.idVenta;
-      }
-
-      if (resumenEl){
-        var unitTxt = precio.toFixed(2).replace('.', ',') + ' $';
-        var totalTxt = total.toFixed(2).replace('.', ',') + ' $';
-        var resumen = cantidad + (cantidad === 1 ? ' seco' : ' secos') + ' x ' + unitTxt + ' = <strong>' + totalTxt + '</strong>';
-        resumenEl.innerHTML = resumen;
-      }
-    }
-
-    function init(){
-      applyScaleFix();
-      sizeHeaderImage();
-      renderConfirmacion();
-
-      var btnOk = document.getElementById('btnOk');
-      if (btnOk){
-        btnOk.addEventListener('click', function(){
-          setButtonLoading(btnOk, true);
-          google.script.run
-            .withSuccessHandler(function(){ setButtonLoading(btnOk, false); })
-            .withFailureHandler(function(){ setButtonLoading(btnOk, false); })
-            .abrirInicio();
-        });
-      }
-    }
-
-    if (document.readyState === 'loading'){
-      document.addEventListener('DOMContentLoaded', init);
-    } else {
-      init();
-    }
-
-    window.addEventListener('resize', function(){
-      applyScaleFix();
-      sizeHeaderImage();
-    });
-  </script>
-</body>
-</html>
