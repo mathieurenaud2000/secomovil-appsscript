@@ -1,9 +1,3 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, shrink-to-fit=no">
-  <title>SecoMobil – Pedido actualizado</title>
   <style>
     :root{
       --fix: 1;
@@ -224,45 +218,3 @@
     </div>
   </div>
 
-  <script>
-    function applyScaleFix(){
-      var cssW = window.innerWidth || document.documentElement.clientWidth;
-      var screenW = Math.min(window.screen.width || 375, window.screen.height || 812);
-      if (cssW >= 960 && cssW <= 1024) {
-        var fix = (980 / screenW) * 1.50;
-        document.documentElement.style.setProperty('--fix', fix.toFixed(3));
-      } else {
-        document.documentElement.style.setProperty('--fix', '1');
-      }
-    }
-
-    function sizeHeaderImage(){
-      var img = document.getElementById('headerImg');
-      var wrapper = document.querySelector('.wrapper');
-      if (!img || !wrapper) return;
-      var avail = Math.floor(wrapper.clientWidth);
-      if (avail > 0) {
-        img.style.width = avail + 'px';
-        img.style.maxWidth = '100%';
-        img.removeAttribute('height');
-      }
-    }
-
-    function init(){
-      applyScaleFix();
-      sizeHeaderImage();
-    }
-
-    if (document.readyState === 'loading'){
-      document.addEventListener('DOMContentLoaded', init);
-    } else {
-      init();
-    }
-
-    window.addEventListener('resize', function(){
-      applyScaleFix();
-      sizeHeaderImage();
-    });
-  </script>
-</body>
-</html>
