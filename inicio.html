@@ -833,14 +833,11 @@
       setTimeout(captureNormalHeight, 0);
     }
 
-    var WEBAPP_URL = new URL(window.location.href);
-
+    // NAVIGATION SIMPLIFIÉE : on réutilise l'URL courante et on ne change que ?page=
     function navigateToPage(pageName){
-      // Conservamos tous les paramètres nécessaires générés par Apps Script
-      // (user_content_key, lib, etc.) et remplaçons uniquement "page".
-      var nextUrl = new URL(WEBAPP_URL.toString());
-      nextUrl.searchParams.set('page', pageName);
-      window.location.href = nextUrl.toString();
+      var url = new URL(window.location.href);
+      url.searchParams.set('page', pageName);
+      window.location.href = url.toString();
     }
 
     btnNuevoPedido.addEventListener('click', function(){
