@@ -221,8 +221,11 @@
           btn.addEventListener('click', function(){
             if (topActionEnCours) return;
             topActionEnCours = true;
-            btn.classList.add('is-loading');
-            loadPage(pageName);
+            setHalfLoading(btn, true);
+            loadPage(pageName, function(){
+              setHalfLoading(btn, false);
+              topActionEnCours = false;
+            });
           });
         }
     
