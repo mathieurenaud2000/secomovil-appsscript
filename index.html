@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, shrink-to-fit=no">
+  <title>SecoMovil</title>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    const pageInit = {
+  inicio: function(){
+    (function(){
+        const card = document.getElementById('card1');
+        const btnDel = document.getElementById('btnDel');
+        const btnConfirm = document.getElementById('btnConfirm');
+        const btnDelay = document.getElementById('btnDelay');
+        const heureText = document.getElementById('heureText');
+        const sectorText = document.getElementById('sectorText');
+        const clienteText = document.getElementById('clienteText');
+        const direccionText = document.getElementById('direccionText');
+        const notaText = document.getElementById('notaText');
+        const extraText = document.getElementById('extraText');
+        const timeConfirmTitle = document.getElementById('timeConfirmTitle');
+        const btnNuevoPedido = document.getElementById('btnNuevoPedido');
+        const btnVentaDirecta = document.getElementById('btnVentaDirecta');
+        const btnPedidosDelDia = document.getElementById('btnPedidosDelDia');
+        const cardLoading = document.getElementById('cardLoading');
+    
+        const overlay = document.getElementById('ddOverlay');
+        const overlayList = document.getElementById('ddOverlayList');
+    
+        const ICONS = {
+          trash:   "https://lh3.googleusercontent.com/d/1NEwXtWZqpIJlto9dPs49xKhq3oOqwpXH",
+          xgray:   "https://lh3.googleusercontent.com/d/15wgAEpPLmV12eD0dFTr4dD9yZugrNiCs",
+          checkBlk:"https://lh3.googleusercontent.com/d/1CiREwW0rHzmdha8SqKtDEqr9iPNW21eG",
+          checkW:  "https://lh3.googleusercontent.com/d/1kIWQWxgpGWgRbdiBcm_X1BpwFZkUwX5l"
+        };
+    
+        let normalHeight = null;
+        let currentHour = null;
+        let pendingHour = null;
+        let pedidoActual = null;
+    
+        function captureNormalHeight(){
+          const wasConfirm       = card.classList.contains('is-confirm');
+          const wasDeleted       = card.classList.contains('is-deleted');
+          const wasTimeConfirm   = card.classList.contains('is-timeconfirm');
+          const wasDeliveryConf  = card.classList.contains('is-deliveryconfirm');
+          const wasDelivered     = card.classList.contains('is-delivered');
+    
+          card.classList.remove('is-confirm','is-deleted','is-timeconfirm','is-deliveryconfirm','is-delivered');
+          card.style.height = '';
+          normalHeight = card.offsetHeight;
+          card.style.height = normalHeight + 'px';
+    
+          if (wasDeleted) card.classList.add('is-deleted');
+          else if (wasDelivered) card.classList.add('is-delivered');
+          else if (wasDeliveryConf) card.classList.add('is-deliveryconfirm');
+          else if (wasTimeConfirm) card.classList.add('is-timeconfirm');
+          else if (wasConfirm) card.classList.add('is-confirm');
+        }
+    
+        function lockToNormalHeight(){
+          if (!normalHeight) captureNormalHeight();
+          card.style.height = normalHeight + 'px';
+        }
+    
+        function setNormal(){
+          card.classList.remove('is-confirm','is-deleted','is-timeconfirm','is-deliveryconfirm','is-delivered');
+          btnDel.querySelector('img').src = ICONS.trash;
+          btnConfirm.querySelector('img').src = ICONS.checkW;
+          card.style.height = '';
+          captureNormalHeight();
+        }
+    
+        function setConfirm(){
+          lockToNormalHeight();
+          card.classList.add('is-confirm');
+          card.classList.remove('is-deleted','is-timeconfirm','is-deliveryconfirm','is-delivered');
+          btnDel.querySelector('img').src = ICONS.xgray;
+          btnConfirm.querySelector('img').src = ICONS.checkBlk;
+        }
+    
+        function setDeleted(){
+          lockToNormalHeight();
+          card.classList.add('is-deleted');
+          card.classList.remove('is-confirm','is-timeconfirm','is-deliveryconfirm','is-delivered');
+        }
+    
+        function setTimeConfirm(){
+          if (!pendingHour) return;
+          lockToNormalHeight();
+          timeConfirmTitle.textContent = pendingHour;
+          card.classList.add('is-timeconfirm');
+          card.classList.remove('is-confirm','is-deleted','is-deliveryconfirm','is-delivered');
+          btnDel.querySelector('img').src = ICONS.xgray;
+          btnConfirm.querySelector('img').src = ICONS.checkBlk;
+        }
+    
+        function setDeliveryConfirm(){
+          lockToNormalHeight();
+          card.classList.add('is-deliveryconfirm');
+          card.classList.remove('is-confirm','is-deleted','is-timeconfirm','is-delivered');
+          btnDel.querySelector('img').src = ICONS.xgray;
+          btnConfirm.querySelector('img').src = ICONS.checkBlk;
+        }
+    
+        function setDelivered(){
+          lockToNormalHeight();
+          card.classList.add('is-delivered');
+          card.classList.remove('is-confirm','is-deleted','is-timeconfirm','is-deliveryconfirm');
+        }
+    
+        function setButtonLoading(btn, isLoading){
+          if (!btn) return;
+          var loadingColor = 'rgba(255,255,255,0.5)';
+          if (isLoading){
+            if (!btn.dataset.originalColor){
+              var computed = window.getComputedStyle ? getComputedStyle(btn).color : btn.style.color;
+              btn.dataset.originalColor = computed || '';
+            }
+            btn.disabled = true;
+            btn.style.color = loadingColor;
+          } else {
+            btn.disabled = false;
+            btn.style.color = btn.dataset.originalColor || '';
+          }
+        }
+    
+        function setHalfLoading(el, isLoading){
+          if (!el) return;
+          var spinner = el.querySelector('.half-spinner');
+          if (!spinner){
+            spinner = document.createElement('div');
+            spinner.className = 'half-spinner';
+            var sp = document.createElement('div');
+            sp.className = 'spinner spinner--invert';
+            spinner.appendChild(sp);
+            el.appendChild(spinner);
+          }
+    
+          if (isLoading){
+            el.dataset.loading = '1';
+            el.classList.add('is-loading');
+            el.style.pointerEvents = 'none';
+          } else {
+            el.dataset.loading = '0';
+            el.classList.remove('is-loading');
+            el.style.pointerEvents = '';
+          }
+        }
+    
+        function setCardLoading(isLoading){
+          if (!card || !cardLoading) return;
+          if (isLoading){
+            card.classList.add('is-loading');
+          } else {
+            card.classList.remove('is-loading');
+          }
+        }
+    
+        function formatHour(hora){
+          if (!hora) return '--:--';
+    
+          if (hora instanceof Date){
+            return `${hora.getHours()}:${hora.getMinutes().toString().padStart(2, '0')}`;
+          }
+    
+          const raw = String(hora).trim();
+          const direct = raw.match(/(\d{1,2}):(\d{2})/);
+          if (direct){
+            return `${Number(direct[1])}:${direct[2]}`;
+          }
+    
+          const parsed = new Date(raw);
+          if (!isNaN(parsed.getTime())){
+            return `${parsed.getHours()}:${parsed.getMinutes().toString().padStart(2, '0')}`;
+          }
+    
+          return raw;
+        }
+    
+        function formatMoney(value){
+          if (typeof value !== 'number' || !isFinite(value)) return null;
+          return value.toFixed(2).replace('.', ',');
+        }
+    
+        function renderPedido(pedido){
+          card.style.display = '';
+    
+          if (!pedido){
+            pedidoActual = null;
+            heureText.textContent = '--:--';
+            sectorText.textContent = '—';
+            clienteText.textContent = '—';
+            direccionText.textContent = '—';
+            notaText.textContent = '';
+            extraText.textContent = '';
+            currentHour = '--:--';
+            setNormal();
+            captureNormalHeight();
+            return;
+          }
+    
+          const sector = pedido.cliente && pedido.cliente.sector ? pedido.cliente.sector : '—';
+          const nombre = pedido.cliente && pedido.cliente.nombre ? pedido.cliente.nombre.toUpperCase() : '—';
+          const direccion = pedido.cliente && pedido.cliente.direccion ? pedido.cliente.direccion : '—';
+          const notas = pedido.notas ? `Nota : ${pedido.notas}` : '';
+    
+          const cantidadValida = typeof pedido.cantidad === 'number' && isFinite(pedido.cantidad) && pedido.cantidad > 0;
+          const totalValido = typeof pedido.total === 'number' && isFinite(pedido.total);
+          let resumenExtra = '';
+          if (cantidadValida && totalValido){
+            const unitPrice = pedido.total / pedido.cantidad;
+            const cantidadTxt = `${pedido.cantidad} seco${pedido.cantidad === 1 ? '' : 's'}`;
+            const unitTxt = formatMoney(unitPrice);
+            const totalTxt = formatMoney(pedido.total);
+            if (unitTxt && totalTxt){
+              resumenExtra = `${cantidadTxt} x ${unitTxt} $ = ${totalTxt} $`;
+            }
+          }
+    
+          pedidoActual = pedido;
+          const horaFormateada = formatHour(pedido.horaEntrega);
+          heureText.textContent = horaFormateada;
+          sectorText.textContent = sector || '—';
+          clienteText.textContent = nombre || '—';
+          direccionText.textContent = direccion || '—';
+          notaText.textContent = notas;
+          extraText.textContent = resumenExtra;
+          currentHour = horaFormateada;
+          setNormal();
+          captureNormalHeight();
+        }
+    
+        function cargarProximoPedido(){
+          card.classList.remove('is-deleted','is-delivered');
+          setCardLoading(true);
+          google.script.run
+            .withSuccessHandler(function(resp){
+              if (resp && resp.ok && resp.data){
+                renderPedido(resp.data.pedido);
+              } else {
+                renderPedido(null);
+              }
+              setCardLoading(false);
+            })
+            .withFailureHandler(function(){ renderPedido(null); setCardLoading(false); })
+            .getProximaEntrega();
+        }
+    
+        function actualizarEstado(estado){
+          if (!pedidoActual || !pedidoActual.idPedido) return;
+          setCardLoading(true);
+          setButtonLoading(btnConfirm, true);
+          google.script.run
+            .withSuccessHandler(function(){
+              setButtonLoading(btnConfirm, false);
+              setNormal();
+              cargarProximoPedido();
+            })
+            .withFailureHandler(function(){ setButtonLoading(btnConfirm, false); setCardLoading(false); })
+            .actualizarEstadoPedido({ idPedido: pedidoActual.idPedido, estado: estado });
+        }
+    
+        function actualizarHora(nuevaHora){
+          if (!pedidoActual || !pedidoActual.idPedido || !nuevaHora) return;
+          setCardLoading(true);
+          setButtonLoading(btnConfirm, true);
+          google.script.run
+            .withSuccessHandler(function(resp){
+              setButtonLoading(btnConfirm, false);
+              if (resp && resp.ok && resp.data && resp.data.pedido){
+                renderPedido(resp.data.pedido);
+              }
+              setNormal();
+              setCardLoading(false);
+            })
+            .withFailureHandler(function(){ setButtonLoading(btnConfirm, false); setNormal(); setCardLoading(false); })
+            .cambiarHoraPedido({ idPedido: pedidoActual.idPedido, nuevaHora: nuevaHora });
+        }
+    
+        btnDel.addEventListener('click', function(e){
+          e.stopPropagation();
+          if (!pedidoActual) return;
+          if (card.classList.contains('is-confirm') || card.classList.contains('is-timeconfirm') || card.classList.contains('is-deliveryconfirm')){
+            setNormal();
+          } else {
+            setConfirm();
+          }
+        });
+    
+        btnConfirm.addEventListener('click', function(e){
+          e.stopPropagation();
+          if (!pedidoActual) return;
+          if (card.classList.contains('is-confirm')){
+            actualizarEstado('Cancelado');
+          } else if (card.classList.contains('is-timeconfirm')){
+            if (pendingHour){
+              actualizarHora(pendingHour);
+              pendingHour = null;
+            }
+          } else if (card.classList.contains('is-deliveryconfirm')){
+            actualizarEstado('Entregado');
+          } else {
+            setDeliveryConfirm();
+          }
+        });
+    
+        card.addEventListener('click', function(){
+          if (card.classList.contains('is-deleted') || card.classList.contains('is-delivered')){
+            setNormal();
+          }
+        });
+    
+        function pad(n){ return n<10 ? '0'+n : ''+n; }
+        function buildTimes(){
+          const out=[];
+          for(let h=6; h<=18; h++){
+            for(let m=0; m<60; m+=5){
+              if(h===18 && m>55) break;
+              out.push(h+":"+pad(m));
+            }
+          }
+          return out;
+        }
+    
+        function openHoursOverlay(){
+          if (!pedidoActual) return;
+          overlayList.innerHTML = '';
+    
+          function markSelectedOption(optionEl){
+            overlayList.querySelectorAll('.dd-grid-option.is-selected').forEach(function(node){
+              node.classList.remove('is-selected');
+            });
+            if (optionEl){
+              optionEl.classList.add('is-selected');
+            }
+          }
+    
+          const ph = document.createElement('li');
+          ph.className = 'dd-grid-option placeholder';
+          ph.textContent = 'Heure';
+          ph.addEventListener('click', () => closeOverlay());
+          overlayList.appendChild(ph);
+    
+          const times = buildTimes();
+          let col = 1;
+          let rowCount = 0;
+    
+          times.forEach((txt, idx) => {
+            const li = document.createElement('li');
+            li.className = 'dd-grid-option';
+            li.dataset.col = String(col);
+            li.textContent = txt;
+            li.addEventListener('click', () => {
+              pendingHour = txt;
+              markSelectedOption(li);
+              requestAnimationFrame(() => {
+                setTimeout(() => {
+                  closeOverlay();
+                  setTimeConfirm();
+                }, 80);
+              });
+            });
+            overlayList.appendChild(li);
+    
+            col = (col % 3) + 1;
+            if ((idx+1) % 3 === 0){
+              rowCount++;
+              if (rowCount === 4 && idx < times.length - 1){
+                const sep = document.createElement('li');
+                sep.className = 'dd-grid-sep-black';
+                overlayList.appendChild(sep);
+                rowCount = 0;
+              }
+            }
+          });
+    
+          overlay.setAttribute('data-open','true');
+          document.body.style.overflow = 'hidden';
+        }
+    
+        function closeOverlay(){
+          overlay.removeAttribute('data-open');
+          document.body.style.overflow = '';
+        }
+    
+        btnDelay.addEventListener('click', function(e){
+          e.stopPropagation();
+          if (!pedidoActual) return;
+          openHoursOverlay();
+        });
+    
+        overlay.addEventListener('click', function(e){
+          if (e.target === overlay) closeOverlay();
+        });
+    
+        document.addEventListener('keydown', function(e){
+          if (e.key === 'Escape' && overlay.getAttribute('data-open')){
+            closeOverlay();
+          }
+        });
+    
+        function applyScaleFix(){
+          let cssW = window.innerWidth;
+          let screenW = Math.min(window.screen.width, window.screen.height);
+          if (cssW >= 960 && cssW <= 1024){
+            let fix = (980 / screenW) * 1.50;
+            document.documentElement.style.setProperty('--fix', fix.toFixed(3));
+          } else {
+            document.documentElement.style.setProperty('--fix', '1');
+          }
+          setTimeout(captureNormalHeight, 0);
+        }
+    
+        // NAVIGATION SIMPLIFIÉE : on réutilise l'URL courante et on ne change que ?page=
+        function navigateToPage(pageName){
+          loadPage(pageName);
+        }
+    
+        btnNuevoPedido.addEventListener('click', function(){
+          navigateToPage('nuevoPedido');
+        });
+    
+        btnVentaDirecta.addEventListener('click', function(){
+          navigateToPage('ventaDirecta');
+        });
+    
+        btnPedidosDelDia.addEventListener('click', function(){
+          navigateToPage('pedidosDelDia');
+        });
+    
+        if (document.readyState === 'loading'){
+          document.addEventListener('DOMContentLoaded', ()=>{
+            currentHour = heureText.textContent.trim();
+            applyScaleFix();
+            captureNormalHeight();
+            setCardLoading(true);
+            cargarProximoPedido();
+          });
+        } else {
+          currentHour = heureText.textContent.trim();
+          applyScaleFix();
+          captureNormalHeight();
+          setCardLoading(true);
+          cargarProximoPedido();
+        }
+    
+        window.addEventListener('resize', ()=>{
+          applyScaleFix();
+          if (!card.classList.contains('is-confirm') &&
+              !card.classList.contains('is-deleted') &&
+              !card.classList.contains('is-timeconfirm') &&
+              !card.classList.contains('is-deliveryconfirm') &&
+              !card.classList.contains('is-delivered')){
+            captureNormalHeight();
+          } else {
+            lockToNormalHeight();
+          }
+        });
+    
+      })();
+  },
+
+  nuevoPedido: function(){
+    function applyScaleFix(){
+          var cssW = window.innerWidth || document.documentElement.clientWidth;
+          var screenW = Math.min(window.screen.width || 375, window.screen.height || 812);
+          if (cssW >= 960 && cssW <= 1024) {
+            var fix = (980 / screenW) * 1.50;
+            document.documentElement.style.setProperty('--fix', fix.toFixed(3));
+          } else {
+            document.documentElement.style.setProperty('--fix', '1');
+          }
+        }
+    
+        function sizeHeaderImage(){
+          var img = document.getElementById('headerImg');
+          var wrap = document.querySelector('.wrapper');
+          if (!img || !wrap) return;
+          var w = Math.floor(wrap.clientWidth);
+          if (w > 0){
+            img.style.width = w + 'px';
+            img.style.maxWidth = '100%';
+            img.removeAttribute('height');
+          }
+        }
+    
+        var overlay     = document.getElementById('ddOverlay');
+        var overlayList = document.getElementById('ddOverlayList');
+        var contactBtn  = document.getElementById('contactBtn');
+        var btnOK       = document.getElementById('btnOK');
+        var btnVolver   = document.getElementById('btnVolverInicio');
+        var pedidoIdEl  = document.getElementById('pedidoIdHeader');
+    
+        var contactosOpciones = [];
+        var contactoSeleccionado = null;
+        var ctxCache = null;
+    
+        function setButtonLoading(btn, isLoading){
+          if (!btn) return;
+          if (isLoading){
+            if (!btn.dataset.originalColor){
+              var computed = window.getComputedStyle ? getComputedStyle(btn).color : btn.style.color;
+              btn.dataset.originalColor = computed || '';
+            }
+            btn.disabled = true;
+            btn.style.color = 'rgba(255,255,255,0.5)';
+          } else {
+            btn.disabled = false;
+            btn.style.color = btn.dataset.originalColor || '';
+          }
+        }
+    
+        function obtenerCtxServidor(){
+          if (ctxCache) return ctxCache;
+          if (typeof window !== 'undefined' && window.SECO_CTX) {
+            ctxCache = window.SECO_CTX;
+            return ctxCache;
+          }
+          return null;
+        }
+    
+        function cuandoCtxListo(callback, intento){
+          var ctx = obtenerCtxServidor();
+          if (ctx) {
+            callback(ctx);
+            return;
+          }
+          var intentoActual = intento || 0;
+          if (intentoActual >= 50) return; // ~4s
+          setTimeout(function(){
+            cuandoCtxListo(callback, intentoActual + 1);
+          }, 80);
+        }
+    
+        function construirOpcionesContactos(){
+          var ctx = obtenerCtxServidor();
+          if (!ctx) return;
+          var clientes = Array.isArray(ctx.clientes) ? ctx.clientes : [];
+          var opciones = [{ label: 'Nuevo contacto', isNuevo: true }];
+    
+          clientes.forEach(function(cli){
+            opciones.push({
+              label: cli && cli.nombre ? cli.nombre : 'Contacto',
+              idCliente: (cli && cli.idCliente) ? cli.idCliente : '',
+              cliente: cli || null
+            });
+          });
+    
+          contactosOpciones = opciones;
+        }
+    
+        function renderPedidoId(){
+          var ctx = obtenerCtxServidor();
+          var id = (ctx && ctx.idPedido) ? ctx.idPedido : '';
+          if (pedidoIdEl && id){
+            pedidoIdEl.textContent = id;
+          }
+        }
+    
+        function actualizarEstadoBtnOK(){
+          var habilitado = !!contactoSeleccionado;
+          btnOK.disabled = !habilitado;
+          btnOK.classList.toggle('btn-noir', habilitado);
+          btnOK.classList.toggle('btn-desactive', !habilitado);
+        }
+    
+        contactBtn.addEventListener('click', function(){
+          cuandoCtxListo(function(){
+            construirOpcionesContactos();
+            overlayList.innerHTML = "";
+    
+            contactosOpciones.forEach(function(opt){
+              var li = document.createElement('li');
+              li.className = "dd-overlay-option";
+              li.textContent = opt.label;
+              li.dataset.isNuevo = opt.isNuevo ? '1' : '0';
+              li.addEventListener('click', function(){
+                contactoSeleccionado = opt;
+                contactBtn.querySelector('.dd-label').textContent = opt.label;
+                contactBtn.removeAttribute('data-placeholder');
+                overlay.setAttribute('data-open','false');
+                document.body.style.overflow = '';
+                actualizarEstadoBtnOK();
+              });
+              overlayList.appendChild(li);
+            });
+    
+            overlay.setAttribute('data-open','true');
+            document.body.style.overflow = 'hidden';
+          });
+        });
+    
+        overlay.addEventListener('click', function(e){
+          if (e.target === overlay){
+            overlay.setAttribute('data-open','false');
+            document.body.style.overflow = '';
+          }
+        });
+    
+        // ===== BRANCHEMENT OK → NUEVO CONTACTO ou REGISTRAR PEDIDO =====
+        btnOK.addEventListener('click', function(){
+          if (btnOK.disabled) return;
+          setButtonLoading(btnOK, true);
+    
+          var ctx = obtenerCtxServidor();
+          var pedidoId = (ctx && ctx.idPedido) ? ctx.idPedido : '';
+    
+          var payload = {
+            pedidoId: pedidoId || '',
+            clienteNombre: '',
+            idCliente: '',
+            origen: 'nuevoPedido'
+          };
+    
+          if (contactoSeleccionado && contactoSeleccionado.isNuevo){
+            // Ouvrir la page NUEVO CONTACTO
+            setButtonLoading(btnOK, false);
+            loadPage('nuevoContacto');
+          } else {
+            var cli = contactoSeleccionado && contactoSeleccionado.cliente ? contactoSeleccionado.cliente : null;
+            payload.clienteNombre = contactoSeleccionado ? contactoSeleccionado.label : '';
+            payload.idCliente = (contactoSeleccionado && contactoSeleccionado.idCliente) ? contactoSeleccionado.idCliente : '';
+            payload.cliente = cli;
+            // Ouvrir directement la page REGISTRAR PEDIDO pour ce client
+            setButtonLoading(btnOK, false);
+            loadPage('registrarPedido');
+          }
+        });
+    
+        if (btnVolver){
+          btnVolver.addEventListener('click', function(){
+            loadPage('inicio');
+          });
+        }
+    
+        function init(){
+          applyScaleFix();
+          sizeHeaderImage();
+    
+          cuandoCtxListo(function(){
+            renderPedidoId();
+            construirOpcionesContactos();
+            actualizarEstadoBtnOK();
+          });
+        }
+        if (document.readyState === 'loading'){
+          document.addEventListener('DOMContentLoaded', init);
+        } else {
+          init();
+        }
+    
+        window.addEventListener('resize', function(){
+          applyScaleFix();
+          sizeHeaderImage();
+        });
+  },
+
+  nuevoContacto: function(){
+    function applyScaleFix(){
+          var cssW = window.innerWidth || document.documentElement.clientWidth;
+          var screenW = Math.min(window.screen.width || 375, window.screen.height || 812);
+          if (cssW >= 960 && cssW <= 1024) {
+            var fix = (980 / screenW) * 1.50;
+            document.documentElement.style.setProperty('--fix', fix.toFixed(3));
+          } else {
+            document.documentElement.style.setProperty('--fix', '1');
+          }
+        }
+    
+        function sizeHeaderImage(){
+          var img = document.getElementById('headerImg');
+          var wrap = document.querySelector('.wrapper');
+          if (!img || !wrap) return;
+          var w = Math.floor(wrap.clientWidth);
+          if (w > 0){
+            img.style.width = w + 'px';
+            img.style.maxWidth = '100%';
+            img.removeAttribute('height');
+          }
+        }
+    
+        /* Références des champs pour la validation */
+        var overlay      = document.getElementById('ddOverlay');
+        var overlayList  = document.getElementById('ddOverlayList');
+        var sectorBtn    = document.getElementById('sectorBtn');
+        var btnGuardar   = document.getElementById('btnGuardar');
+        var btnVolverIni = document.getElementById('btnVolverInicio');
+    
+        var nombreEl   = document.getElementById('nombre');
+        var dirEl      = document.getElementById('direccion');
+        var notaEl     = document.getElementById('nota');
+        var whatsappEl = document.getElementById('whatsapp');
+    
+        var ctxCache = null;
+        var sectoresOpciones = [];
+    
+        function setButtonLoading(btn, isLoading){
+          if (!btn) return;
+          if (isLoading){
+            if (!btn.dataset.originalColor){
+              var computed = window.getComputedStyle ? getComputedStyle(btn).color : btn.style.color;
+              btn.dataset.originalColor = computed || '';
+            }
+            btn.disabled = true;
+            btn.style.color = 'rgba(255,255,255,0.5)';
+          } else {
+            btn.disabled = false;
+            btn.style.color = btn.dataset.originalColor || '';
+          }
+        }
+    
+        function obtenerCtxServidor(){
+          if (ctxCache) return ctxCache;
+          if (typeof window !== 'undefined' && window.SECO_CTX) {
+            ctxCache = window.SECO_CTX;
+            return ctxCache;
+          }
+          return null;
+        }
+    
+        function cuandoCtxListo(callback, intento){
+          var ctx = obtenerCtxServidor();
+          if (ctx) {
+            callback(ctx);
+            return;
+          }
+          var intentoActual = (intento || 0);
+          if (intentoActual >= 50) return; // ~4s max si 80ms
+          setTimeout(function(){
+            cuandoCtxListo(callback, intentoActual + 1);
+          }, 80);
+        }
+    
+        function setContactoIdDesdeCtx(ctx){
+          var idEl = document.getElementById('contactoId');
+          if (!idEl || !ctx) return;
+          var idContacto = (ctx && ctx.idContacto) ? ctx.idContacto : '';
+          if (idContacto){
+            idEl.textContent = idContacto;
+          }
+        }
+    
+        function esWhatsappValido(valor){
+          var limpio = (valor || '').toString().trim();
+          return /^\d{7,15}$/.test(limpio);
+        }
+    
+        function validarWhatsappCampo(){
+          var errorEl = document.getElementById('whatsappError');
+          if (!errorEl) return esWhatsappValido(whatsappEl.value);
+    
+          var valor = (whatsappEl.value || '').toString().trim();
+          if (!valor){
+            errorEl.textContent = '';
+            return false;
+          }
+    
+          var valido = esWhatsappValido(valor);
+          errorEl.textContent = valido ? '' : 'Número de WhatsApp inválido';
+          return valido;
+        }
+    
+        function champsRemplis(){
+          var nomOK    = nombreEl.value.trim()   !== '';
+          var dirOK    = dirEl.value.trim()      !== '';
+          var waOK     = esWhatsappValido(whatsappEl.value);
+          var sectorOK = !sectorBtn.hasAttribute('data-placeholder');
+          // Nota est optionnel → non pris en compte
+          return nomOK && dirOK && waOK && sectorOK;
+        }
+    
+        function majBoutonGuardar(){
+          var waValido = validarWhatsappCampo();
+          if (champsRemplis() && waValido){
+            btnGuardar.disabled = false;
+            btnGuardar.classList.remove('btn-desactive');
+            btnGuardar.classList.add('btn-noir');
+          } else {
+            btnGuardar.disabled = true;
+            btnGuardar.classList.remove('btn-noir');
+            btnGuardar.classList.add('btn-desactive');
+          }
+        }
+    
+        function sincronizarSectoresDesdeCtx(ctx){
+          var sectores = Array.isArray(ctx && ctx.sectores) ? ctx.sectores : [];
+          sectoresOpciones = sectores
+            .map(function(sec){ return (sec && sec.nombre) ? sec.nombre : sec; })
+            .filter(Boolean);
+        }
+    
+        /* Dropdown simple pour "Sector" */
+        function openSectorDropdown(){
+          if (!sectoresOpciones.length) {
+            cuandoCtxListo(function(ctx){
+              sincronizarSectoresDesdeCtx(ctx);
+              openSectorDropdown();
+            });
+            return;
+          }
+    
+          overlayList.innerHTML = "";
+    
+          sectoresOpciones.forEach(function(txt){
+            var li = document.createElement('li');
+            li.className = "dd-overlay-option";
+            li.textContent = txt;
+            li.addEventListener('click', function(){
+              sectorBtn.querySelector('.dd-label').textContent = txt;
+              sectorBtn.removeAttribute('data-placeholder');
+              overlay.setAttribute('data-open','false');
+              document.body.style.overflow = '';
+              majBoutonGuardar();
+            });
+            overlayList.appendChild(li);
+          });
+    
+          overlay.setAttribute('data-open','true');
+          document.body.style.overflow = 'hidden';
+        }
+    
+        sectorBtn.addEventListener('click', openSectorDropdown);
+    
+        overlay.addEventListener('click', function(e){
+          if (e.target === overlay){
+            overlay.setAttribute('data-open','false');
+            document.body.style.overflow = '';
+          }
+        });
+    
+        /* Écouteurs sur les champs pour activer/désactiver GUARDAR */
+        ['input','change'].forEach(function(ev){
+          nombreEl.addEventListener(ev, majBoutonGuardar);
+          dirEl.addEventListener(ev, majBoutonGuardar);
+          // notaEl est optionnel → pas nécessaire dans la logique d'activation
+          whatsappEl.addEventListener(ev, majBoutonGuardar);
+        });
+    
+        /* Clic sur GUARDAR : créer le client puis ouvrir registrarPedido */
+        btnGuardar.addEventListener('click', function(){
+          if (btnGuardar.disabled) return;
+    
+          var whatsappValido = validarWhatsappCampo();
+          if (!whatsappValido){
+            whatsappEl.focus();
+            return;
+          }
+    
+          var sectorText = sectorBtn.querySelector('.dd-label')
+            ? sectorBtn.querySelector('.dd-label').textContent.trim()
+            : '';
+    
+          var ctxActual = obtenerCtxServidor();
+    
+          var datosCliente = {
+            idContacto: (ctxActual && ctxActual.idContacto) ? ctxActual.idContacto : '',
+            pedidoId:   (ctxActual && ctxActual.pedidoId) ? ctxActual.pedidoId : '',
+            nombre:    nombreEl.value.trim(),
+            direccion: dirEl.value.trim(),
+            telefono:  whatsappEl.value.trim(),
+            sector:    sectorText,
+            nota:      notaEl.value.trim()
+          };
+    
+          setButtonLoading(btnGuardar, true);
+    
+          google.script.run
+            .withSuccessHandler(function(resp){
+              setButtonLoading(btnGuardar, false);
+              if (!resp || (!resp.ok && !resp.success) || !resp.data || !resp.data.cliente){
+                var msg = (resp && resp.error) ? resp.error : 'Error al crear el cliente.';
+                alert(msg);
+                return;
+              }
+    
+              var cliente = resp.data.cliente; // { idCliente, nombre, telefono, direccion, sector, nota }
+    
+              var ctxNuevoPedido = obtenerCtxServidor();
+    
+              var payload = {
+                origen: 'nuevoContacto',
+                pedidoId: (resp.data && resp.data.pedidoId) ? resp.data.pedidoId : (ctxNuevoPedido.pedidoId || ''),
+                idContacto: (resp.data && resp.data.idContacto) ? resp.data.idContacto : (ctxNuevoPedido.idContacto || ''),
+                clienteNombre: (resp.data && resp.data.clienteNombre) ? resp.data.clienteNombre : (cliente.nombre || ''),
+                cliente: cliente
+              };
+    
+              loadPage('registrarPedido');
+            })
+            .withFailureHandler(function(err){
+              setButtonLoading(btnGuardar, false);
+              var msg = (err && err.message) ? err.message : 'Error al crear el cliente.';
+              alert(msg);
+            })
+            .registrarNuevoContacto(datosCliente, ctxActual);
+        });
+    
+        /* Clic sur VOLVER AL INICIO : reset + abrirInicio() */
+        btnVolverIni.addEventListener('click', function(){
+          // Effacer les champs
+          nombreEl.value   = '';
+          dirEl.value      = '';
+          notaEl.value     = '';
+          whatsappEl.value = '';
+    
+          // Réinitialiser le dropdown Sector
+          sectorBtn.setAttribute('data-placeholder', 'true');
+          var lbl = sectorBtn.querySelector('.dd-label');
+          if (lbl){
+            lbl.textContent = 'Elegir un sector';
+          }
+    
+          majBoutonGuardar();
+    
+          // Ouvrir la page inicio.html côté serveur
+          loadPage('inicio');
+        });
+    
+        function init(){
+          applyScaleFix();
+          sizeHeaderImage();
+    
+          cuandoCtxListo(function(ctx){
+            setContactoIdDesdeCtx(ctx);
+            sincronizarSectoresDesdeCtx(ctx);
+            majBoutonGuardar();
+          });
+        }
+        if (document.readyState === 'loading'){
+          document.addEventListener('DOMContentLoaded', init);
+        } else {
+          init();
+        }
+    
+        window.addEventListener('resize', function(){
+          applyScaleFix();
+          sizeHeaderImage();
+        });
+  },
+
+  editarContacto: function(){
+    function applyScaleFix(){
+          var cssW = window.innerWidth || document.documentElement.clientWidth;
+          var screenW = Math.min(window.screen.width || 375, window.screen.height || 812);
+          if (cssW >= 960 && cssW <= 1024) {
+            var fix = (980 / screenW) * 1.50;
+            document.documentElement.style.setProperty('--fix', fix.toFixed(3));
+          } else {
+            document.documentElement.style.setProperty('--fix', '1');
+          }
+        }
+    
+        function sizeHeaderImage(){
+          var img = document.getElementById('headerImg');
+          var wrap = document.querySelector('.wrapper');
+          if (!img || !wrap) return;
+          var w = Math.floor(wrap.clientWidth);
+          if (w > 0){
+            img.style.width = w + 'px';
+            img.style.maxWidth = '100%';
+            img.removeAttribute('height');
+          }
+        }
+    
+        var overlay      = document.getElementById('ddOverlay');
+        var overlayList  = document.getElementById('ddOverlayList');
+        var sectorBtn    = document.getElementById('sectorBtn');
+        var btnGuardar   = document.getElementById('btnGuardar');
+        var btnVolverIni = document.getElementById('btnVolverInicio');
+    
+        var nombreEl   = document.getElementById('nombre');
+        var dirEl      = document.getElementById('direccion');
+        var notaEl     = document.getElementById('nota');
+        var whatsappEl = document.getElementById('whatsapp');
+    
+        var ctxCache = null;
+        var sectoresOpciones = [];
+    
+        function obtenerCtxServidor(){
+          if (ctxCache) return ctxCache;
+          if (typeof window !== 'undefined' && window.SECO_CTX){
+            ctxCache = window.SECO_CTX;
+            return ctxCache;
+          }
+          return null;
+        }
+    
+        function cuandoCtxListo(callback, intento){
+          var ctx = obtenerCtxServidor();
+          if (ctx){
+            callback(ctx);
+            return;
+          }
+          var intentoActual = intento || 0;
+          if (intentoActual >= 50) return;
+          setTimeout(function(){
+            cuandoCtxListo(callback, intentoActual + 1);
+          }, 80);
+        }
+    
+        function setContactoIdDesdeCtx(ctx){
+          var idEl = document.getElementById('contactoId');
+          if (!idEl || !ctx) return;
+          var idContacto = (ctx.idContacto || (ctx.cliente && ctx.cliente.idCliente) || '').toString();
+          if (idContacto){
+            idEl.textContent = idContacto;
+          }
+        }
+    
+        function sincronizarSectoresDesdeCtx(ctx){
+          var sectores = Array.isArray(ctx && ctx.sectores) ? ctx.sectores : [];
+          sectoresOpciones = sectores
+            .map(function(sec){ return (sec && sec.nombre) ? sec.nombre : sec; })
+            .filter(Boolean);
+    
+          var dataEl = sectorBtn && sectorBtn.parentNode ? sectorBtn.parentNode.querySelector('.dd-data') : null;
+          if (dataEl){
+            dataEl.textContent = JSON.stringify(sectoresOpciones);
+          }
+        }
+    
+        function esWhatsappValido(valor){
+          var limpio = (valor || '').toString().trim();
+          return /^\d{7,15}$/.test(limpio);
+        }
+    
+        function validarWhatsappCampo(){
+          var errorEl = document.getElementById('whatsappError');
+          if (!errorEl) return esWhatsappValido(whatsappEl.value);
+    
+          var valor = (whatsappEl.value || '').toString().trim();
+          if (!valor){
+            errorEl.textContent = '';
+            return false;
+          }
+    
+          var valido = esWhatsappValido(valor);
+          errorEl.textContent = valido ? '' : 'Número de WhatsApp inválido';
+          return valido;
+        }
+    
+        function champsRemplis(){
+          var nomOK    = nombreEl.value.trim()   !== '';
+          var dirOK    = dirEl.value.trim()      !== '';
+          var waOK     = esWhatsappValido(whatsappEl.value);
+          var sectorOK = !sectorBtn.hasAttribute('data-placeholder');
+          return nomOK && dirOK && waOK && sectorOK;
+        }
+    
+        function majBoutonGuardar(){
+          var waValido = validarWhatsappCampo();
+          if (champsRemplis() && waValido){
+            btnGuardar.disabled = false;
+            btnGuardar.classList.remove('btn-desactive');
+            btnGuardar.classList.add('btn-noir');
+          } else {
+            btnGuardar.disabled = true;
+            btnGuardar.classList.remove('btn-noir');
+            btnGuardar.classList.add('btn-desactive');
+          }
+        }
+    
+        function poblarFormularioDesdeCtx(ctx){
+          if (!ctx) return;
+    
+          var cliente = ctx.cliente || {};
+          nombreEl.value   = cliente.nombre || '';
+          dirEl.value      = cliente.direccion || '';
+          notaEl.value     = cliente.nota || '';
+          whatsappEl.value = cliente.telefono || cliente.whatsapp || '';
+    
+          var sector = cliente.sector || '';
+          var lbl = sectorBtn.querySelector('.dd-label');
+          if (sector && lbl){
+            lbl.textContent = sector;
+            sectorBtn.removeAttribute('data-placeholder');
+          }
+    
+          setContactoIdDesdeCtx(ctx);
+        }
+    
+        function openSectorDropdown(){
+          if (!sectoresOpciones.length) {
+            cuandoCtxListo(function(ctx){
+              sincronizarSectoresDesdeCtx(ctx);
+              openSectorDropdown();
+            });
+            return;
+          }
+    
+          overlayList.innerHTML = "";
+    
+          sectoresOpciones.forEach(function(txt){
+            var li = document.createElement('li');
+            li.className = "dd-overlay-option";
+            li.textContent = txt;
+            li.addEventListener('click', function(){
+              sectorBtn.querySelector('.dd-label').textContent = txt;
+              sectorBtn.removeAttribute('data-placeholder');
+              overlay.setAttribute('data-open','false');
+              document.body.style.overflow = '';
+              majBoutonGuardar();
+            });
+            overlayList.appendChild(li);
+          });
+    
+          overlay.setAttribute('data-open','true');
+          document.body.style.overflow = 'hidden';
+        }
+    
+        sectorBtn.addEventListener('click', openSectorDropdown);
+    
+        overlay.addEventListener('click', function(e){
+          if (e.target === overlay){
+            overlay.setAttribute('data-open','false');
+            document.body.style.overflow = '';
+          }
+        });
+    
+        ['input','change'].forEach(function(ev){
+          nombreEl.addEventListener(ev, majBoutonGuardar);
+          dirEl.addEventListener(ev, majBoutonGuardar);
+          whatsappEl.addEventListener(ev, majBoutonGuardar);
+        });
+    
+        btnGuardar.addEventListener('click', function(){
+          if (btnGuardar.disabled) return;
+    
+          var waValido = validarWhatsappCampo();
+          if (!waValido){
+            whatsappEl.focus();
+            return;
+          }
+    
+          var sectorText = sectorBtn.querySelector('.dd-label')
+            ? sectorBtn.querySelector('.dd-label').textContent.trim()
+            : '';
+    
+          var ctxActual = obtenerCtxServidor() || {};
+    
+          var datosCliente = {
+            idContacto: (ctxActual && (ctxActual.idContacto || (ctxActual.cliente && ctxActual.cliente.idCliente))) || '',
+            pedidoId:   (ctxActual && ctxActual.pedidoId) ? ctxActual.pedidoId : '',
+            nombre:    nombreEl.value.trim(),
+            direccion: dirEl.value.trim(),
+            telefono:  whatsappEl.value.trim(),
+            sector:    sectorText,
+            nota:      notaEl.value.trim()
+          };
+    
+          google.script.run
+            .withSuccessHandler(function(resp){
+              if (!resp || !resp.ok || !resp.data || !resp.data.ctx){
+                var msg = (resp && resp.error) ? resp.error : 'Error al actualizar el contacto.';
+                alert(msg);
+                return;
+              }
+              loadPage('registrarPedido');
+            })
+            .actualizarContactoDesdeEditar(datosCliente, ctxActual);
+        });
+    
+        btnVolverIni.addEventListener('click', function(){
+          loadPage('inicio');
+        });
+    
+        function init(){
+          applyScaleFix();
+          sizeHeaderImage();
+    
+          cuandoCtxListo(function(ctx){
+            sincronizarSectoresDesdeCtx(ctx);
+            poblarFormularioDesdeCtx(ctx);
+            majBoutonGuardar();
+          });
+        }
+        if (document.readyState === 'loading'){
+          document.addEventListener('DOMContentLoaded', init);
+        } else {
+          init();
+        }
+    
+        window.addEventListener('resize', function(){
+          applyScaleFix();
+          sizeHeaderImage();
+        });
+  }
+    };
+
+    function loadPage(pageName){
+      google.script.run.withSuccessHandler(function(html){
+        const app = document.getElementById('app');
+        if (app) {
+          app.innerHTML = html;
+          if (pageInit[pageName]) {
+            pageInit[pageName]();
+          }
+        }
+      }).getPage(pageName);
+    }
+
+    document.addEventListener('DOMContentLoaded', function(){
+      loadPage('inicio');
+    });
+  </script>
+</body>
+</html>
