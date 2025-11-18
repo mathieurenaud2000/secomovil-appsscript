@@ -36,6 +36,9 @@
   }
   .btn--white{ border-color:#000; }
   .btn--gray{ border-color: rgba(0,0,0,0.20); }
+  .btn.is-waiting{ filter:brightness(0.95); }
+  .btn--white.is-waiting,
+  .btn--gray.is-waiting{ color: rgba(0,0,0,0.5); }
 
   /* Double bouton noir */
   .double-actions{
@@ -60,6 +63,7 @@
     align-items:center; justify-content:center;
   }
   .double-actions .half.is-loading .half-spinner{ display:flex; }
+  .double-actions .half.is-loading{ background:#3d3d3c; }
   .double-actions .half .half-spinner .spinner{
     border-color: rgba(255,255,255,0.3);
     border-top-color:#fff;
@@ -91,6 +95,10 @@
   .card-top .secteur{ padding: calc(10px * var(--fix)) 0 0 0; text-align:left; }
   .card-top .edit-cell{ padding: calc(10px * var(--fix)) calc(10px * var(--fix)) 0 0; }
   .card-top .edit-img{ display:block; height: calc(12px * var(--fix)); width:auto; object-fit:contain; }
+  .card-top .edit-spinner{ display:none; height: calc(12px * var(--fix)); width: calc(12px * var(--fix)); }
+  .card-top .edit-spinner .spinner{ width:100%; height:100%; border-width: calc(2px * var(--fix)); }
+  .card-top .edit-cell.is-editloading .edit-img{ display:none; }
+  .card-top .edit-cell.is-editloading .edit-spinner{ display:block; }
 
   .card-body{
     border-top:0; border-bottom:2px solid #000;
@@ -222,6 +230,7 @@
   }
   .card-actions > button + button{ border-left:2px solid #000; }
   .card-actions .act-icon{ width:calc(34px * var(--fix)); height:auto; object-fit:contain; }
+  .card-actions .act-icon.is-processing{ opacity:0.5; }
 
   .card-actions .act--delete .act-icon{ width:calc(27.2px * var(--fix)); }
   .card-actions .act--delay  .act-icon{ width:calc(30.6px * var(--fix)); }
@@ -335,6 +344,7 @@
         <div class="secteur meta" id="sectorText">–</div>
         <div class="edit-cell">
           <img class="edit-img" src="https://lh3.googleusercontent.com/d/1IJOPYYBICvweVK9rn2mQqckhfyQOHvrJ" alt="Éditer">
+          <div class="edit-spinner" aria-hidden="true"><div class="spinner" aria-label="Cargando"></div></div>
         </div>
       </div>
 
@@ -401,13 +411,13 @@
   <div class="sep-black"></div>
 
   <div class="stack">
-    <button class="btn btn--gray">REGISTRAR GASTO</button>
-    <button class="btn btn--gray">CERRAR EL DIA</button>
+    <button class="btn btn--gray" id="btnRegistrarGasto">REGISTRAR GASTO</button>
+    <button class="btn btn--gray" id="btnCerrarElDia">CERRAR EL DIA</button>
   </div>
 
   <div class="sep-black"></div>
   <div class="stack">
-    <button class="btn btn--gray" onclick="loadPage('configuracionDelSistema')">CONFIGURATION</button>
+    <button class="btn btn--gray" id="btnConfiguracion">CONFIGURATION</button>
   </div>
 
   <div style="height: var(--side)"></div>

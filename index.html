@@ -25,7 +25,11 @@
         const btnNuevoPedido = document.getElementById('btnNuevoPedido');
         const btnVentaDirecta = document.getElementById('btnVentaDirecta');
         const btnPedidosDelDia = document.getElementById('btnPedidosDelDia');
+        const btnRegistrarGasto = document.getElementById('btnRegistrarGasto');
+        const btnCerrarElDia = document.getElementById('btnCerrarElDia');
+        const btnConfiguracion = document.getElementById('btnConfiguracion');
         const cardLoading = document.getElementById('cardLoading');
+        const editCell = card ? card.querySelector('.edit-cell') : null;
     
         const overlay = document.getElementById('ddOverlay');
         const overlayList = document.getElementById('ddOverlayList');
@@ -41,6 +45,8 @@
         let currentHour = null;
         let pendingHour = null;
         let pedidoActual = null;
+        let actionOrigin = null;
+        let processingActionBtn = null;
     
         function captureNormalHeight(){
           const wasConfirm       = card.classList.contains('is-confirm');
@@ -72,14 +78,19 @@
           btnConfirm.querySelector('img').src = ICONS.checkW;
           card.style.height = '';
           captureNormalHeight();
+          actionOrigin = null;
+          clearActionProcessing();
         }
     
         function setConfirm(){
+          clearActionProcessing();
           lockToNormalHeight();
           card.classList.add('is-confirm');
           card.classList.remove('is-deleted','is-timeconfirm','is-deliveryconfirm','is-delivered');
           btnDel.querySelector('img').src = ICONS.xgray;
           btnConfirm.querySelector('img').src = ICONS.checkBlk;
+          actionOrigin = btnDel;
+          setActionProcessing(btnDel, true, false);
         }
     
         function setDeleted(){
@@ -90,20 +101,26 @@
     
         function setTimeConfirm(){
           if (!pendingHour) return;
+          clearActionProcessing();
           lockToNormalHeight();
           timeConfirmTitle.textContent = pendingHour;
           card.classList.add('is-timeconfirm');
           card.classList.remove('is-confirm','is-deleted','is-deliveryconfirm','is-delivered');
           btnDel.querySelector('img').src = ICONS.xgray;
           btnConfirm.querySelector('img').src = ICONS.checkBlk;
+          actionOrigin = btnDelay;
+          setActionProcessing(btnDelay, true, false);
         }
     
         function setDeliveryConfirm(){
+          clearActionProcessing();
           lockToNormalHeight();
           card.classList.add('is-deliveryconfirm');
           card.classList.remove('is-confirm','is-deleted','is-timeconfirm','is-delivered');
           btnDel.querySelector('img').src = ICONS.xgray;
           btnConfirm.querySelector('img').src = ICONS.checkBlk;
+          actionOrigin = btnConfirm;
+          setActionProcessing(btnConfirm, true, false);
         }
     
         function setDelivered(){
@@ -150,6 +167,11 @@
             el.style.pointerEvents = '';
           }
         }
+
+        function setEditLoading(isLoading){
+          if (!editCell) return;
+          editCell.classList.toggle('is-editloading', !!isLoading);
+        }
     
         function setCardLoading(isLoading){
           if (!card || !cardLoading) return;
@@ -158,6 +180,49 @@
           } else {
             card.classList.remove('is-loading');
           }
+        }
+
+        function setButtonWaiting(btn, isWaiting){
+          if (!btn) return;
+          btn.classList.toggle('is-waiting', !!isWaiting);
+          btn.disabled = !!isWaiting;
+        }
+
+        function setActionProcessing(btn, isProcessing, lockButton){
+          if (!btn) return;
+          const icon = btn.querySelector('.act-icon');
+          if (!icon) return;
+          const shouldLock = lockButton !== false;
+          if (isProcessing){
+            icon.classList.add('is-processing');
+            if (shouldLock) btn.disabled = true;
+            processingActionBtn = btn;
+          } else {
+            icon.classList.remove('is-processing');
+            if (shouldLock) btn.disabled = false;
+            if (processingActionBtn === btn){
+              processingActionBtn = null;
+            }
+          }
+        }
+
+        function clearActionProcessing(){
+          if (processingActionBtn){
+            setActionProcessing(processingActionBtn, false);
+          }
+        }
+
+        function bindNavigationButton(btn, pageName, startFn, endFn){
+          if (!btn) return;
+          btn.addEventListener('click', function(){
+            if (btn.dataset.navLoading === '1') return;
+            btn.dataset.navLoading = '1';
+            if (startFn) startFn(btn);
+            loadPage(pageName, function(){
+              btn.dataset.navLoading = '0';
+              if (endFn) endFn(btn);
+            });
+          });
         }
     
         function formatHour(hora){
@@ -252,32 +317,31 @@
     
         function actualizarEstado(estado){
           if (!pedidoActual || !pedidoActual.idPedido) return;
-          setCardLoading(true);
-          setButtonLoading(btnConfirm, true);
+          const processingBtn = actionOrigin || btnConfirm;
+          setActionProcessing(processingBtn, true);
           google.script.run
             .withSuccessHandler(function(){
-              setButtonLoading(btnConfirm, false);
+              setActionProcessing(processingBtn, false);
               setNormal();
               cargarProximoPedido();
             })
-            .withFailureHandler(function(){ setButtonLoading(btnConfirm, false); setCardLoading(false); })
+            .withFailureHandler(function(){ setActionProcessing(processingBtn, false); })
             .actualizarEstadoPedido({ idPedido: pedidoActual.idPedido, estado: estado });
         }
-    
+
         function actualizarHora(nuevaHora){
           if (!pedidoActual || !pedidoActual.idPedido || !nuevaHora) return;
-          setCardLoading(true);
-          setButtonLoading(btnConfirm, true);
+          const processingBtn = actionOrigin || btnConfirm;
+          setActionProcessing(processingBtn, true);
           google.script.run
             .withSuccessHandler(function(resp){
-              setButtonLoading(btnConfirm, false);
+              setActionProcessing(processingBtn, false);
               if (resp && resp.ok && resp.data && resp.data.pedido){
                 renderPedido(resp.data.pedido);
               }
               setNormal();
-              setCardLoading(false);
             })
-            .withFailureHandler(function(){ setButtonLoading(btnConfirm, false); setNormal(); setCardLoading(false); })
+            .withFailureHandler(function(){ setActionProcessing(processingBtn, false); setNormal(); })
             .cambiarHoraPedido({ idPedido: pedidoActual.idPedido, nuevaHora: nuevaHora });
         }
     
@@ -385,11 +449,17 @@
         function closeOverlay(){
           overlay.removeAttribute('data-open');
           document.body.style.overflow = '';
+          if (!pendingHour && actionOrigin === btnDelay){
+            clearActionProcessing();
+            actionOrigin = null;
+          }
         }
     
         btnDelay.addEventListener('click', function(e){
           e.stopPropagation();
           if (!pedidoActual) return;
+          setActionProcessing(btnDelay, true, false);
+          actionOrigin = btnDelay;
           openHoursOverlay();
         });
     
@@ -402,6 +472,18 @@
             closeOverlay();
           }
         });
+
+        if (editCell){
+          editCell.addEventListener('click', function(){
+            if (!pedidoActual || editCell.dataset.editing === '1') return;
+            editCell.dataset.editing = '1';
+            setEditLoading(true);
+            loadPage('editarPedido', function(){
+              setEditLoading(false);
+              editCell.dataset.editing = '0';
+            });
+          });
+        }
     
         function applyScaleFix(){
           let cssW = window.innerWidth;
@@ -415,22 +497,12 @@
           setTimeout(captureNormalHeight, 0);
         }
     
-        // NAVIGATION SIMPLIFIÉE : on réutilise l'URL courante et on ne change que ?page=
-        function navigateToPage(pageName){
-          loadPage(pageName);
-        }
-    
-        btnNuevoPedido.addEventListener('click', function(){
-          navigateToPage('nuevoPedido');
-        });
-    
-        btnVentaDirecta.addEventListener('click', function(){
-          navigateToPage('ventaDirecta');
-        });
-    
-        btnPedidosDelDia.addEventListener('click', function(){
-          navigateToPage('pedidosDelDia');
-        });
+        bindNavigationButton(btnNuevoPedido, 'nuevoPedido', (btn) => setHalfLoading(btn, true), (btn) => setHalfLoading(btn, false));
+        bindNavigationButton(btnVentaDirecta, 'ventaDirecta', (btn) => setHalfLoading(btn, true), (btn) => setHalfLoading(btn, false));
+        bindNavigationButton(btnPedidosDelDia, 'pedidosDelDia', (btn) => setButtonWaiting(btn, true), (btn) => setButtonWaiting(btn, false));
+        bindNavigationButton(btnRegistrarGasto, 'registrarGasto', (btn) => setButtonWaiting(btn, true), (btn) => setButtonWaiting(btn, false));
+        bindNavigationButton(btnCerrarElDia, 'cerrarElDia', (btn) => setButtonWaiting(btn, true), (btn) => setButtonWaiting(btn, false));
+        bindNavigationButton(btnConfiguracion, 'configuracionDelSistema', (btn) => setButtonWaiting(btn, true), (btn) => setButtonWaiting(btn, false));
     
         if (document.readyState === 'loading'){
           document.addEventListener('DOMContentLoaded', ()=>{
@@ -1507,16 +1579,22 @@
   }
     };
 
-    function loadPage(pageName){
-      google.script.run.withSuccessHandler(function(html){
-        const app = document.getElementById('app');
-        if (app) {
-          app.innerHTML = html;
-          if (pageInit[pageName]) {
-            pageInit[pageName]();
+    function loadPage(pageName, onLoaded){
+      google.script.run
+        .withSuccessHandler(function(html){
+          const app = document.getElementById('app');
+          if (app) {
+            app.innerHTML = html;
+            if (pageInit[pageName]) {
+              pageInit[pageName]();
+            }
           }
-        }
-      }).getPage(pageName);
+          if (typeof onLoaded === 'function') onLoaded();
+        })
+        .withFailureHandler(function(){
+          if (typeof onLoaded === 'function') onLoaded();
+        })
+        .getPage(pageName);
     }
 
     document.addEventListener('DOMContentLoaded', function(){
