@@ -1,10 +1,4 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, shrink-to-fit=no">
-  <title>SecoMobil – Cerrar el día</title>
-  <style>
+<style>
     :root{
       --fix: 1;
       --gap: 12px;
@@ -156,9 +150,7 @@
       height: calc(3px * var(--fix));
     }
   </style>
-</head>
-<body>
-  <div class="wrapper">
+<div class="wrapper">
 
     <!-- ENTÊTE -->
     <header class="header">
@@ -248,66 +240,3 @@
       <div class="footer-gap"></div>
     </div>
   </div>
-
-  <script>
-    function applyScaleFix(){
-      var cssW = window.innerWidth;
-      var screenW = Math.min(window.screen.width, window.screen.height);
-      if(cssW >= 960 && cssW <= 1024){
-        var fix = (980 / screenW) * 1.50;
-        document.documentElement.style.setProperty('--fix', fix.toFixed(3));
-      } else {
-        document.documentElement.style.setProperty('--fix','1');
-      }
-    }
-
-    function sizeHeaderImage(){
-      var img = document.getElementById('headerImg');
-      var wrapper = document.querySelector('.wrapper');
-      if(img && wrapper){
-        var avail = Math.floor(wrapper.clientWidth);
-        img.style.width = avail + 'px';
-        img.style.maxWidth = '100%';
-        img.removeAttribute('height');
-      }
-    }
-
-    function setupConfirm(){
-      var chk = document.getElementById('chkConfirm');
-      var btn = document.getElementById('btnCerrar');
-
-      function sync(){
-        if(chk.checked){
-          btn.disabled = false;
-          btn.classList.remove('btn-desactive');
-          btn.classList.add('btn-noir');
-        } else {
-          btn.disabled = true;
-          btn.classList.remove('btn-noir');
-          btn.classList.add('btn-desactive');
-        }
-      }
-
-      chk.addEventListener('change', sync);
-      sync();
-    }
-
-    function init(){
-      applyScaleFix();
-      sizeHeaderImage();
-      setupConfirm();
-    }
-
-    if(document.readyState === 'loading'){
-      document.addEventListener('DOMContentLoaded', init);
-    } else {
-      init();
-    }
-
-    window.addEventListener('resize', function(){
-      applyScaleFix();
-      sizeHeaderImage();
-    });
-  </script>
-</body>
-</html>
