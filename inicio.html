@@ -57,16 +57,20 @@
   .double-actions .half img{ display:block; width:50%; height:auto; object-fit:contain; margin-bottom: calc(4px * var(--fix)); }
   .double-actions .half div{ font-size: calc(var(--font-body) * var(--fix)); }
   .double-actions .half.is-loading img,
-  .double-actions .half.is-loading div{ visibility:hidden; }
+  .double-actions .half.is-loading > div:not(.half-spinner){ visibility:hidden; }
   .double-actions .half .half-spinner{
     position:absolute; inset:0; display:none;
     align-items:center; justify-content:center;
+    z-index:1;
   }
   .double-actions .half.is-loading .half-spinner{ display:flex; }
   .double-actions .half.is-loading{ background:#000; }
   .double-actions .half .half-spinner .spinner{
     border-color: rgba(255,255,255,0.3);
     border-top-color:#fff;
+    width: calc(32px * var(--fix));
+    height: calc(32px * var(--fix));
+    border-width: calc(4px * var(--fix));
   }
 
   .sep-black{ height:5px; background:#000; border:0; margin: calc(var(--gap) * var(--fix)) 0; }
