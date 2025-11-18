@@ -47,6 +47,7 @@
         let pedidoActual = null;
         let actionOrigin = null;
         let processingActionBtn = null;
+        let topActionEnCours = false;
     
         function captureNormalHeight(){
           const wasConfirm       = card.classList.contains('is-confirm');
@@ -147,16 +148,6 @@
     
         function setHalfLoading(el, isLoading){
           if (!el) return;
-          var spinner = el.querySelector('.half-spinner');
-          if (!spinner){
-            spinner = document.createElement('div');
-            spinner.className = 'half-spinner';
-            var sp = document.createElement('div');
-            sp.className = 'spinner spinner--invert';
-            spinner.appendChild(sp);
-            el.appendChild(spinner);
-          }
-    
           if (isLoading){
             el.dataset.loading = '1';
             el.classList.add('is-loading');
@@ -222,6 +213,16 @@
               btn.dataset.navLoading = '0';
               if (endFn) endFn(btn);
             });
+          });
+        }
+
+        function bindTopHalfAction(btn, pageName){
+          if (!btn) return;
+          btn.addEventListener('click', function(){
+            if (topActionEnCours) return;
+            topActionEnCours = true;
+            btn.classList.add('is-loading');
+            loadPage(pageName);
           });
         }
     
@@ -497,8 +498,8 @@
           setTimeout(captureNormalHeight, 0);
         }
     
-        bindNavigationButton(btnNuevoPedido, 'nuevoPedido', (btn) => setHalfLoading(btn, true), (btn) => setHalfLoading(btn, false));
-        bindNavigationButton(btnVentaDirecta, 'ventaDirecta', (btn) => setHalfLoading(btn, true), (btn) => setHalfLoading(btn, false));
+        bindTopHalfAction(btnNuevoPedido, 'nuevoPedido');
+        bindTopHalfAction(btnVentaDirecta, 'ventaDirecta');
         bindNavigationButton(btnPedidosDelDia, 'pedidosDelDia', (btn) => setButtonWaiting(btn, true), (btn) => setButtonWaiting(btn, false));
         bindNavigationButton(btnRegistrarGasto, 'registrarGasto', (btn) => setButtonWaiting(btn, true), (btn) => setButtonWaiting(btn, false));
         bindNavigationButton(btnCerrarElDia, 'cerrarElDia', (btn) => setButtonWaiting(btn, true), (btn) => setButtonWaiting(btn, false));
