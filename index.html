@@ -185,10 +185,12 @@
           if (!icon) return;
           const shouldLock = lockButton !== false;
           if (isProcessing){
+            btn.classList.add('is-processing');
             icon.classList.add('is-processing');
             if (shouldLock) btn.disabled = true;
             processingActionBtn = btn;
           } else {
+            btn.classList.remove('is-processing');
             icon.classList.remove('is-processing');
             if (shouldLock) btn.disabled = false;
             if (processingActionBtn === btn){

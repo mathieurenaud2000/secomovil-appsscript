@@ -232,9 +232,24 @@
     flex: 0 0 33.3333%; appearance:none; border:0; background:#fff; cursor:pointer;
     display:flex; align-items:center; justify-content:center; padding:0; position:relative;
   }
+  .card-actions > button .action-spinner{
+    position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+    pointer-events:none;
+  }
+  .card-actions > button .action-spinner .spinner{
+    width: calc(30.6px * var(--fix));
+    height: calc(30.6px * var(--fix));
+    border-width: calc(4px * var(--fix));
+    border-color: rgba(255,255,255,0.35);
+    border-top-color: #fff;
+  }
   .card-actions > button + button{ border-left:2px solid #000; }
   .card-actions .act-icon{ width:calc(34px * var(--fix)); height:auto; object-fit:contain; }
   .card-actions .act-icon.is-processing{ opacity:0.5; }
+
+  .card-actions > button.is-processing{ background:#000 !important; }
+  .card-actions > button.is-processing .act-icon{ visibility:hidden; opacity:0; }
+  .card-actions > button.is-processing .action-spinner{ display:flex; }
 
   .card-actions .act--delete .act-icon{ width:calc(27.2px * var(--fix)); }
   .card-actions .act--delay  .act-icon{ width:calc(30.6px * var(--fix)); }
@@ -401,6 +416,9 @@
 
       <button type="button" class="act--confirm" id="btnConfirm">
         <img class="act-icon" src="https://lh3.googleusercontent.com/d/1kIWQWxgpGWgRbdiBcm_X1BpwFZkUwX5l" alt="Confirmer">
+        <div class="action-spinner" aria-hidden="true">
+          <div class="spinner spinner--invert" aria-label="Cargando"></div>
+        </div>
       </button>
 
       <img class="arrow-grey" src="https://lh3.googleusercontent.com/d/1or6tPZN2u4WpSsFBdx3SsM4HNGCWDcC7" alt="Continuer">
