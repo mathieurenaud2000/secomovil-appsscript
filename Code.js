@@ -34,102 +34,6 @@
       .setTitle(pages[page]);
   }
 
-function abrirInicio() {
-  var template = HtmlService.createTemplateFromFile('inicio');
-  var html = template.evaluate()
-    .setTitle('Inicio');
-
-  SpreadsheetApp.getUi().showSidebar(html);
-}
-
-function abrirPedidosDelDia() {
-  var template = HtmlService.createTemplateFromFile('pedidosDelDia');
-  var html = template.evaluate()
-    .setTitle('Pedidos del día');
-
-  SpreadsheetApp.getUi().showSidebar(html);
-}
-
-function abrirVentaDirecta() {
-  var init = initVentaDirecta();
-  if (!init || !init.ok || !init.data) {
-    SpreadsheetApp.getUi().alert((init && init.error) || 'No se pudo inicializar Venta directa.');
-    return;
-  }
-
-  var ctx = {
-    idVenta: init.data.idVenta || ''
-  };
-
-  var userProps = PropertiesService.getUserProperties();
-  userProps.setProperty('SECOMOVIL_CTX_VENTA_DIRECTA', JSON.stringify(ctx));
-
-  var template = HtmlService.createTemplateFromFile('ventaDirecta');
-  var html = template.evaluate()
-    .setTitle('Venta directa');
-
-  inyectarContextoEnHtml_(html, ctx);
-  SpreadsheetApp.getUi().showSidebar(html);
-}
-
-  function abrirNuevoPedido() {
-    var init = initNuevoPedido();
-    if (!init || !init.ok || !init.data) {
-      SpreadsheetApp.getUi().alert((init && init.error) || 'No se pudo inicializar Nuevo pedido.');
-      return;
-    }
-
-    var ctx = {
-      idPedido: init.data.idPedido || '',
-      clientes: init.data.clientes || [],
-      nextIdCliente: init.data.nextIdCliente || ''
-    };
-
-    var userProps = PropertiesService.getUserProperties();
-    userProps.setProperty('SECOMOVIL_CTX_NUEVO_PEDIDO', JSON.stringify(ctx));
-
-    var template = HtmlService.createTemplateFromFile('nuevoPedido');
-    var html = template.evaluate()
-      .setTitle('Nuevo pedido');
-
-    inyectarContextoEnHtml_(html, ctx);
-    SpreadsheetApp.getUi().showSidebar(html);
-  }
-
-  function onOpen(e) {
-    var ui = SpreadsheetApp.getUi();
-    var menu = ui.createMenu('SecoMobil');
-
-    menu.addItem('Abrir SecoMobil (web)', 'abrirWebAppSecoMobil');
-
-    menu.addToUi();
-  }
-
-function abrirWebAppSecoMobil() {
-  var url = 'https://script.google.com/macros/s/AKfycbzbcAbAsKnW7tDSQVcV-Jxar0V9NDwVNObudDFSEx2S346xhxujTP8Cee_hb7mYJ9k/exec';
-  var html = HtmlService.createHtmlOutput(
-    '<script>' +
-      '(function() {' +
-        'var u = ' + JSON.stringify(url) + ';' +
-        "try { window.open(u, '_blank'); } catch (e) {}" +
-        'google.script.host.close();' +
-      '})();' +
-    '</script>'
-  )
-    .setWidth(10)
-    .setHeight(10);
-
-  SpreadsheetApp.getUi().showSidebar(html);
-}
-
-  function ouvrirPage() {
-  // Ouvre la page HTML complète dans un nouvel onglet plein écran
-  const url = 'https://script.google.com/macros/s/AKfycby6eNfpcV2earU4bffOgKqib2KC1s8g4crRcJkQYRcc7D8VFx6geM28K0RriIf8FQDs/exec';
-  const html = HtmlService.createHtmlOutput(
-    '<script>window.open("' + url + '", "_blank");google.script.host.close();</script>'
-  );
-  SpreadsheetApp.getUi().showModalDialog(html, 'Ouvrir la page');
-}
 
 
 
@@ -2056,13 +1960,6 @@ function abrirRegistrarPedido(desdeNuevoPedidoPayload) {
     var userProps = PropertiesService.getUserProperties();
     userProps.setProperty('SECOMOVIL_CTX_NUEVO_PEDIDO', JSON.stringify(ctx));
 
-    var template = HtmlService.createTemplateFromFile('registrarPedido');
-    var html = template.evaluate()
-      .setTitle('Registrar pedido');
-
-    inyectarContextoEnHtml_(html, ctx, { aplicarContextoRegistrar: true });
-    SpreadsheetApp.getUi().showSidebar(html);
-
     return {
       ok: true,
       error: null,
@@ -2112,13 +2009,6 @@ function abrirNuevoContacto(desdeNuevoPedidoPayload) {
 
     var userProps = PropertiesService.getUserProperties();
     userProps.setProperty('SECOMOVIL_CTX_NUEVO_PEDIDO', JSON.stringify(ctx));
-
-    var template = HtmlService.createTemplateFromFile('nuevoContacto');
-    var html = template.evaluate()
-      .setTitle('Nuevo contacto');
-
-    inyectarContextoEnHtml_(html, ctx);
-    SpreadsheetApp.getUi().showSidebar(html);
 
     return {
       ok: true,
@@ -2173,13 +2063,6 @@ function abrirEditarContacto(payload) {
 
     var userProps = PropertiesService.getUserProperties();
     userProps.setProperty('SECOMOVIL_CTX_NUEVO_PEDIDO', JSON.stringify(ctx));
-
-    var template = HtmlService.createTemplateFromFile('editarContacto');
-    var html = template.evaluate()
-      .setTitle('Editar contacto');
-
-    inyectarContextoEnHtml_(html, ctx);
-    SpreadsheetApp.getUi().showSidebar(html);
 
     return {
       ok: true,
@@ -2514,13 +2397,6 @@ function registrarPedidoDesdeRegistrar(payload) {
 
     var userProps = PropertiesService.getUserProperties();
     userProps.setProperty('SECOMOVIL_CTX_NUEVO_PEDIDO', JSON.stringify(ctx));
-
-    var template = HtmlService.createTemplateFromFile('pedidoRegistrado');
-    var html = template.evaluate()
-      .setTitle('Pedido registrado');
-
-    inyectarContextoEnHtml_(html, ctx);
-    SpreadsheetApp.getUi().showSidebar(html);
 
     return {
       ok: true,
@@ -4267,13 +4143,6 @@ function initVentaDirecta() {
 
 function abrirVentaRegistrada(ctxVenta) {
   var ctx = ctxVenta || {};
-
-  var template = HtmlService.createTemplateFromFile('ventaRegistrada');
-  var html = template.evaluate()
-    .setTitle('Venta registrada');
-
-  inyectarContextoEnHtml_(html, ctx);
-  SpreadsheetApp.getUi().showSidebar(html);
 
   return {
     ok: true,

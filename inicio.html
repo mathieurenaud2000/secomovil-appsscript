@@ -833,10 +833,11 @@
       setTimeout(captureNormalHeight, 0);
     }
 
+    var WEBAPP_BASE_URL = 'https://script.google.com/macros/s/AKfycbzbcAbAsKnW7tDSQVcV-Jxar0V9NDwVNObudDFSEx2S346xhxujTP8Cee_hb7mYJ9k/exec';
+
     function navigateToPage(pageName){
-      const url = new URL(window.location.href);
-      url.searchParams.set('page', pageName);
-      window.location.href = url.toString();
+      var params = new URLSearchParams({ page: pageName });
+      window.location.href = WEBAPP_BASE_URL + '?' + params.toString();
     }
 
     btnNuevoPedido.addEventListener('click', function(){
