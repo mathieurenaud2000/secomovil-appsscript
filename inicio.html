@@ -833,7 +833,7 @@
       setTimeout(captureNormalHeight, 0);
     }
 
-    var WEBAPP_BASE_URL = 'https://script.google.com/macros/s/AKfycbzbcAbAsKnW7tDSQVcV-Jxar0V9NDwVNObudDFSEx2S346xhxujTP8Cee_hb7mYJ9k/exec';
+    var WEBAPP_BASE_URL = window.location.origin + window.location.pathname;
 
     function navigateToPage(pageName){
       var params = new URLSearchParams({ page: pageName });
