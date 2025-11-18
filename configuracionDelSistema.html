@@ -1,0 +1,214 @@
+<style>
+    :root{
+      --fix: 1;
+      --gap: 12px;
+      --radius: 40px;
+      --font-label: 12px;
+      --font-small: 14px;
+      --font-body: 15px;
+      --btn-fs: 16px;
+      --btn-ph: 14px;
+      --btn-pw: 18px;
+      --btn-minh: 48px;
+      --black: #000;
+      --white: #fff;
+      --gray10: rgba(0,0,0,0.10);
+      --gray20: rgba(0,0,0,0.20);
+      --gray25: rgba(0,0,0,0.25);
+    }
+
+    html, body{
+      margin:0; padding:0;
+      width:100%; max-width:100%;
+      overflow-x:hidden; box-sizing:border-box;
+      background:#fff;
+      font-family: Roboto, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    }
+    *, *::before, *::after{ box-sizing:inherit; }
+    *:focus{ outline:none!important; box-shadow:none!important; }
+
+    .wrapper{ padding: 0 50px; }
+
+    /* ===== ENTÊTE ===== */
+    .header{ display:block; margin: calc(var(--gap) * var(--fix)) 0; }
+    .header-logo{ display:block; width:100%; line-height:0; margin:0; }
+    .header-img{
+      display:block; width:100%; height:auto;
+      object-fit:contain; object-position:left center;
+      margin:0 8px 15px 0;
+      padding-bottom:30px;
+    }
+
+    .sep-black{ height:0; border-top: 5px solid var(--black); }
+
+    .header-grid{
+      display:grid; grid-template-columns: 1fr;
+      align-items:end;
+      gap: calc(8px * var(--fix));
+      padding: calc(12px * var(--fix)) 0;
+    }
+    .header-title{
+      text-transform: uppercase; font-weight: 900;
+      font-size: calc(21px * var(--fix));
+      line-height: calc(20px * var(--fix));
+    }
+    .header-title span{ display:block; }
+
+    /* ===== CONTENU ===== */
+    .stack{
+      display:flex;
+      flex-direction:column;
+      gap: calc(var(--gap) * var(--fix));
+    }
+
+    .txt-mini{
+      font-size: calc(var(--font-label) * var(--fix));
+      color:#111;
+    }
+    .txt-small{
+      font-size: calc(var(--font-small) * var(--fix));
+      color:#111;
+    }
+
+    /* ===== DROPDOWN ===== */
+    .dropdown{
+      position:relative; width:100%;
+      font-size: calc(var(--font-body) * var(--fix));
+    }
+    .dropdown[data-variant="boxed"] .dd-button{
+      border: 5px solid var(--black);
+      border-radius: var(--radius);
+      background:#fff; color:#000;
+      padding: calc(10px * var(--fix)) calc(36px * var(--fix)) calc(10px * var(--fix)) calc(10px * var(--fix));
+    }
+
+    .dd-button{
+      width:100%; text-align:left; position:relative; cursor:pointer;
+      line-height:1.3; font-size: inherit;
+    }
+    .dd-button[data-placeholder="true"] .dd-label{ color: var(--gray25); }
+    .dd-label{ display:block; padding-right: calc(18px * var(--fix)); }
+    .dd-caret{
+      position:absolute; right: calc(16px * var(--fix)); top:50%; transform: translateY(-50%);
+      width: 0; height: 0; pointer-events:none;
+      border-left: calc(6px * var(--fix)) solid transparent;
+      border-right: calc(6px * var(--fix)) solid transparent;
+      border-top: calc(6px * var(--fix)) solid #000;
+    }
+
+    /* OVERLAY LISTE */
+    .dd-overlay{
+      position: fixed; inset:0; background:#fff; display:none; z-index:1000;
+      overflow:auto;
+    }
+    .dd-overlay[data-open="true"]{ display:block; }
+    .dd-overlay-inner{ max-width:100%; padding-top:0; }
+    .dd-overlay-list{
+      list-style:none; margin:0; padding:0;
+      font-size: calc(var(--font-body) * var(--fix));
+    }
+    .dd-overlay-option{
+      padding: calc(12px * var(--fix)) calc(10px * var(--fix));
+      border-bottom: 2px solid var(--gray20);
+      line-height:1.25; cursor:pointer;
+    }
+    .dd-overlay-option.placeholder{ color: var(--gray25); }
+
+    /* ===== CHECKBOX ===== */
+    .checkbox-row{
+      display:flex;
+      align-items:center;
+      gap: calc(8px * var(--fix));
+    }
+    .checkbox-row input[type="checkbox"]{
+      width: calc(18px * var(--fix));
+      height: calc(18px * var(--fix));
+      accent-color:#000;
+    }
+
+    /* ===== BOUTONS ===== */
+    .btn{
+      display:block; width:100%;
+      text-transform:uppercase; font-weight:700;
+      font-size: calc(var(--btn-fs) * var(--fix));
+      padding: calc(var(--btn-ph) * var(--fix)) calc(var(--btn-pw) * var(--fix));
+      min-height: calc(var(--btn-minh) * var(--fix));
+      border-radius: var(--radius);
+      border: 5px solid transparent; cursor:pointer;
+      transition: filter .15s ease, background .15s ease;
+    }
+    .btn-noir{
+      background:#000; color:#fff; border-color:#000;
+      box-shadow:0 20px 40px rgba(0,0,0,0.40);
+    }
+    .btn-blanc{
+      background:#fff; color:#000; border-color: var(--gray20);
+    }
+    .btn-blanc:active{
+      color: rgba(0,0,0,0.5);
+    }
+    .btn-desactive{
+      background: var(--gray10); color:#fff;
+      border:0;
+      box-shadow:none;
+      cursor:default;
+    }
+  </style>
+<div class="wrapper">
+
+    <!-- ENTÊTE -->
+    <header class="header">
+      <div class="header-logo">
+        <img class="header-img" id="headerImg"
+             src="https://lh3.googleusercontent.com/d/15N5N0TgMBTxmn2v-sKsG53mEAKaxXYtA"
+             alt="Logo SecoMobil">
+      </div>
+
+      <div class="sep-black"></div>
+
+      <div class="header-grid">
+        <div class="header-title">
+          <span>CONFIGURACION</span>
+          <span>DEL SISTEMA</span>
+        </div>
+      </div>
+
+      <div class="sep-black"></div>
+    </header>
+
+    <div class="stack">
+
+      <div class="txt-mini">MENU DEL 6/11/2025</div>
+
+      <!-- MENU DU JOUR -->
+      <div class="dropdown" data-variant="boxed">
+        <button type="button" class="dd-button">
+          <span class="dd-label">Pollo a la plancha</span><span class="dd-caret"></span>
+        </button>
+        <div class="dd-data" data-options='["Pollo a la plancha","Seco de pollo","Seco de carne","Pescado frito","Arroz con menestra y carne"]'></div>
+      </div>
+
+      <!-- ESPACE AJOUTÉ -->
+      <div style="height: calc(var(--gap) * var(--fix));"></div>
+
+      <!-- CHECKBOX -->
+      <label class="checkbox-row">
+        <input type="checkbox" id="chkConfirm">
+        <span class="txt-small">Confirmar los datos</span>
+      </label>
+
+      <!-- BOUTONS -->
+      <button class="btn btn-desactive" id="btnConfigurar" disabled>CONFIGURAR</button>
+      <button class="btn btn-blanc">VOLVER AL INICIO</button>
+
+      <div style="height:0;"></div>
+
+    </div>
+  </div>
+
+  <!-- OVERLAY DROPDOWNS -->
+  <div class="dd-overlay" id="ddOverlay">
+    <div class="dd-overlay-inner">
+      <ul class="dd-overlay-list" id="ddOverlayList"></ul>
+    </div>
+  </div>
