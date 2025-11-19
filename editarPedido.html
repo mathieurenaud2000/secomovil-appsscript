@@ -64,6 +64,8 @@
     .label + .field,
     .label + textarea.field,
     .label + .dropdown { margin-top: calc((-1 * var(--gap) / 2) * var(--fix)); }
+    /* Commentaire en français : espacement entre le label et le nom du contact */
+    .label + .txt-body{ margin-top: calc((-1 * var(--gap) / 2) * var(--fix)); }
 
     /* Boutons */
     .btn {
@@ -226,14 +228,24 @@
       display:flex;
       align-items:flex-start;
       justify-content:center;
-      cursor:default;
+      cursor:pointer;
+      position:relative;
     }
     .contact-edit-icon-img{
       display:block;
-      width: calc(26px * var(--fix));
+      width: calc(13px * var(--fix));
       height:auto;
       object-fit:contain;
     }
+    .contact-edit-spinner{
+      position:absolute;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+    }
+    .contact-edit.is-loading .contact-edit-icon-img{ visibility:hidden; }
+    .contact-edit.is-loading .contact-edit-spinner{ display:flex; }
 
     .price-row{
       display:flex;
@@ -298,14 +310,20 @@
 
       <div class="section-block contact-card">
         <div class="contact-top">
-          <div class="txt-body">
-            <div>Lorenzo</div>
-            <div>Despacito</div>
+          <div>
+            <div class="label">Nombre</div>
+            <div class="txt-body">
+              <div>Nombre</div>
+              <div>Apellido</div>
+            </div>
           </div>
-          <button type="button" class="contact-edit">
+          <button type="button" class="contact-edit" id="btnEditarContacto">
             <img class="contact-edit-icon-img"
                  src="https://lh3.googleusercontent.com/d/1IJOPYYBICvweVK9rn2mQqckhfyQOHvrJ"
                  alt="Editar contacto">
+            <div class="contact-edit-spinner" aria-hidden="true">
+              <div class="spinner" aria-label="Cargando"></div>
+            </div>
           </button>
         </div>
 
@@ -350,7 +368,7 @@
 
       <!-- Fecha -->
       <div class="dropdown" data-variant="plain" data-list-variant="fullscreen" data-name="fecha">
-        <button type="button" class="dd-button">
+        <button type="button" class="dd-button" data-placeholder="true">
           <span class="dd-label">Fecha</span><span class="dd-caret" aria-hidden="true"></span>
         </button>
         <script type="application/json" class="dd-data">[]</script>
@@ -370,7 +388,7 @@
 
       <!-- Cantidad -->
       <div class="dropdown" data-variant="plain" data-list-variant="fullscreen" data-name="cantidad">
-        <button type="button" class="dd-button">
+        <button type="button" class="dd-button" data-placeholder="true">
           <span class="dd-label">Cantidad</span><span class="dd-caret" aria-hidden="true"></span>
         </button>
         <script type="application/json" class="dd-data">[]</script>
