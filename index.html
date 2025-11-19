@@ -30,6 +30,7 @@
         const btnConfiguracion = document.getElementById('btnConfiguracion');
         const cardLoading = document.getElementById('cardLoading');
         const editCell = card ? card.querySelector('.edit-cell') : null;
+        const cardEmptyText = document.getElementById('cardEmptyText');
     
         const overlay = document.getElementById('ddOverlay');
         const overlayList = document.getElementById('ddOverlayList');
@@ -74,7 +75,7 @@
         }
     
         function setNormal(){
-          card.classList.remove('is-confirm','is-deleted','is-timeconfirm','is-deliveryconfirm','is-delivered');
+          card.classList.remove('is-confirm','is-deleted','is-timeconfirm','is-deliveryconfirm','is-delivered','is-empty');
           btnDel.querySelector('img').src = ICONS.trash;
           btnConfirm.querySelector('img').src = ICONS.checkW;
           card.style.height = '';
@@ -269,9 +270,11 @@
     
         function renderPedido(pedido){
           card.style.display = '';
-    
+
           if (!pedido){
             pedidoActual = null;
+            card.classList.add('is-empty');
+            card.classList.remove('is-confirm','is-deleted','is-timeconfirm','is-deliveryconfirm','is-delivered');
             heureText.textContent = '--:--';
             sectorText.textContent = '—';
             clienteText.textContent = '—';
@@ -279,11 +282,16 @@
             notaText.textContent = '';
             extraText.textContent = '';
             currentHour = '--:--';
-            setNormal();
-            captureNormalHeight();
+            if (cardEmptyText){
+              cardEmptyText.textContent = 'Sin pedido pendiente';
+            }
+            clearActionProcessing();
+            card.style.height = '';
+            normalHeight = null;
             return;
           }
-    
+
+          card.classList.remove('is-empty');
           const sector = pedido.cliente && pedido.cliente.sector ? pedido.cliente.sector : '—';
           const nombre = pedido.cliente && pedido.cliente.nombre ? pedido.cliente.nombre.toUpperCase() : '—';
           const direccion = pedido.cliente && pedido.cliente.direccion ? pedido.cliente.direccion : '—';
