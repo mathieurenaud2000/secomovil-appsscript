@@ -294,6 +294,26 @@
   .card.is-delivered .card-actions .arrow-grey{ display:block; }
   .card.is-delivered .card-actions .check-grey-bottom{ display:none; }
 
+  /* ÉTAT SANS PÉDIDO */
+  .card-empty{
+    grid-row:1;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding: calc(20px * var(--fix));
+    font-size: calc(var(--font-body) * var(--fix));
+    font-weight:700;
+  }
+
+  .card.is-empty{ grid-template-rows: 1fr; --actionsH: 0; }
+  .card.is-empty .card-empty{ display:flex; }
+  .card.is-empty .card-main,
+  .card.is-empty .card-confirm,
+  .card.is-empty .card-deleted,
+  .card.is-empty .card-delivered{ display:none; }
+  .card.is-empty .card-actions{ display:none; }
+
   .card-actions .arrow-grey,
   .card-actions .check-grey-bottom{
     position:absolute; right: calc(10px * var(--fix)); bottom: calc(6px * var(--fix));
@@ -407,6 +427,8 @@
       <img class="icon" src="https://lh3.googleusercontent.com/d/1ejYqmcRjgWxEfPf8TPAbwYYNv5ulYNAo" alt="OK">
       <div class="msg">Pedido entregado</div>
     </div>
+
+    <div class="card-empty" id="cardEmptyText">Sin pedido pendiente</div>
 
     <div class="card-actions">
       <button type="button" class="act--delete" id="btnDel">
