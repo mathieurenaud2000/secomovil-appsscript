@@ -451,11 +451,35 @@
       var ctx = (typeof window !== 'undefined' && window.SECO_CTX) ? window.SECO_CTX : {};
       var cliente = (ctx && ctx.cliente) ? ctx.cliente : {};
 
+      function obtenerSectorDesdePagina(){
+        var labels = document.querySelectorAll('.contact-card .label');
+        for (var i = 0; i < labels.length; i++) {
+          var lbl = labels[i];
+          if ((lbl.textContent || '').toString().trim().toLowerCase() !== 'sector') continue;
+
+          var contenedor = lbl.parentElement;
+          if (contenedor) {
+            var txtBody = contenedor.querySelector('.txt-body');
+            if (txtBody && txtBody.textContent) {
+              return txtBody.textContent.trim();
+            }
+          }
+
+          var siguiente = lbl.nextElementSibling;
+          if (siguiente && siguiente.classList.contains('txt-body') && siguiente.textContent) {
+            return siguiente.textContent.trim();
+          }
+        }
+        return '';
+      }
+
       if (typeof cliente.precioBase === 'number' && !isNaN(cliente.precioBase)) {
         return Number(cliente.precioBase);
       }
 
-      var sector = (cliente.sector || '').toString().trim().toLowerCase();
+      var sector = obtenerSectorDesdePagina() || (cliente.sector || '').toString().trim();
+      sector = sector.toLowerCase();
+
       var sectores = Array.isArray(ctx && ctx.sectores) ? ctx.sectores : [];
 
       for (var i = 0; i < sectores.length; i++) {
