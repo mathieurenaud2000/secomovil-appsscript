@@ -1373,6 +1373,29 @@
       return out;
     }
 
+    function normalizarHora(h) {
+      if (!h) return '';
+      const raw = String(h).trim();
+
+      // Format H:MM ou HH:MM
+      const m = raw.match(/(\d{1,2}):(\d{2})/);
+      if (m) {
+        const hh = m[1].padStart(2, "0");
+        const mm = m[2];
+        return hh + ":" + mm;
+      }
+
+      // Format ISO ou Date()
+      const d = new Date(raw);
+      if (!isNaN(d.getTime())) {
+        const hh = String(d.getHours()).padStart(2, "0");
+        const mm = String(d.getMinutes()).padStart(2, "0");
+        return hh + ":" + mm;
+      }
+
+      return raw;
+    }
+
     function formatFechaEtiqueta(raw){
       if (!raw) return "";
 
@@ -1493,7 +1516,9 @@
         var times = buildTimes();
         var perRow = 3, groupRows = 4, groupSize = perRow * groupRows;
         var col = 1;
-        var currentValue = (dropdown.dataset.value || (label && label.textContent) || '').trim();
+        const ddHora = document.querySelector('.dropdown[data-name="hora"]');
+        const rawSelected = ddHora ? (ddHora.dataset.value || '') : '';
+        const horaSeleccionada = normalizarHora(rawSelected);
 
         times.forEach(function(txt, idx){
           var li = document.createElement('li');
@@ -1502,7 +1527,7 @@
           li.setAttribute('role','option');
           li.dataset.col = String(col);
 
-          if (txt === currentValue){
+          if (normalizarHora(txt) === horaSeleccionada) {
             li.classList.add('is-selected');
           }
 
@@ -1664,17 +1689,16 @@
     }
 
     function setDefaultHoraOuDesdePedido(){
-      var ddHora = document.querySelector('.dropdown[data-name="hora"]');
-      if (!ddHora) return;
+      const horaRaw = pedido.horaEntrega;
+      const horaNorm = normalizarHora(horaRaw);
 
-      var button = ddHora.querySelector('.dd-button');
-      var label  = ddHora.querySelector('.dd-label');
-      var defaultHora = ((pedido && (pedido.horaEntrega || pedido.hora)) || '11:40').toString().trim();
-
-      if (defaultHora){
-        if (label) label.textContent = defaultHora;
-        if (button) button.removeAttribute('data-placeholder');
-        ddHora.dataset.value = defaultHora;
+      const ddHora = document.querySelector('.dropdown[data-name="hora"]');
+      if (ddHora) {
+        ddHora.dataset.value = horaNorm;
+        const lbl = ddHora.querySelector('.dd-label');
+        const btn = ddHora.querySelector('.dd-button');
+        if (lbl) lbl.textContent = horaNorm;
+        if (btn) btn.removeAttribute('data-placeholder');
       }
 
       updatePrecioYBoton();
