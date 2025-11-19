@@ -1660,13 +1660,16 @@
     function setDefaultHoraOuDesdePedido(){
       var ddHora = document.querySelector('.dropdown[data-name="hora"]');
       if (!ddHora) return;
+
       var button = ddHora.querySelector('.dd-button');
       var label  = ddHora.querySelector('.dd-label');
-      var defaultHora = (pedido && (pedido.horaEntrega || pedido.hora)) || '11:40';
+      var defaultHora = ((pedido && (pedido.horaEntrega || pedido.hora)) || '11:40').toString().trim();
 
-      if (label) label.textContent = defaultHora;
-      if (button) button.removeAttribute('data-placeholder');
-      ddHora.dataset.value = defaultHora;
+      if (defaultHora){
+        if (label) label.textContent = defaultHora;
+        if (button) button.removeAttribute('data-placeholder');
+        ddHora.dataset.value = defaultHora;
+      }
 
       updatePrecioYBoton();
     }
