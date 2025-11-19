@@ -530,6 +530,10 @@
             editCell.dataset.editing = '1';
             setEditLoading(true);
             prepararCtxEditarPedido();
+            if (pedidoActual) {
+              window.SECO_CTX = window.SECO_CTX || {};
+              window.SECO_CTX.pedidoEnEdicion = pedidoActual;
+            }
             loadPage('editarPedido', function(){
               setEditLoading(false);
               editCell.dataset.editing = '0';
@@ -1315,6 +1319,20 @@
   },
 
   editarPedido: function(){
+    var ctx = (typeof window !== 'undefined' && window.SECO_CTX) ? window.SECO_CTX : {};
+    var pedido = ctx && ctx.pedidoEnEdicion ? ctx.pedidoEnEdicion : null;
+
+    var overlay      = document.getElementById('ddOverlay');
+    var overlayList  = document.getElementById('ddOverlayList');
+    var btnVolver    = document.getElementById('btnVolver');
+    var btnRegistrar = document.getElementById('btnRegistrar');
+    var pedidoIdEl   = document.getElementById('pedidoId');
+    var contactEditBtn   = document.querySelector('.contact-edit');
+
+    var overlayListRef = null;
+    var currentDropdown = null;
+    var contactEditLoading = false;
+
     function applyScaleFix(){
       var cssW = window.innerWidth || document.documentElement.clientWidth;
       var screenW = Math.min(window.screen.width || 375, window.screen.height || 812);
@@ -1328,211 +1346,297 @@
 
     function sizeHeaderImage(){
       var img = document.getElementById('headerImg');
-      var wrap = document.querySelector('.wrapper');
-      if (!img || !wrap) return;
-      var w = Math.floor(wrap.clientWidth);
-      if (w > 0){
-        img.style.width = w + 'px';
+      var wrapper = document.querySelector('.wrapper');
+      if (!img || !wrapper) return;
+      var avail = Math.floor(wrapper.clientWidth);
+      if (avail > 0) {
+        img.style.width = avail + 'px';
         img.style.maxWidth = '100%';
         img.removeAttribute('height');
       }
     }
 
-    var overlay      = document.getElementById('ddOverlay');
-    var overlayList  = document.getElementById('ddOverlayList');
-    var overlayInner = document.getElementById('ddOverlayInner');
-    var btnVolver    = document.getElementById('btnVolver');
-    var btnRegistrar = document.getElementById('btnRegistrar');
-    var btnEditar    = document.getElementById('btnEditarContacto');
-    var pedidoIdEl   = document.getElementById('pedidoId');
-
-    var ctxCache = null;
-    var currentDropdown = null;
-
-    function obtenerCtxServidor(){
-      if (ctxCache) return ctxCache;
-      if (typeof window !== 'undefined' && window.SECO_CTX){
-        ctxCache = window.SECO_CTX;
-        return ctxCache;
+    function buildTimes(){
+      const out=[];
+      for(let h=6;h<=18;h++){
+        for(let m=0;m<60;m+=5){
+          if(h===18 && m>55) break;
+          out.push(String(h).padStart(2,"0")+":"+String(m).padStart(2,"0"));
+        }
       }
-      return null;
+      return out;
     }
 
-    function cuandoCtxListo(callback, intento){
-      var ctx = obtenerCtxServidor();
-      if (ctx){
-        callback(ctx);
-        return;
+    function buildDatesStartingTomorrow(count){
+      const dias = ["Domingo","Lunes","Martes","Miercoles","Jueves","Viernes","Sabado"];
+      const res = [];
+      const hoy = new Date();
+      for (let i = 1; i <= count; i++){
+        const d = new Date(hoy);
+        d.setDate(hoy.getDate() + i);
+        const dia = dias[d.getDay()];
+        const dd  = String(d.getDate()).padStart(2,"0");
+        const mm  = String(d.getMonth()+1).padStart(2,"0");
+        const yyyy = d.getFullYear();
+        res.push(dia + ", " + dd + "/" + mm + "/" + yyyy);
       }
-      var intentoActual = intento || 0;
-      if (intentoActual >= 50) return;
-      setTimeout(function(){
-        cuandoCtxListo(callback, intentoActual + 1);
-      }, 80);
+      return res;
     }
 
-    function formatearPrecio(valor){
-      var num = Number(valor);
-      if (isNaN(num)) return '0,00 $';
-      return num.toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' $';
-    }
+    function updatePrecioYBoton(){
+      var precioBase = 1.00;
+      var ddFecha    = document.querySelector('.dropdown[data-name="fecha"]');
+      var ddHora     = document.querySelector('.dropdown[data-name="hora"]');
+      var ddCantidad = document.querySelector('.dropdown[data-name="cantidad"]');
+      var btn        = document.getElementById('btnRegistrar');
+      var precioEl   = document.getElementById('precioValor');
 
-    function setDropdownValue(dd, value){
-      if (!dd) return;
-      var btn = dd.querySelector('.dd-button');
-      var lbl = dd.querySelector('.dd-label');
-      if (lbl){
-        lbl.textContent = value;
+      function isFilled(dd){
+        if (!dd) return false;
+        var button = dd.querySelector('.dd-button');
+        var val = dd.dataset.value || '';
+        var isPlaceholder = button && button.getAttribute('data-placeholder') === 'true';
+        return !isPlaceholder && val !== '';
       }
+
+      var cantidad = 1;
+      if (ddCantidad){
+        var raw = ddCantidad.dataset.value || '';
+        var m = raw.match(/^(\d+)/);
+        if (m) cantidad = parseInt(m[1],10);
+      }
+      if (!isFinite(cantidad) || cantidad < 1) cantidad = 1;
+
+      var total = precioBase * cantidad;
+      if (precioEl){
+        var txt = total.toFixed(2).replace('.', ',') + ' $';
+        precioEl.textContent = txt;
+      }
+
+      var ok = isFilled(ddFecha) && isFilled(ddHora) && isFilled(ddCantidad);
       if (btn){
-        btn.removeAttribute('data-placeholder');
-      }
-      dd.dataset.value = value;
-      actualizarBotonRegistrar();
-    }
-
-    function getOptions(dd){
-      if (!dd) return [];
-      var dataEl = dd.querySelector('.dd-data');
-      if (!dataEl) return [];
-      var raw = dataEl.textContent || dataEl.getAttribute('data-options') || '[]';
-      try {
-        var parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) return parsed;
-        return [];
-      } catch (e){
-        return [];
+        btn.disabled = !ok;
+        btn.classList.toggle('btn-noir', ok);
+        btn.classList.toggle('btn-desactive', !ok);
       }
     }
 
-    function renderFullscreenOptions(dd, opts){
-      var label = dd.querySelector('.dd-label');
-      if (label){
-        var ph = label.textContent.trim();
-        var liPh = document.createElement('li');
-        liPh.className = 'dd-overlay-option placeholder';
-        liPh.textContent = ph;
-        liPh.addEventListener('click', function(){
-          closeOverlay();
-        });
-        overlayList.appendChild(liPh);
-      }
+    var overlayRef, overlayListEl;
 
-      opts.forEach(function(txt){
-        var li = document.createElement('li');
-        li.className = 'dd-overlay-option';
-        li.textContent = txt;
-        li.addEventListener('click', function(){
-          setDropdownValue(dd, txt);
-          closeOverlay();
-        });
-        overlayList.appendChild(li);
-      });
-    }
+    function openOverlayFor(dropdown){
+      overlayRef = overlay;
+      overlayListEl = overlayList || document.getElementById('ddOverlayList');
+      if (!overlayRef || !overlayListEl || !dropdown) return;
 
-    function renderGridOptions(dd, opts){
-      var label = dd.querySelector('.dd-label');
-      if (label){
-        var ph = label.textContent.trim();
-        var liPh = document.createElement('li');
-        liPh.className = 'dd-grid-option placeholder';
-        liPh.textContent = ph;
-        liPh.addEventListener('click', function(){ closeOverlay(); });
-        overlayList.appendChild(liPh);
-      }
+      currentDropdown = dropdown;
+      overlayListEl.className = 'dd-overlay-list';
+      overlayListEl.innerHTML = "";
 
-      opts.forEach(function(txt, idx){
-        var li = document.createElement('li');
-        li.className = 'dd-grid-option';
-        var col = (idx % 3) + 1;
-        li.setAttribute('data-col', col);
-        li.textContent = txt;
-        li.addEventListener('click', function(){
-          setDropdownValue(dd, txt);
-          closeOverlay();
-        });
-        overlayList.appendChild(li);
-      });
+      var button = dropdown.querySelector('.dd-button');
+      var label  = dropdown.querySelector('.dd-label');
 
-      if (opts.length){
-        var sep = document.createElement('li');
-        sep.className = 'dd-grid-sep-black';
-        overlayList.appendChild(sep);
-      }
-    }
-
-    function openOverlay(dd){
-      if (!overlay || !overlayList || !dd) return;
-      currentDropdown = dd;
-      overlayList.innerHTML = '';
-      overlayList.classList.remove('grid3');
-
-      var variant = dd.getAttribute('data-list-variant');
-      var opts = getOptions(dd);
+      var variant = dropdown.dataset.listVariant || 'fullscreen';
 
       if (variant === 'grid3'){
-        overlayList.classList.add('grid3');
-        renderGridOptions(dd, opts);
+        overlayListEl.classList.add('grid3');
+
+        var phText = dropdown.dataset.ph || label.textContent.trim() || 'Heure';
+        var ph = document.createElement('li');
+        ph.className = 'dd-grid-option placeholder';
+        ph.textContent = phText;
+        ph.addEventListener('click', function(){
+          label.textContent = phText;
+          button.setAttribute('data-placeholder','true');
+          dropdown.dataset.value = '';
+          closeOverlay();
+          setTimeout(()=>button.focus({preventScroll:true}),0);
+          updatePrecioYBoton();
+        });
+        overlayListEl.appendChild(ph);
+
+        var times = buildTimes();
+        var perRow = 3, groupRows = 4, groupSize = perRow * groupRows;
+        var col = 1;
+
+        times.forEach(function(txt, idx){
+          var li = document.createElement('li');
+          li.className = 'dd-grid-option';
+          li.textContent = txt;
+          li.setAttribute('role','option');
+          li.dataset.col = String(col);
+
+          li.addEventListener('click', function(){
+            label.textContent = txt;
+            button.removeAttribute('data-placeholder');
+            dropdown.dataset.value = txt;
+            closeOverlay();
+            setTimeout(()=>button.focus({preventScroll:true}),0);
+            updatePrecioYBoton();
+          });
+          overlayListEl.appendChild(li);
+
+          col = (col % 3) + 1;
+
+          var pos = idx + 1;
+          if (pos % groupSize === 0 && pos < times.length){
+            var sep = document.createElement('li');
+            sep.className = 'dd-grid-sep-black';
+            overlayListEl.appendChild(sep);
+          }
+        });
+
       } else {
-        renderFullscreenOptions(dd, opts);
+        var dataEl = dropdown.querySelector('.dd-data');
+        var items = [];
+        if (dataEl) {
+          try { items = JSON.parse(dataEl.textContent.trim() || "[]"); } catch(e){ items = []; }
+        }
+
+        var placeholderText = dropdown.dataset.ph || label.textContent.trim() || 'Seleccionar';
+        var liPh = document.createElement('li');
+        liPh.className = 'dd-overlay-option placeholder';
+        liPh.setAttribute('role','option');
+        liPh.textContent = placeholderText;
+        liPh.addEventListener('click', function(){
+          label.textContent = placeholderText;
+          button.setAttribute('data-placeholder','true');
+          dropdown.dataset.value = '';
+          closeOverlay();
+          setTimeout(()=>button.focus({preventScroll:true}),0);
+          updatePrecioYBoton();
+        });
+        overlayListEl.appendChild(liPh);
+
+        items.forEach(function(txt){
+          var li = document.createElement('li');
+          li.className = 'dd-overlay-option';
+          li.setAttribute('role','option');
+          li.textContent = txt;
+          li.addEventListener('click', function(){
+            label.textContent = txt;
+            button.removeAttribute('data-placeholder');
+            dropdown.dataset.value = txt;
+            closeOverlay();
+            setTimeout(()=>button.focus({preventScroll:true}),0);
+            updatePrecioYBoton();
+          });
+          overlayListEl.appendChild(li);
+        });
       }
 
-      overlay.setAttribute('data-open','true');
+      document.getElementById('ddOverlay').setAttribute('data-open','true');
       document.body.style.overflow = 'hidden';
     }
 
     function closeOverlay(){
-      if (!overlay) return;
-      overlay.removeAttribute('data-open');
+      document.getElementById('ddOverlay').setAttribute('data-open','false');
       document.body.style.overflow = '';
       currentDropdown = null;
     }
 
-    function actualizarBotonRegistrar(){
-      if (!btnRegistrar) return;
-      var fechaOK    = !document.querySelector('[data-name="fecha"] .dd-button')?.hasAttribute('data-placeholder');
-      var horaOK     = !document.querySelector('[data-name="hora"] .dd-button')?.hasAttribute('data-placeholder');
-      var cantidadOK = !document.querySelector('[data-name="cantidad"] .dd-button')?.hasAttribute('data-placeholder');
+    function setupDropdown(dropdown){
+      var button = dropdown.querySelector('.dd-button');
+      var label  = dropdown.querySelector('.dd-label');
 
-      if (fechaOK && horaOK && cantidadOK){
-        btnRegistrar.disabled = false;
-        btnRegistrar.classList.remove('btn-desactive');
-        btnRegistrar.classList.add('btn-noir');
-      } else {
-        btnRegistrar.disabled = true;
-        btnRegistrar.classList.add('btn-desactive');
-        btnRegistrar.classList.remove('btn-noir');
+      var phText = label.textContent.trim() || 'Seleccionar';
+      dropdown.dataset.ph = phText;
+      if (!dropdown.dataset.value){
+        dropdown.dataset.value = '';
       }
+
+      button.addEventListener('click', function(){
+        openOverlayFor(dropdown);
+      });
+      button.addEventListener('keydown', function(e){
+        if (e.key === 'Enter' || e.key === ' '){
+          e.preventDefault();
+          openOverlayFor(dropdown);
+        }
+      });
     }
 
-    function setPlaceholderState(dd){
-      if (!dd) return;
-      var btn = dd.querySelector('.dd-button');
-      var lbl = dd.querySelector('.dd-label');
-      if (btn && lbl && !dd.dataset.value){
-        btn.setAttribute('data-placeholder','true');
-      }
+    function initDropdowns(){
+      document.querySelectorAll('.dropdown').forEach(setupDropdown);
+      overlayListRef = document.getElementById('ddOverlayList');
+
+      document.addEventListener('keydown', function(e){
+        if (e.key === 'Escape' && document.getElementById('ddOverlay').getAttribute('data-open') === 'true'){
+          closeOverlay();
+        }
+      });
+
+      document.getElementById('ddOverlay').addEventListener('click', function(e){
+        if (e.target === e.currentTarget) closeOverlay();
+      });
     }
 
-    function poblarDesdeCtx(ctx){
-      if (!ctx) return;
-      var pedido = ctx.pedido || {};
-      var cliente = pedido.cliente || ctx.cliente || {};
+    function buildDatesAndCantidad(){
+      var ddFecha    = document.querySelector('.dropdown[data-name="fecha"]');
+      var ddCantidad = document.querySelector('.dropdown[data-name="cantidad"]');
 
-      if (pedidoIdEl && (ctx.pedidoId || pedido.idPedido)){
-        pedidoIdEl.textContent = ctx.pedidoId || pedido.idPedido;
+      if (ddFecha){
+        var dataElF = ddFecha.querySelector('.dd-data');
+        if (dataElF){
+          var fechas = buildDatesStartingTomorrow(7);
+          dataElF.textContent = JSON.stringify(fechas);
+          if (fechas.length){
+            var btnF = ddFecha.querySelector('.dd-button');
+            var labF = ddFecha.querySelector('.dd-label');
+            var fechaPedido = pedido && (pedido.fechaEntrega || pedido.fecha || pedido.fecha_entrega);
+            var fechaSeleccionada = fechaPedido && fechas.indexOf(fechaPedido) !== -1 ? fechaPedido : fechas[0];
+            if (labF) labF.textContent = fechaSeleccionada;
+            if (btnF) btnF.removeAttribute('data-placeholder');
+            ddFecha.dataset.value = fechaSeleccionada;
+          }
+        }
       }
 
+      if (ddCantidad){
+        var dataElC = ddCantidad.querySelector('.dd-data');
+        if (dataElC){
+          var items = [];
+          for (var i = 1; i <= 10; i++){
+            items.push(i + (i === 1 ? ' seco' : ' secos'));
+          }
+          dataElC.textContent = JSON.stringify(items);
+          if (items.length){
+            var btnC = ddCantidad.querySelector('.dd-button');
+            var labC = ddCantidad.querySelector('.dd-label');
+            var cantidadPedido = pedido && pedido.cantidad ? Number(pedido.cantidad) : null;
+            var cantidadTxt = cantidadPedido && items[cantidadPedido - 1] ? items[cantidadPedido - 1] : items[0];
+            if (labC) labC.textContent = cantidadTxt;
+            if (btnC) btnC.removeAttribute('data-placeholder');
+            ddCantidad.dataset.value = cantidadTxt;
+          }
+        }
+      }
+
+      updatePrecioYBoton();
+    }
+
+    function setDefaultHoraOuDesdePedido(){
+      var ddHora = document.querySelector('.dropdown[data-name="hora"]');
+      if (!ddHora) return;
+      var button = ddHora.querySelector('.dd-button');
+      var label  = ddHora.querySelector('.dd-label');
+      var defaultHora = (pedido && (pedido.horaEntrega || pedido.hora)) || '11:40';
+
+      if (label) label.textContent = defaultHora;
+      if (button) button.removeAttribute('data-placeholder');
+      ddHora.dataset.value = defaultHora;
+
+      updatePrecioYBoton();
+    }
+
+    function poblarContacto(){
+      var cliente = (pedido && pedido.cliente) || (ctx && ctx.cliente) || {};
       var nombre = cliente.nombre || '';
-      var nombreParts = nombre.split(' ');
-      var linea1 = nombreParts.shift() || '';
-      var linea2 = nombreParts.join(' ');
-
+      var partes = nombre.split(' ');
       var headerLines = document.querySelectorAll('.contact-top .txt-body div');
       if (headerLines.length){
-        headerLines[0].textContent = linea1 || nombre || 'Contacto';
+        headerLines[0].textContent = partes.shift() || nombre || 'Contacto';
         if (headerLines[1]){
-          headerLines[1].textContent = linea2 || '';
+          headerLines[1].textContent = partes.join(' ');
         }
       }
 
@@ -1541,70 +1645,14 @@
         var target = lbl.nextElementSibling;
         if (!target) return;
         if (key === 'sector') target.textContent = cliente.sector || '—';
-        else if (key === 'direccion') target.textContent = (pedido.direccion || cliente.direccion || '').trim() || '—';
-        else if (key === 'nota') target.textContent = (pedido.notas || pedido.nota || cliente.nota || '').trim() || '—';
-        else if (key === 'whatsapp') target.textContent = (cliente.telefono || cliente.whatsapp || pedido.whatsapp || '').trim() || '—';
+        else if (key === 'direccion') target.textContent = (pedido && pedido.direccion) || cliente.direccion || '—';
+        else if (key === 'nota') target.textContent = (pedido && (pedido.notas || pedido.nota)) || cliente.nota || '—';
+        else if (key === 'whatsapp') target.textContent = (cliente.telefono || cliente.whatsapp || (pedido && pedido.whatsapp)) || '—';
       });
 
-      var fechasOpciones = Array.isArray(ctx.fechas) ? ctx.fechas : [];
-      var horasOpciones  = Array.isArray(ctx.horas) ? ctx.horas : [];
-      var cantOpciones   = Array.isArray(ctx.cantidades) ? ctx.cantidades : [];
-
-      if (!fechasOpciones.length && pedido.fechaEntrega){ fechasOpciones = [pedido.fechaEntrega]; }
-      if (!horasOpciones.length && pedido.horaEntrega){ horasOpciones = [pedido.horaEntrega]; }
-      if (!cantOpciones.length){
-        if (pedido.cantidad){
-          cantOpciones = [pedido.cantidad];
-        } else {
-          cantOpciones = [1,2,3,4,5];
-        }
-      }
-
-      var ddFecha    = document.querySelector('[data-name="fecha"]');
-      var ddHora     = document.querySelector('[data-name="hora"]');
-      var ddCantidad = document.querySelector('[data-name="cantidad"]');
-
-      if (ddFecha){
-        var dataElF = ddFecha.querySelector('.dd-data');
-        if (dataElF){ dataElF.textContent = JSON.stringify(fechasOpciones); }
-        setPlaceholderState(ddFecha);
-        if (pedido.fechaEntrega){ setDropdownValue(ddFecha, pedido.fechaEntrega); }
-      }
-
-      if (ddHora){
-        var dataElH = ddHora.querySelector('.dd-data');
-        if (dataElH){ dataElH.textContent = JSON.stringify(horasOpciones); }
-        setPlaceholderState(ddHora);
-        if (pedido.horaEntrega){ setDropdownValue(ddHora, pedido.horaEntrega); }
-      }
-
-      if (ddCantidad){
-        var dataElC = ddCantidad.querySelector('.dd-data');
-        if (dataElC){ dataElC.textContent = JSON.stringify(cantOpciones); }
-        setPlaceholderState(ddCantidad);
-        if (pedido.cantidad){ setDropdownValue(ddCantidad, pedido.cantidad.toString()); }
-      }
-
-      var precioEl = document.getElementById('precioValor');
-      if (precioEl && pedido.total !== undefined && pedido.total !== null){
-        precioEl.textContent = formatearPrecio(pedido.total);
-      }
-
-      actualizarBotonRegistrar();
-    }
-
-    function bindDropdowns(){
-      document.querySelectorAll('.dropdown .dd-button').forEach(function(btn){
-        btn.addEventListener('click', function(){
-          var dd = btn.closest('.dropdown');
-          openOverlay(dd);
-        });
-      });
-
-      if (overlay){
-        overlay.addEventListener('click', function(e){
-          if (e.target === overlay){ closeOverlay(); }
-        });
+      if (pedidoIdEl){
+        var pedidoId = (pedido && (pedido.idPedido || pedido.pedidoId || pedido.id_pedido || pedido.id)) || (ctx && ctx.pedidoId);
+        if (pedidoId) pedidoIdEl.textContent = pedidoId;
       }
     }
 
@@ -1615,21 +1663,22 @@
         });
       }
 
-      if (btnEditar){
-        btnEditar.addEventListener('click', function(){
-          if (btnEditar.classList.contains('is-loading')) return;
-          btnEditar.classList.add('is-loading');
-          var ctx = obtenerCtxServidor() || {};
-          var cliente = (ctx.pedido && ctx.pedido.cliente) || ctx.cliente || {};
+      if (contactEditBtn){
+        contactEditBtn.addEventListener('click', function(){
+          if (contactEditLoading) return;
+          contactEditLoading = true;
+          contactEditBtn.classList.add('is-loading');
+          var cliente = (pedido && pedido.cliente) || (ctx && ctx.cliente) || {};
           window.SECO_CTX = {
             origen: 'editarPedido',
-            pedidoId: (ctx.pedidoId || (ctx.pedido && ctx.pedido.idPedido) || ''),
-            idContacto: cliente.idCliente || ctx.idContacto || '',
-            cliente: cliente
+            pedidoId: (pedido && (pedido.idPedido || pedido.pedidoId)) || (ctx && ctx.pedidoId) || '',
+            idContacto: cliente.idCliente || (ctx && ctx.idContacto) || '',
+            cliente: cliente,
+            pedido: pedido || (ctx && ctx.pedido)
           };
-          // Ouvrir la page d’édition du contact avec un spinner local
           loadPage('editarContacto', function(){
-            btnEditar.classList.remove('is-loading');
+            contactEditLoading = false;
+            contactEditBtn.classList.remove('is-loading');
           });
         });
       }
@@ -1638,25 +1687,21 @@
     function init(){
       applyScaleFix();
       sizeHeaderImage();
-      bindDropdowns();
+      poblarContacto();
+      initDropdowns();
+      buildDatesAndCantidad();
+      setDefaultHoraOuDesdePedido();
       bindActions();
-
-      cuandoCtxListo(function(ctx){
-        poblarDesdeCtx(ctx);
-      });
     }
 
-    if (document.readyState === 'loading'){
-      document.addEventListener('DOMContentLoaded', init);
-    } else {
-      init();
-    }
+    init();
 
     window.addEventListener('resize', function(){
       applyScaleFix();
       sizeHeaderImage();
     });
   },
+,
 
   cerrarElDia: function(){
     function applyScaleFix(){
