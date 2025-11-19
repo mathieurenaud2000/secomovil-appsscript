@@ -674,7 +674,24 @@
             btn.style.color = btn.dataset.originalColor || '';
           }
         }
-    
+
+        function setButtonSpinner(btn, isLoading, color){
+          if (!btn) return;
+          if (isLoading){
+            if (!btn.dataset.originalHtml){
+              btn.dataset.originalHtml = btn.innerHTML;
+            }
+            btn.innerHTML = '<span class="btn-spinner' + (color === 'black' ? ' black' : '') + '" aria-hidden="true"></span>';
+            btn.disabled = true;
+          } else {
+            btn.disabled = false;
+            if (btn.dataset.originalHtml){
+              btn.innerHTML = btn.dataset.originalHtml;
+              delete btn.dataset.originalHtml;
+            }
+          }
+        }
+
         function obtenerCtxServidor(){
           if (ctxCache) return ctxCache;
           if (typeof window !== 'undefined' && window.SECO_CTX) {
@@ -757,21 +774,24 @@
         // ===== BRANCHEMENT OK → NUEVO CONTACTO ou REGISTRAR PEDIDO =====
         btnOK.addEventListener('click', function(){
           if (btnOK.disabled) return;
-          setButtonLoading(btnOK, true);
-    
-          var ctx = obtenerCtxServidor();
-          var pedidoId = (ctx && ctx.idPedido) ? ctx.idPedido : '';
-    
-          var payload = {
+          setButtonSpinner(btnOK, true);
+
+          var ctx = obtenerCtxServidor() || {};
+          var pedidoId = ctx.idPedido || ctx.pedidoId || '';
+
+          var payload = Object.assign({}, ctx, {
+            origen: 'nuevoPedido',
             pedidoId: pedidoId || '',
+            idPedido: pedidoId || '',
             clienteNombre: '',
             idCliente: '',
-            origen: 'nuevoPedido'
-          };
-    
+            idContacto: ctx.idContacto || ctx.nextIdCliente || ''
+          });
+
           if (contactoSeleccionado && contactoSeleccionado.isNuevo){
             // Ouvrir la page NUEVO CONTACTO
-            setButtonLoading(btnOK, false);
+            window.SECO_CTX = payload;
+            ctxCache = payload;
             loadPage('nuevoContacto');
           } else {
             var cli = contactoSeleccionado && contactoSeleccionado.cliente ? contactoSeleccionado.cliente : null;
@@ -779,7 +799,9 @@
             payload.idCliente = (contactoSeleccionado && contactoSeleccionado.idCliente) ? contactoSeleccionado.idCliente : '';
             payload.cliente = cli;
             // Ouvrir directement la page REGISTRAR PEDIDO pour ce client
-            setButtonLoading(btnOK, false);
+            payload.idContacto = payload.idCliente;
+            window.SECO_CTX = payload;
+            ctxCache = payload;
             loadPage('registrarPedido');
           }
         });
@@ -867,7 +889,7 @@
     
         var ctxCache = null;
         var sectoresOpciones = [];
-    
+
         function setButtonLoading(btn, isLoading){
           if (!btn) return;
           if (isLoading){
@@ -880,6 +902,23 @@
           } else {
             btn.disabled = false;
             btn.style.color = btn.dataset.originalColor || '';
+          }
+        }
+
+        function setButtonSpinner(btn, isLoading, color){
+          if (!btn) return;
+          if (isLoading){
+            if (!btn.dataset.originalHtml){
+              btn.dataset.originalHtml = btn.innerHTML;
+            }
+            btn.innerHTML = '<span class="btn-spinner' + (color === 'black' ? ' black' : '') + '" aria-hidden="true"></span>';
+            btn.disabled = true;
+          } else {
+            btn.disabled = false;
+            if (btn.dataset.originalHtml){
+              btn.innerHTML = btn.dataset.originalHtml;
+              delete btn.dataset.originalHtml;
+            }
           }
         }
     
@@ -908,9 +947,17 @@
         function setContactoIdDesdeCtx(ctx){
           var idEl = document.getElementById('contactoId');
           if (!idEl || !ctx) return;
-          var idContacto = (ctx && ctx.idContacto) ? ctx.idContacto : '';
-          if (idContacto){
-            idEl.textContent = idContacto;
+          var txtEl = document.getElementById('contactoIdTexto');
+          var loaderEl = idEl.querySelector('.pedido-id-loader');
+          var idContacto = (ctx && (ctx.idContacto || ctx.nextIdCliente)) ? (ctx.idContacto || ctx.nextIdCliente) : '';
+          var tiene = !!idContacto;
+
+          if (txtEl){
+            txtEl.textContent = idContacto;
+            txtEl.style.display = tiene ? '' : 'none';
+          }
+          if (loaderEl){
+            loaderEl.style.display = tiene ? 'none' : '';
           }
         }
     
@@ -961,6 +1008,11 @@
           sectoresOpciones = sectores
             .map(function(sec){ return (sec && sec.nombre) ? sec.nombre : sec; })
             .filter(Boolean);
+
+          var dataEl = sectorBtn && sectorBtn.parentNode ? sectorBtn.parentNode.querySelector('.dd-data') : null;
+          if (dataEl){
+            dataEl.textContent = JSON.stringify(sectoresOpciones);
+          }
         }
     
         /* Dropdown simple pour "Sector" */
@@ -1035,34 +1087,45 @@
             sector:    sectorText,
             nota:      notaEl.value.trim()
           };
-    
-          setButtonLoading(btnGuardar, true);
-    
+
+          setButtonSpinner(btnGuardar, true);
+          if (btnVolverIni) btnVolverIni.disabled = true;
+
           google.script.run
             .withSuccessHandler(function(resp){
-              setButtonLoading(btnGuardar, false);
               if (!resp || (!resp.ok && !resp.success) || !resp.data || !resp.data.cliente){
+                setButtonSpinner(btnGuardar, false);
+                if (btnVolverIni) btnVolverIni.disabled = false;
                 var msg = (resp && resp.error) ? resp.error : 'Error al crear el cliente.';
                 alert(msg);
                 return;
               }
-    
+
               var cliente = resp.data.cliente; // { idCliente, nombre, telefono, direccion, sector, nota }
-    
-              var ctxNuevoPedido = obtenerCtxServidor();
-    
-              var payload = {
+
+              var ctxNuevoPedido = obtenerCtxServidor() || {};
+
+              var pedidoIdNuevo = (resp.data && (resp.data.pedidoId || resp.data.idPedido))
+                ? (resp.data.pedidoId || resp.data.idPedido)
+                : (ctxNuevoPedido.pedidoId || ctxNuevoPedido.idPedido || datosCliente.pedidoId || '');
+
+              var payload = Object.assign({}, ctxNuevoPedido, {
                 origen: 'nuevoContacto',
-                pedidoId: (resp.data && resp.data.pedidoId) ? resp.data.pedidoId : (ctxNuevoPedido.pedidoId || ''),
-                idContacto: (resp.data && resp.data.idContacto) ? resp.data.idContacto : (ctxNuevoPedido.idContacto || ''),
+                pedidoId: pedidoIdNuevo,
+                idPedido: pedidoIdNuevo,
+                idContacto: (resp.data && resp.data.idContacto) ? resp.data.idContacto : (ctxNuevoPedido.idContacto || datosCliente.idContacto || ''),
                 clienteNombre: (resp.data && resp.data.clienteNombre) ? resp.data.clienteNombre : (cliente.nombre || ''),
                 cliente: cliente
-              };
-    
+              });
+
+              window.SECO_CTX = payload;
+              ctxCache = payload;
+
               loadPage('registrarPedido');
             })
             .withFailureHandler(function(err){
-              setButtonLoading(btnGuardar, false);
+              setButtonSpinner(btnGuardar, false);
+              if (btnVolverIni) btnVolverIni.disabled = false;
               var msg = (err && err.message) ? err.message : 'Error al crear el cliente.';
               alert(msg);
             })
@@ -1071,6 +1134,8 @@
     
         /* Clic sur VOLVER AL INICIO : reset + abrirInicio() */
         btnVolverIni.addEventListener('click', function(){
+          setButtonSpinner(btnVolverIni, true, 'black');
+          if (btnGuardar) btnGuardar.disabled = true;
           // Effacer les champs
           nombreEl.value   = '';
           dirEl.value      = '';
@@ -1083,9 +1148,12 @@
           if (lbl){
             lbl.textContent = 'Elegir un sector';
           }
-    
+
           majBoutonGuardar();
-    
+
+          window.SECO_CTX = null;
+          ctxCache = null;
+
           // Ouvrir la page inicio.html côté serveur
           loadPage('inicio');
         });
@@ -1095,6 +1163,7 @@
           sizeHeaderImage();
     
           cuandoCtxListo(function(ctx){
+            ctxCache = ctx;
             setContactoIdDesdeCtx(ctx);
             sincronizarSectoresDesdeCtx(ctx);
             majBoutonGuardar();
