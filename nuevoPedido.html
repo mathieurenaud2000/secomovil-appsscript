@@ -204,6 +204,7 @@
           <span>PEDIDO</span>
         </div>
         <div class="header-id" id="pedidoIdHeader">
+          <span id="pedidoIdTexto" style="display:none;"></span>
           <span class="pedido-id-loader" aria-label="Cargando ID" role="status">
             <span class="dot"></span>
             <span class="dot"></span>
@@ -248,14 +249,30 @@
 
   <script>
     function setPedidoIdHeader(texto){
-      var el = document.getElementById('pedidoIdHeader');
-      if (!el) return;
-      el.textContent = (texto || '').toString().trim() || '—';
+      var contenedor = document.getElementById('pedidoIdHeader');
+      var campoTexto = contenedor ? contenedor.querySelector('#pedidoIdTexto') : null;
+      var loader = contenedor ? contenedor.querySelector('.pedido-id-loader') : null;
+
+      if (!contenedor) return;
+
+      var valor = (texto || '').toString().trim();
+      var tieneValor = !!valor;
+
+      if (campoTexto){
+        campoTexto.textContent = valor;
+        campoTexto.style.display = tieneValor ? '' : 'none';
+      } else {
+        contenedor.textContent = valor || '—';
+      }
+
+      if (loader){
+        loader.style.display = tieneValor ? 'none' : '';
+      }
     }
 
     function cargarNuevoPedidoId(){
       if (!(window.google && google.script && google.script.run)){
-        setPedidoIdHeader('—');
+        setPedidoIdHeader('');
         return;
       }
 
@@ -264,11 +281,11 @@
           if (resp && resp.ok && resp.data && resp.data.idPedido){
             setPedidoIdHeader(resp.data.idPedido);
           } else {
-            setPedidoIdHeader('—');
+            setPedidoIdHeader('');
           }
         })
         .withFailureHandler(function(){
-          setPedidoIdHeader('—');
+          setPedidoIdHeader('');
         })
         .initNuevoPedido();
     }
