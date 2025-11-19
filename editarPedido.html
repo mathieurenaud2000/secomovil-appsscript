@@ -412,7 +412,7 @@
       <!-- PRIX -->
       <div class="price-row">
         <div class="price-label">PRECIO</div>
-        <div class="price-value" id="precioValor">1,00 $</div>
+        <div class="price-value" id="precioValor"></div>
       </div>
 
       <!-- SÉPARATEUR NOIR SOUS LE PRIX -->
@@ -447,49 +447,60 @@
       document.documentElement.style.setProperty('--fix', String(fix));
     }
 
-    function getPrecioBaseDesdeCtx(){
+    function obtenerElementoSector(){
+      var labels = document.querySelectorAll('.contact-card .label');
+      for (var i = 0; i < labels.length; i++) {
+        var lbl = labels[i];
+        if ((lbl.textContent || '').toString().trim().toLowerCase() !== 'sector') continue;
+
+        var contenedor = lbl.parentElement;
+        if (contenedor) {
+          var txtBody = contenedor.querySelector('.txt-body');
+          if (txtBody && txtBody.textContent) {
+            return txtBody;
+          }
+        }
+
+        var siguiente = lbl.nextElementSibling;
+        if (siguiente && siguiente.classList.contains('txt-body') && siguiente.textContent) {
+          return siguiente;
+        }
+      }
+      return null;
+    }
+
+    function obtenerSectorDesdePagina(){
+      var el = obtenerElementoSector();
+      return el && el.textContent ? el.textContent.trim() : '';
+    }
+
+    function construirSectorPrices(){
       var ctx = (typeof window !== 'undefined' && window.SECO_CTX) ? window.SECO_CTX : {};
-      var cliente = (ctx && ctx.cliente) ? ctx.cliente : {};
-
-      function obtenerSectorDesdePagina(){
-        var labels = document.querySelectorAll('.contact-card .label');
-        for (var i = 0; i < labels.length; i++) {
-          var lbl = labels[i];
-          if ((lbl.textContent || '').toString().trim().toLowerCase() !== 'sector') continue;
-
-          var contenedor = lbl.parentElement;
-          if (contenedor) {
-            var txtBody = contenedor.querySelector('.txt-body');
-            if (txtBody && txtBody.textContent) {
-              return txtBody.textContent.trim();
-            }
-          }
-
-          var siguiente = lbl.nextElementSibling;
-          if (siguiente && siguiente.classList.contains('txt-body') && siguiente.textContent) {
-            return siguiente.textContent.trim();
-          }
-        }
-        return '';
-      }
-
-      if (typeof cliente.precioBase === 'number' && !isNaN(cliente.precioBase)) {
-        return Number(cliente.precioBase);
-      }
-
-      var sector = obtenerSectorDesdePagina() || (cliente.sector || '').toString().trim();
-      sector = sector.toLowerCase();
-
       var sectores = Array.isArray(ctx && ctx.sectores) ? ctx.sectores : [];
+      var tabla = {};
 
-      for (var i = 0; i < sectores.length; i++) {
-        var sec = sectores[i] || {};
-        if ((sec.nombre || '').toString().trim().toLowerCase() === sector && typeof sec.precio === 'number' && !isNaN(sec.precio)) {
-          return Number(sec.precio);
-        }
+      sectores.forEach(function(sec){
+        var nombre = (sec && sec.nombre) ? sec.nombre.toString().trim() : '';
+        var precioValido = (sec && typeof sec.precio === 'number' && !isNaN(sec.precio))
+          ? Number(sec.precio)
+          : null;
+
+        if (!nombre || precioValido === null) return;
+        tabla[nombre.toLowerCase()] = precioValido;
+      });
+
+      return tabla;
+    }
+
+    function getPrecioBaseDesdeCtx(){
+      var sectorTexto = (obtenerSectorDesdePagina() || '').toString().trim().toLowerCase();
+      var sectorPrices = construirSectorPrices();
+
+      if (sectorTexto && Object.prototype.hasOwnProperty.call(sectorPrices, sectorTexto)) {
+        return sectorPrices[sectorTexto];
       }
 
-      return 1;
+      return 0;
     }
 
     function obtenerCantidadSeleccionada(){
@@ -514,6 +525,17 @@
         var txt = total.toFixed(2).replace('.', ',') + ' $';
         precioEl.textContent = txt;
       }
+    }
+
+    function observarCambiosSector(){
+      var sectorEl = obtenerElementoSector();
+      if (!sectorEl || typeof MutationObserver !== 'function') return;
+
+      var obs = new MutationObserver(function(){
+        actualizarPrecio();
+      });
+
+      obs.observe(sectorEl, { childList: true, characterData: true, subtree: true });
     }
 
     /* Largeur stricte du logo pour neutraliser la largeur intrinsèque */
@@ -711,6 +733,7 @@
       applyScaleFix();
       sizeHeaderImage();
       initDropdowns();
+      observarCambiosSector();
       actualizarPrecio();
     }
 
