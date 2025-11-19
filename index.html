@@ -635,11 +635,30 @@
         var contactBtn  = document.getElementById('contactBtn');
         var btnOK       = document.getElementById('btnOK');
         var btnVolver   = document.getElementById('btnVolverInicio');
-        var pedidoIdEl  = document.getElementById('pedidoIdHeader');
-    
+
         var contactosOpciones = [];
         var contactoSeleccionado = null;
         var ctxCache = null;
+
+        function setPedidoIdHeaderDesdeValor(idPedido){
+          var cont = document.getElementById('pedidoIdHeader');
+          if (!cont) return;
+
+          var txt = cont.querySelector('#pedidoIdTexto');
+          var loader = cont.querySelector('.pedido-id-loader');
+
+          var valor = (idPedido || '').toString().trim();
+          var tieneValor = !!valor;
+
+          if (txt){
+            txt.textContent = valor;
+            txt.style.display = tieneValor ? '' : 'none';
+          }
+
+          if (loader){
+            loader.style.display = tieneValor ? 'none' : '';
+          }
+        }
     
         function setButtonLoading(btn, isLoading){
           if (!btn) return;
@@ -693,14 +712,6 @@
           });
     
           contactosOpciones = opciones;
-        }
-    
-        function renderPedidoId(){
-          var ctx = obtenerCtxServidor();
-          var id = (ctx && ctx.idPedido) ? ctx.idPedido : '';
-          if (pedidoIdEl && id){
-            pedidoIdEl.textContent = id;
-          }
         }
     
         function actualizarEstadoBtnOK(){
@@ -782,12 +793,29 @@
         function init(){
           applyScaleFix();
           sizeHeaderImage();
-    
-          cuandoCtxListo(function(){
-            renderPedidoId();
-            construirOpcionesContactos();
-            actualizarEstadoBtnOK();
-          });
+
+          if (window.google && google.script && google.script.run){
+            google.script.run
+              .withSuccessHandler(function(resp){
+                if (resp && resp.ok && resp.data){
+                  window.SECO_CTX = resp.data;
+                  ctxCache = resp.data;
+
+                  setPedidoIdHeaderDesdeValor(resp.data.idPedido);
+
+                  construirOpcionesContactos();
+                  actualizarEstadoBtnOK();
+                } else {
+                  setPedidoIdHeaderDesdeValor('');
+                }
+              })
+              .withFailureHandler(function(){
+                setPedidoIdHeaderDesdeValor('');
+              })
+              .initNuevoPedido();
+          } else {
+            setPedidoIdHeaderDesdeValor('');
+          }
         }
         if (document.readyState === 'loading'){
           document.addEventListener('DOMContentLoaded', init);
