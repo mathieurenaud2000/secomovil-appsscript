@@ -283,7 +283,7 @@
             extraText.textContent = '';
             currentHour = '--:--';
             if (cardEmptyText){
-              cardEmptyText.textContent = 'Sin pedido pendiente';
+              cardEmptyText.innerHTML = 'Sin pedido<br>Pendiente';
             }
             clearActionProcessing();
             lockToNormalHeight();
