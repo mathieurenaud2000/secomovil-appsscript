@@ -286,8 +286,7 @@
               cardEmptyText.textContent = 'Sin pedido pendiente';
             }
             clearActionProcessing();
-            card.style.height = '';
-            normalHeight = null;
+            lockToNormalHeight();
             return;
           }
 
@@ -596,7 +595,8 @@
               !card.classList.contains('is-deleted') &&
               !card.classList.contains('is-timeconfirm') &&
               !card.classList.contains('is-deliveryconfirm') &&
-              !card.classList.contains('is-delivered')){
+              !card.classList.contains('is-delivered') &&
+              !card.classList.contains('is-empty')){
             captureNormalHeight();
           } else {
             lockToNormalHeight();
