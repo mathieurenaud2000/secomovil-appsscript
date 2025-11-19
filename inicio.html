@@ -240,6 +240,24 @@
   .card-actions .act--delay  .act-icon{ width:calc(30.6px * var(--fix)); }
   .card-actions .act--confirm{ background:#000; color:#fff; }
   .card-actions .act--confirm .act-icon{ width:calc(30.6px * var(--fix)); }
+  .card-actions .act--confirm{ position:relative; }
+  .card-actions .btn-confirm-spinner{
+    position:absolute;
+    inset:0;
+    display:none;
+    align-items:center;
+    justify-content:center;
+  }
+  .card-actions .act--confirm.is-loading-confirm .act-icon{
+    visibility:hidden;
+  }
+  .card-actions .act--confirm.is-loading-confirm .btn-confirm-spinner{
+    display:flex;
+  }
+  .card-actions .act--confirm.is-loading-confirm{
+    background:#000;
+    color:#fff;
+  }
 
   .card.is-confirm .card-actions .act--delay,
   .card.is-timeconfirm .card-actions .act--delay,
@@ -401,6 +419,9 @@
 
       <button type="button" class="act--confirm" id="btnConfirm">
         <img class="act-icon" src="https://lh3.googleusercontent.com/d/1kIWQWxgpGWgRbdiBcm_X1BpwFZkUwX5l" alt="Confirmer">
+        <div class="btn-confirm-spinner" aria-hidden="true">
+          <div class="spinner spinner--invert" aria-label="Cargando"></div>
+        </div>
       </button>
 
       <img class="arrow-grey" src="https://lh3.googleusercontent.com/d/1or6tPZN2u4WpSsFBdx3SsM4HNGCWDcC7" alt="Continuer">
