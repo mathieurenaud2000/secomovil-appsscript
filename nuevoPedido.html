@@ -245,3 +245,37 @@
   <div class="dd-overlay" id="ddOverlay">
     <ul class="dd-overlay-list" id="ddOverlayList"></ul>
   </div>
+
+  <script>
+    function setPedidoIdHeader(texto){
+      var el = document.getElementById('pedidoIdHeader');
+      if (!el) return;
+      el.textContent = (texto || '').toString().trim() || '—';
+    }
+
+    function cargarNuevoPedidoId(){
+      if (!(window.google && google.script && google.script.run)){
+        setPedidoIdHeader('—');
+        return;
+      }
+
+      google.script.run
+        .withSuccessHandler(function(resp){
+          if (resp && resp.ok && resp.data && resp.data.idPedido){
+            setPedidoIdHeader(resp.data.idPedido);
+          } else {
+            setPedidoIdHeader('—');
+          }
+        })
+        .withFailureHandler(function(){
+          setPedidoIdHeader('—');
+        })
+        .initNuevoPedido();
+    }
+
+    if (document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', cargarNuevoPedidoId);
+    } else {
+      cargarNuevoPedidoId();
+    }
+  </script>
