@@ -447,6 +447,51 @@
       document.documentElement.style.setProperty('--fix', String(fix));
     }
 
+    function getPrecioBaseDesdeCtx(){
+      var ctx = (typeof window !== 'undefined' && window.SECO_CTX) ? window.SECO_CTX : {};
+      var cliente = (ctx && ctx.cliente) ? ctx.cliente : {};
+
+      if (typeof cliente.precioBase === 'number' && !isNaN(cliente.precioBase)) {
+        return Number(cliente.precioBase);
+      }
+
+      var sector = (cliente.sector || '').toString().trim().toLowerCase();
+      var sectores = Array.isArray(ctx && ctx.sectores) ? ctx.sectores : [];
+
+      for (var i = 0; i < sectores.length; i++) {
+        var sec = sectores[i] || {};
+        if ((sec.nombre || '').toString().trim().toLowerCase() === sector && typeof sec.precio === 'number' && !isNaN(sec.precio)) {
+          return Number(sec.precio);
+        }
+      }
+
+      return 1;
+    }
+
+    function obtenerCantidadSeleccionada(){
+      var ddCantidad = document.querySelector('.dropdown[data-name="cantidad"]');
+      if (!ddCantidad) return 1;
+      var raw = ddCantidad.dataset.value || '';
+      var m = raw.match(/^(\d+)/);
+      if (m){
+        var n = parseInt(m[1], 10);
+        if (!isNaN(n) && n > 0) return n;
+      }
+      return 1;
+    }
+
+    function actualizarPrecio(){
+      var precioBase = getPrecioBaseDesdeCtx();
+      var cantidad = obtenerCantidadSeleccionada();
+      var total = precioBase * cantidad;
+
+      var precioEl = document.getElementById('precioValor');
+      if (precioEl){
+        var txt = total.toFixed(2).replace('.', ',') + ' $';
+        precioEl.textContent = txt;
+      }
+    }
+
     /* Largeur stricte du logo pour neutraliser la largeur intrinsèque */
     function sizeHeaderImage(){
       var img = document.getElementById('headerImg');
@@ -499,6 +544,7 @@
           dropdown.dataset.value = '';
           closeOverlay();
           setTimeout(()=>button.focus({preventScroll:true}),0);
+          actualizarPrecio();
         });
         overlayList.appendChild(ph);
 
@@ -529,6 +575,7 @@
             dropdown.dataset.value = txt;
             closeOverlay();
             setTimeout(()=>button.focus({preventScroll:true}),0);
+            actualizarPrecio();
           });
           overlayList.appendChild(li);
 
@@ -564,6 +611,7 @@
           dropdown.dataset.value = '';
           closeOverlay();
           setTimeout(()=>button.focus({preventScroll:true}),0);
+          actualizarPrecio();
         });
         overlayList.appendChild(liPh);
 
@@ -579,6 +627,7 @@
             dropdown.dataset.value = txt;
             closeOverlay();
             setTimeout(()=>button.focus({preventScroll:true}),0);
+            actualizarPrecio();
           });
           overlayList.appendChild(li);
         });
@@ -638,6 +687,7 @@
       applyScaleFix();
       sizeHeaderImage();
       initDropdowns();
+      actualizarPrecio();
     }
 
     if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); }
