@@ -173,6 +173,18 @@
           }
         }
 
+        function setConfirmButtonLoading(isLoading){
+          // Gestion du spinner local sur le bouton de confirmation en bas de la carte
+          if (!btnConfirm) return;
+          if (isLoading){
+            btnConfirm.classList.add('is-loading-confirm');
+            btnConfirm.disabled = true;
+          } else {
+            btnConfirm.classList.remove('is-loading-confirm');
+            btnConfirm.disabled = false;
+          }
+        }
+
         function setButtonWaiting(btn, isWaiting){
           if (!btn) return;
           btn.classList.toggle('is-waiting', !!isWaiting);
@@ -322,30 +334,52 @@
         function actualizarEstado(estado){
           if (!pedidoActual || !pedidoActual.idPedido) return;
           const processingBtn = actionOrigin || btnConfirm;
+          setCardLoading(true);
+          setButtonLoading(btnConfirm, true);
+          setConfirmButtonLoading(true);
           setActionProcessing(processingBtn, true);
           google.script.run
             .withSuccessHandler(function(){
               setActionProcessing(processingBtn, false);
+              setButtonLoading(btnConfirm, false);
+              setConfirmButtonLoading(false);
               setNormal();
               cargarProximoPedido();
             })
-            .withFailureHandler(function(){ setActionProcessing(processingBtn, false); })
+            .withFailureHandler(function(){
+              setActionProcessing(processingBtn, false);
+              setButtonLoading(btnConfirm, false);
+              setConfirmButtonLoading(false);
+              setCardLoading(false);
+            })
             .actualizarEstadoPedido({ idPedido: pedidoActual.idPedido, estado: estado });
         }
 
         function actualizarHora(nuevaHora){
           if (!pedidoActual || !pedidoActual.idPedido || !nuevaHora) return;
           const processingBtn = actionOrigin || btnConfirm;
+          setCardLoading(true);
+          setButtonLoading(btnConfirm, true);
+          setConfirmButtonLoading(true);
           setActionProcessing(processingBtn, true);
           google.script.run
             .withSuccessHandler(function(resp){
               setActionProcessing(processingBtn, false);
+              setButtonLoading(btnConfirm, false);
+              setConfirmButtonLoading(false);
               if (resp && resp.ok && resp.data && resp.data.pedido){
                 renderPedido(resp.data.pedido);
               }
               setNormal();
+              setCardLoading(false);
             })
-            .withFailureHandler(function(){ setActionProcessing(processingBtn, false); setNormal(); })
+            .withFailureHandler(function(){
+              setActionProcessing(processingBtn, false);
+              setButtonLoading(btnConfirm, false);
+              setConfirmButtonLoading(false);
+              setNormal();
+              setCardLoading(false);
+            })
             .cambiarHoraPedido({ idPedido: pedidoActual.idPedido, nuevaHora: nuevaHora });
         }
     
