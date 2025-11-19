@@ -60,15 +60,10 @@
     /* ===== CONTENU ===== */
     .stack { display:flex; flex-direction:column; gap: calc(var(--gap) * var(--fix)); }
 
-    /* label -> élément : gap/2 */
+    /* label -> élément : espacement uniforme */
     .label + .field,
     .label + textarea.field,
-    .label + .dropdown { margin-top: calc(20px * var(--fix)); }
-    /* Commentaire en français : espacement entre le label et le nom du contact */
-    .label + .txt-body{ margin-top: calc((-1 * var(--gap) / 2) * var(--fix)); }
-    .label + .txt-body{
-      margin-top: calc(1px * var(--fix));
-    }
+    .label + .dropdown { margin-top: calc(3px * var(--fix)); }
 
     /* Boutons */
     .btn {
@@ -361,12 +356,12 @@
 
         <div class="sep-gray"></div>
 
-        <div data-role="nota-row">
+        <div>
           <div class="label">Nota</div>
           <div class="txt-body">Dejar a la puerta</div>
         </div>
 
-        <div class="sep-gray" data-role="nota-sep-below"></div>
+        <div class="sep-gray"></div>
 
         <div>
           <div class="label">WhatsApp</div>
