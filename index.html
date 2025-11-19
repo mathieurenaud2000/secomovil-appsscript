@@ -1367,18 +1367,48 @@
       return out;
     }
 
+    function formatFechaEtiqueta(raw){
+      if (!raw) return "";
+
+      var meses = ["Ene.","Feb.","Mar.","Abr.","May.","Jun.","Jul.","Ago.","Sep.","Oct.","Nov.","Dic."];
+      var dias = ["Domingo","Lunes","Martes","Miercoles","Jueves","Viernes","Sabado"];
+
+      var d = null;
+      var s = String(raw).trim();
+
+      var m1 = s.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+      if (m1){
+        var dd = parseInt(m1[1], 10);
+        var mm = parseInt(m1[2], 10) - 1;
+        var yyyy = parseInt(m1[3], 10);
+        d = new Date(yyyy, mm, dd);
+      } else {
+        var dIso = new Date(s);
+        if (!isNaN(dIso.getTime())){
+          d = dIso;
+        }
+      }
+
+      if (!d || isNaN(d.getTime())) return raw;
+
+      var dow  = dias[d.getDay()];
+      var day  = d.getDate();
+      var mes  = meses[d.getMonth()];
+
+      return dow + ", " + day + " de " + mes;
+    }
+
     function buildDatesStartingTomorrow(count){
-      const dias = ["Domingo","Lunes","Martes","Miercoles","Jueves","Viernes","Sabado"];
       const res = [];
       const hoy = new Date();
       for (let i = 1; i <= count; i++){
         const d = new Date(hoy);
         d.setDate(hoy.getDate() + i);
-        const dia = dias[d.getDay()];
         const dd  = String(d.getDate()).padStart(2,"0");
         const mm  = String(d.getMonth()+1).padStart(2,"0");
         const yyyy = d.getFullYear();
-        res.push(dia + ", " + dd + "/" + mm + "/" + yyyy);
+        const etiqueta = formatFechaEtiqueta(yyyy + "-" + mm + "-" + dd);
+        res.push(etiqueta);
       }
       return res;
     }
@@ -1457,6 +1487,7 @@
         var times = buildTimes();
         var perRow = 3, groupRows = 4, groupSize = perRow * groupRows;
         var col = 1;
+        var currentValue = (dropdown.dataset.value || (label && label.textContent) || '').trim();
 
         times.forEach(function(txt, idx){
           var li = document.createElement('li');
@@ -1464,6 +1495,10 @@
           li.textContent = txt;
           li.setAttribute('role','option');
           li.dataset.col = String(col);
+
+          if (txt === currentValue){
+            li.classList.add('is-selected');
+          }
 
           li.addEventListener('click', function(){
             label.textContent = txt;
@@ -1578,18 +1613,23 @@
         var dataElF = ddFecha.querySelector('.dd-data');
         if (dataElF){
           const fechas = buildDatesStartingTomorrow(7);
-          const fechaPedido = pedido && (pedido.fechaEntrega || pedido.fecha || pedido.fecha_entrega);
+          const fechaPedidoRaw = pedido && (pedido.fechaEntrega || pedido.fecha || pedido.fecha_entrega);
+          const fechaPedidoFmt = fechaPedidoRaw ? formatFechaEtiqueta(fechaPedidoRaw) : '';
 
-          if (fechaPedido && !fechas.includes(fechaPedido)) fechas.unshift(fechaPedido);
+          if (fechaPedidoFmt && fechas.indexOf(fechaPedidoFmt) === -1){
+            fechas.unshift(fechaPedidoFmt);
+          }
 
           dataElF.textContent = JSON.stringify(fechas);
-          if (fechas.length){
-            var btnF = ddFecha.querySelector('.dd-button');
-            var labF = ddFecha.querySelector('.dd-label');
-            var fechaSeleccionada = fechaPedido ? fechaPedido : fechas[0];
-            if (labF) labF.textContent = fechaSeleccionada;
+
+          var btnF = ddFecha.querySelector('.dd-button');
+          var labF = ddFecha.querySelector('.dd-label');
+          var valorInicial = fechaPedidoFmt || (fechas.length ? fechas[0] : '');
+
+          if (valorInicial){
+            if (labF) labF.textContent = valorInicial;
             if (btnF) btnF.removeAttribute('data-placeholder');
-            ddFecha.dataset.value = fechaSeleccionada;
+            ddFecha.dataset.value = valorInicial;
           }
         }
       }
