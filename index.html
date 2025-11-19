@@ -1643,15 +1643,33 @@
         }
       }
 
+      var notaRow = document.querySelector('[data-role="nota-row"]');
+      var notaSep = document.querySelector('[data-role="nota-sep-below"]');
+      var notaBody = notaRow ? notaRow.querySelector('.txt-body') : null;
+      var notaValor = (pedido && (pedido.notas || pedido.nota)) || cliente.nota || '';
+      var notaTexto = (notaValor || '').trim();
+      var mostrarNota = notaTexto !== '';
+
       document.querySelectorAll('.contact-card .label').forEach(function(lbl){
         var key = lbl.textContent.trim().toLowerCase();
         var target = lbl.nextElementSibling;
         if (!target) return;
         if (key === 'sector') target.textContent = cliente.sector || '—';
         else if (key === 'direccion') target.textContent = (pedido && pedido.direccion) || cliente.direccion || '—';
-        else if (key === 'nota') target.textContent = (pedido && (pedido.notas || pedido.nota)) || cliente.nota || '—';
+        else if (key === 'nota') return;
         else if (key === 'whatsapp') target.textContent = (cliente.telefono || cliente.whatsapp || (pedido && pedido.whatsapp)) || '—';
       });
+
+      if (notaBody){
+        notaBody.textContent = notaTexto;
+      }
+
+      if (notaRow){
+        notaRow.style.display = mostrarNota ? '' : 'none';
+      }
+      if (notaSep){
+        notaSep.style.display = mostrarNota ? '' : 'none';
+      }
 
       if (pedidoIdEl){
         var pedidoId = (pedido && (pedido.idPedido || pedido.pedidoId || pedido.id_pedido || pedido.id)) || (ctx && ctx.pedidoId);

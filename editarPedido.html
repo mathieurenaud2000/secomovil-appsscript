@@ -63,7 +63,7 @@
     /* label -> élément : gap/2 */
     .label + .field,
     .label + textarea.field,
-    .label + .dropdown { margin-top: calc((-1 * var(--gap) / 2) * var(--fix)); }
+    .label + .dropdown { margin-top: 0; }
     /* Commentaire en français : espacement entre le label et le nom du contact */
     .label + .txt-body{ margin-top: calc((-1 * var(--gap) / 2) * var(--fix)); }
 
@@ -358,12 +358,12 @@
 
         <div class="sep-gray"></div>
 
-        <div>
+        <div data-role="nota-row">
           <div class="label">Nota</div>
           <div class="txt-body">Dejar a la puerta</div>
         </div>
 
-        <div class="sep-gray"></div>
+        <div class="sep-gray" data-role="nota-sep-below"></div>
 
         <div>
           <div class="label">WhatsApp</div>
