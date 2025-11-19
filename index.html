@@ -441,6 +441,8 @@
             }
           }
     
+          const selectedHour = pendingHour || currentHour;
+
           const ph = document.createElement('li');
           ph.className = 'dd-grid-option placeholder';
           ph.textContent = 'Heure';
@@ -467,7 +469,11 @@
               });
             });
             overlayList.appendChild(li);
-    
+
+            if (selectedHour && txt === selectedHour){
+              markSelectedOption(li);
+            }
+
             col = (col % 3) + 1;
             if ((idx+1) % 3 === 0){
               rowCount++;
