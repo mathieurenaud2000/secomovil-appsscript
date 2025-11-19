@@ -1577,13 +1577,16 @@
       if (ddFecha){
         var dataElF = ddFecha.querySelector('.dd-data');
         if (dataElF){
-          var fechas = buildDatesStartingTomorrow(7);
+          const fechas = buildDatesStartingTomorrow(7);
+          const fechaPedido = pedido && (pedido.fechaEntrega || pedido.fecha || pedido.fecha_entrega);
+
+          if (fechaPedido && !fechas.includes(fechaPedido)) fechas.unshift(fechaPedido);
+
           dataElF.textContent = JSON.stringify(fechas);
           if (fechas.length){
             var btnF = ddFecha.querySelector('.dd-button');
             var labF = ddFecha.querySelector('.dd-label');
-            var fechaPedido = pedido && (pedido.fechaEntrega || pedido.fecha || pedido.fecha_entrega);
-            var fechaSeleccionada = fechaPedido && fechas.indexOf(fechaPedido) !== -1 ? fechaPedido : fechas[0];
+            var fechaSeleccionada = fechaPedido ? fechaPedido : fechas[0];
             if (labF) labF.textContent = fechaSeleccionada;
             if (btnF) btnF.removeAttribute('data-placeholder');
             ddFecha.dataset.value = fechaSeleccionada;
@@ -1701,7 +1704,6 @@
       sizeHeaderImage();
     });
   },
-,
 
   cerrarElDia: function(){
     function applyScaleFix(){
