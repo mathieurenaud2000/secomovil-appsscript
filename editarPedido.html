@@ -244,6 +244,14 @@
       align-items:center;
       justify-content:center;
     }
+    .contact-edit-spinner .spinner{
+      width: calc(13px * var(--fix));
+      height: calc(13px * var(--fix));
+      border-radius:50%;
+      border: calc(2px * var(--fix)) solid rgba(0,0,0,0.2);
+      border-top-color:#000;
+      animation: spin 1s linear infinite;
+    }
     .contact-edit.is-loading .contact-edit-icon-img{ visibility:hidden; }
     .contact-edit.is-loading .contact-edit-spinner{ display:flex; }
 
@@ -275,6 +283,10 @@
       width: calc(20px * var(--fix));
       height: calc(20px * var(--fix));
       accent-color:#000;
+    }
+    @keyframes spin{
+      from{ transform:rotate(0deg); }
+      to{ transform:rotate(360deg); }
     }
   </style>
 
