@@ -1432,13 +1432,15 @@
     
         btnGuardar.addEventListener('click', function(){
           if (btnGuardar.disabled) return;
-    
+
           var waValido = validarWhatsappCampo();
           if (!waValido){
             whatsappEl.focus();
             return;
           }
-    
+
+          secoSetBlackButtonLoading(btnGuardar, true);
+
           var sectorText = sectorBtn.querySelector('.dd-label')
             ? sectorBtn.querySelector('.dd-label').textContent.trim()
             : '';
@@ -1454,7 +1456,7 @@
             sector:    sectorText,
             nota:      notaEl.value.trim()
           };
-    
+
           google.script.run
             .withSuccessHandler(function(resp){
               if (!resp || !resp.ok || !resp.data || !resp.data.ctx){
@@ -1463,6 +1465,11 @@
                 return;
               }
               loadPage('registrarPedido');
+            })
+            .withFailureHandler(function(err){
+              secoSetBlackButtonLoading(btnGuardar, false);
+              var msg = (err && err.message) ? err.message : 'Error al actualizar el contacto.';
+              alert(msg);
             })
             .actualizarContactoDesdeEditar(datosCliente, ctxActual);
         });
