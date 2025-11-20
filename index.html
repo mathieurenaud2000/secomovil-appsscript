@@ -2385,6 +2385,16 @@
         if (contactCard){
           contactCard.removeAttribute('data-loading');
           contactCard.classList.remove('is-loading');
+          contactCard.classList.remove('loading');
+
+          var loader = contactCard.querySelector('.contact-card-loader');
+          if (loader) loader.style.display = 'none';
+
+          var contenido = contactCard.querySelectorAll(':scope > *:not(.contact-card-loader)');
+          contenido.forEach(function(el){
+            el.style.removeProperty('visibility');
+            el.style.removeProperty('opacity');
+          });
         }
       }
 
