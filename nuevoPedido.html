@@ -166,6 +166,13 @@
       transition:0.15s ease;
     }
 
+    .btn.is-loading{
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
     .btn-noir{
       background:#000; color:#fff; border-color:#000;
       box-shadow:0 20px 40px rgba(0,0,0,0.40);
@@ -189,16 +196,16 @@
     /* Boutons avec spinner interne */
     .btn-spinner{
       display:inline-block;
-      width: calc(18px * var(--fix));
-      height: calc(18px * var(--fix));
+      width: calc(24px * var(--fix));
+      height: calc(24px * var(--fix));
       border-radius:50%;
-      border: 20px solid rgba(255,255,255,0.35);
+      border: 15px solid rgba(255,255,255,0.35);
       border-top-color: #fff;
       animation: btnSpin 0.9s linear infinite;
     }
 
     .btn-spinner.black{
-      border: 20px solid rgba(0,0,0,0.35);
+      border-color: rgba(0,0,0,0.35);
       border-top-color: #000;
     }
 
@@ -267,4 +274,25 @@
   <div class="dd-overlay" id="ddOverlay">
     <ul class="dd-overlay-list" id="ddOverlayList"></ul>
   </div>
+
+  <script>
+    function setButtonSpinner(btn, isLoading, color){
+      if (!btn) return;
+      if (isLoading){
+        if (!btn.dataset.originalHtml){
+          btn.dataset.originalHtml = btn.innerHTML;
+        }
+        btn.innerHTML = '<span class="btn-spinner' + (color === 'black' ? ' black' : '') + '" aria-hidden="true"></span>';
+        btn.disabled = true;
+        btn.classList.add('is-loading');
+      } else {
+        btn.disabled = false;
+        btn.classList.remove('is-loading');
+        if (btn.dataset.originalHtml){
+          btn.innerHTML = btn.dataset.originalHtml;
+          delete btn.dataset.originalHtml;
+        }
+      }
+    }
+  </script>
 
