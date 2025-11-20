@@ -2351,10 +2351,11 @@
         var nombre = cliente.nombre || ctx.clienteNombre || '';
         var partes = nombre.split(' ');
         var nombrePrincipal = partes.shift() || nombre || 'Contacto';
-        var subline = (cliente.telefono || cliente.whatsapp || '').toString().trim();
+        var subline = partes.join(' ');
+        var whatsappTexto = (cliente.telefono || cliente.whatsapp || '').toString().trim();
 
         if (nombreEl) nombreEl.textContent = nombrePrincipal;
-        if (sublineEl) sublineEl.textContent = subline || 'Contacto sin WhatsApp';
+        if (sublineEl) sublineEl.textContent = subline;
         if (sectorEl) sectorEl.textContent = cliente.sector || '—';
 
         if (dirEl) dirEl.textContent = cliente.direccion || '—';
@@ -2373,7 +2374,7 @@
           if (sepBelow) sepBelow.style.display = nota ? '' : 'none';
         }
 
-        if (waEl) waEl.textContent = subline || '—';
+        if (waEl) waEl.textContent = whatsappTexto || '—';
 
         var idEl = document.getElementById('pedidoId');
         if (idEl && ctx && ctx.pedidoId){
