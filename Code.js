@@ -1830,6 +1830,46 @@ function obtenerClientePorId_(idCliente) {
   return null;
 }
 
+/**
+ * Devuelve un cliente (BASE DE CLIENTES) y los sectores disponibles.
+ * Reutiliza la lógica existente de lectura para no duplicar hojas.
+ *
+ * @param {Object} payload
+ * @returns {{ok: boolean, error: string|null, data: Object|null}}
+ */
+function obtenerClientePorId(payload) {
+  try {
+    payload = payload || {};
+    var idContacto = (payload.idContacto || payload.idCliente || payload.id || '').toString().trim();
+
+    if (!idContacto) {
+      return { ok: false, error: 'Falta el idContacto para buscar el cliente.', data: null };
+    }
+
+    var cliente = obtenerClientePorId_(idContacto);
+    if (!cliente) {
+      return { ok: false, error: 'No se encontró el contacto solicitado.', data: null };
+    }
+
+    var sectores = leerSectores_();
+
+    return {
+      ok: true,
+      error: null,
+      data: {
+        cliente: cliente,
+        sectores: sectores
+      }
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e && e.message ? e.message : 'Error desconocido al obtener el contacto.',
+      data: null
+    };
+  }
+}
+
 
 
 
