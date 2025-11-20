@@ -808,7 +808,10 @@
     
         if (btnVolver){
           btnVolver.addEventListener('click', function(){
-            loadPage('inicio');
+            setButtonSpinner(btnVolver, true, 'black');
+            loadPage('inicio', function(){
+              setButtonSpinner(btnVolver, false, 'black');
+            });
           });
         }
     
