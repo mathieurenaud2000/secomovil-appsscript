@@ -168,14 +168,17 @@
     }
 
     .btn.is-loading{
-      padding-top: 0 !important;
-      padding-bottom: 10px !important;  /* lift spinner visually */
-      padding-left: 0 !important;
-      padding-right: 0 !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      line-height: 0 !important;
+      position: relative !important;
+      padding: 0 !important;            /* prevent size changes */
+      overflow: hidden !important;      /* keep layout stable */
+    }
+
+    .btn.is-loading .btn-spinner{
+      position: absolute !important;
+      top: 1px !important;              /* align with top */
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+      margin: 0 !important;
     }
 
     .btn-noir{
