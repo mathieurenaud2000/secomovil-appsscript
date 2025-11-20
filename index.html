@@ -886,7 +886,7 @@
         var dirEl      = document.getElementById('direccion');
         var notaEl     = document.getElementById('nota');
         var whatsappEl = document.getElementById('whatsapp');
-    
+
         var ctxCache = null;
         var sectoresOpciones = [];
 
@@ -1002,31 +1002,37 @@
             btnGuardar.classList.add('btn-desactive');
           }
         }
-    
-        function sincronizarSectoresDesdeCtx(ctx){
-          var sectores = Array.isArray(ctx && ctx.sectores) ? ctx.sectores : [];
-          sectoresOpciones = sectores
-            .map(function(sec){ return (sec && sec.nombre) ? sec.nombre : sec; })
-            .filter(Boolean);
 
-          var dataEl = sectorBtn && sectorBtn.parentNode ? sectorBtn.parentNode.querySelector('.dd-data') : null;
-          if (dataEl){
-            dataEl.textContent = JSON.stringify(sectoresOpciones);
-          }
+        function cargarSectoresDesdeServidor(callback) {
+          google.script.run
+            .withSuccessHandler(function(resp) {
+              if (resp && resp.ok && Array.isArray(resp.sectores)) {
+                sectoresOpciones = resp.sectores
+                  .map(function(sec){ return (sec && sec.nombre) ? sec.nombre : sec; })
+                  .filter(Boolean);
+              } else {
+                sectoresOpciones = [];
+              }
+              if (typeof callback === 'function') callback();
+            })
+            .withFailureHandler(function() {
+              sectoresOpciones = [];
+              if (typeof callback === 'function') callback();
+            })
+            .listarSectores();
         }
-    
+
         /* Dropdown simple pour "Sector" */
         function openSectorDropdown(){
           if (!sectoresOpciones.length) {
-            cuandoCtxListo(function(ctx){
-              sincronizarSectoresDesdeCtx(ctx);
-              openSectorDropdown();
+            cargarSectoresDesdeServidor(function(){
+              if (sectoresOpciones.length) openSectorDropdown();
             });
             return;
           }
-    
+
           overlayList.innerHTML = "";
-    
+
           sectoresOpciones.forEach(function(txt){
             var li = document.createElement('li');
             li.className = "dd-overlay-option";
@@ -1160,14 +1166,16 @@
     
         function init(){
           applyScaleFix();
-          sizeHeaderImage();
-    
+            sizeHeaderImage();
+
           cuandoCtxListo(function(ctx){
             ctxCache = ctx;
             setContactoIdDesdeCtx(ctx);
-            sincronizarSectoresDesdeCtx(ctx);
             majBoutonGuardar();
           });
+
+          cargarSectoresDesdeServidor();
+          majBoutonGuardar();
         }
         if (document.readyState === 'loading'){
           document.addEventListener('DOMContentLoaded', init);
