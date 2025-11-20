@@ -16,10 +16,10 @@
       position:absolute;
       inset:0;
       margin:auto;
-      width:36px;
-      height:36px;
+      width:calc(28px * var(--fix));
+      height:calc(28px * var(--fix));
       border-radius:50%;
-      border:12px solid rgba(255,255,255,0.35);
+      border:calc(12px * var(--fix)) solid rgba(255,255,255,0.35);
       border-top-color:#fff;
       animation: btnNoirSpin 0.9s linear infinite;
       pointer-events:none;
@@ -33,40 +33,17 @@
 <body>
   <div id="app"></div>
   <script>
-    function activarSpinnerBotonNegro(btn){
-      if (!btn || btn.dataset.spinner === '1' || btn.disabled) return;
-      const rect = btn.getBoundingClientRect();
-      btn.dataset.originalInlineWidth = btn.style.width;
-      btn.dataset.originalInlineHeight = btn.style.height;
-      btn.style.width = rect.width + 'px';
-      btn.style.height = rect.height + 'px';
-      btn.disabled = true;
-      btn.dataset.spinner = '1';
-    }
-
-    function desactivarSpinnerBotonNegro(btn){
+    window.secoSetBlackButtonLoading = function(btn, isLoading){
       if (!btn) return;
-      btn.disabled = false;
-      if (btn.dataset.originalInlineWidth !== undefined){
-        btn.style.width = btn.dataset.originalInlineWidth;
-        delete btn.dataset.originalInlineWidth;
+      if (isLoading){
+        if (btn.dataset.spinner === '1') return;
+        btn.disabled = true;
+        btn.dataset.spinner = '1';
       } else {
-        btn.style.width = '';
+        btn.disabled = false;
+        btn.removeAttribute('data-spinner');
       }
-      if (btn.dataset.originalInlineHeight !== undefined){
-        btn.style.height = btn.dataset.originalInlineHeight;
-        delete btn.dataset.originalInlineHeight;
-      } else {
-        btn.style.height = '';
-      }
-      btn.removeAttribute('data-spinner');
-    }
-
-    document.addEventListener('click', function(evt){
-      var btn = evt.target.closest('.btn-noir');
-      if (!btn) return;
-      activarSpinnerBotonNegro(btn);
-    }, true);
+    };
 
     const pageInit = {
   inicio: function(){
@@ -739,9 +716,9 @@
           if (!btn) return;
           if (btn.classList.contains('btn-noir')){
             if (isLoading){
-              activarSpinnerBotonNegro(btn);
+              window.secoSetBlackButtonLoading(btn, true);
             } else {
-              desactivarSpinnerBotonNegro(btn);
+              window.secoSetBlackButtonLoading(btn, false);
             }
             return;
           }
@@ -980,9 +957,9 @@
           if (!btn) return;
           if (btn.classList.contains('btn-noir')){
             if (isLoading){
-              activarSpinnerBotonNegro(btn);
+              window.secoSetBlackButtonLoading(btn, true);
             } else {
-              desactivarSpinnerBotonNegro(btn);
+              window.secoSetBlackButtonLoading(btn, false);
             }
             return;
           }
