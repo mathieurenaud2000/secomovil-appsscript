@@ -85,6 +85,11 @@
       40%{ opacity:0.8; transform: translateY(-1px); }
     }
 
+    @keyframes btnSpin{
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
     /* ===== CONTENU ===== */
     .stack{
       display:flex;
@@ -190,6 +195,38 @@
     .btn-blanc:active{
       color: rgba(0,0,0,0.5);
     }
+
+    /* Boutons avec spinner interne */
+    .btn-spinner{
+      display:inline-block;
+      width: calc(18px * var(--fix));
+      height: calc(18px * var(--fix));
+      border-radius:50%;
+      border: 3px solid rgba(255,255,255,0.35);
+      border-top-color: #fff;
+      animation: btnSpin 0.9s linear infinite;
+    }
+
+    .btn-spinner.black{
+      border-color: rgba(0,0,0,0.35);
+      border-top-color: #000;
+    }
+
+    #btnGuardar{
+      position:relative;
+      overflow:hidden;
+    }
+    #btnGuardar .btn-guardar-label{ display:inline-block; }
+    #btnGuardar.is-loading .btn-guardar-label{ visibility:hidden; }
+    #btnGuardar .btn-guardar-spinner{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      pointer-events:none;
+    }
+    #btnGuardar:not(.is-loading) .btn-guardar-spinner{ display:none; }
   </style>
 <div class="wrapper">
 
@@ -254,7 +291,10 @@
       <div class="sep-gray"></div>
 
       <!-- Boutons -->
-      <button class="btn btn-desactive" id="btnGuardar" disabled>GUARDAR</button>
+      <button class="btn btn-desactive" id="btnGuardar" disabled>
+        <span class="btn-guardar-label">GUARDAR</span>
+        <span class="btn-guardar-spinner" aria-hidden="true"><span class="btn-spinner"></span></span>
+      </button>
       <button class="btn btn-blanc" id="btnVolverInicio">VOLVER AL INICIO</button>
 
       <div style="height:0;"></div>
@@ -265,3 +305,15 @@
   <div class="dd-overlay" id="ddOverlay">
     <ul class="dd-overlay-list" id="ddOverlayList"></ul>
   </div>
+
+  <script>
+    (function(){
+      var btnGuardar = document.getElementById('btnGuardar');
+      if (!btnGuardar) return;
+
+      btnGuardar.addEventListener('click', function(){
+        btnGuardar.disabled = true;
+        btnGuardar.classList.add('is-loading');
+      });
+    })();
+  </script>
