@@ -225,18 +225,20 @@
     }
 
     .contact-card{
+      --contact-card-normal-height: calc(320px * var(--fix));
       display:flex;
       flex-direction:column;
       gap: calc(6px * var(--fix));
       padding: calc(6px * var(--fix)) 0;
       position:relative;
     }
-    .contact-card[data-loading="true"]{
+    .contact-card.loading{
       padding: calc(3px * var(--fix)) 0;
-      min-height: calc(150px * var(--fix));
+      min-height: calc(var(--contact-card-normal-height) * 0.25);
+      max-height: calc(var(--contact-card-normal-height) * 0.25);
       overflow:hidden;
     }
-    .contact-card[data-loading="true"] > *:not(.contact-card-loader){
+    .contact-card.loading > *:not(.contact-card-loader){
       visibility:hidden;
       opacity:0;
     }
@@ -248,7 +250,7 @@
       justify-content:center;
       pointer-events:none;
     }
-    .contact-card:not([data-loading="true"]) .contact-card-loader{ display:none; }
+    .contact-card:not(.loading) .contact-card-loader{ display:none; }
     .contact-card-spinner{
       width: calc(72px * var(--fix));
       height: calc(72px * var(--fix));
@@ -365,7 +367,7 @@
       <div class="section-title">CONTACTO</div>
       <div class="sep-black"></div>
 
-      <div class="section-block contact-card" data-loading="true" id="contactoCard">
+      <div class="section-block contact-card loading" data-loading="true" id="contactoCard">
         <div class="contact-card-loader" aria-hidden="true">
           <span class="btn-spinner black contact-card-spinner" aria-label="Cargando"></span>
         </div>
@@ -481,4 +483,57 @@
       <ul class="dd-overlay-list" id="ddOverlayList" role="listbox" aria-label="Options"></ul>
     </div>
   </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const contactoCard = document.getElementById('contactoCard');
+
+      if (!contactoCard) return;
+
+      const ensureNormalHeight = () => {
+        if (!contactoCard.dataset.normalHeight) {
+          contactoCard.dataset.normalHeight = contactoCard.scrollHeight.toString();
+          contactoCard.style.setProperty('--contact-card-normal-height', `${contactoCard.scrollHeight}px`);
+        }
+      };
+
+      const applyLoadingLayout = () => {
+        ensureNormalHeight();
+        const normalHeight = Number(contactoCard.dataset.normalHeight) || contactoCard.scrollHeight;
+        const reducedHeight = normalHeight * 0.25;
+
+        contactoCard.style.minHeight = `${reducedHeight}px`;
+        contactoCard.style.maxHeight = `${reducedHeight}px`;
+        contactoCard.classList.add('loading');
+      };
+
+      const restoreNormalLayout = () => {
+        contactoCard.classList.remove('loading');
+        contactoCard.style.minHeight = '';
+        contactoCard.style.maxHeight = '';
+      };
+
+      const syncCardState = () => {
+        const isLoading = contactoCard.dataset.loading === 'true';
+
+        if (isLoading) {
+          applyLoadingLayout();
+        } else {
+          restoreNormalLayout();
+        }
+      };
+
+      syncCardState();
+
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (mutation.type === 'attributes' && mutation.attributeName === 'data-loading') {
+            syncCardState();
+          }
+        });
+      });
+
+      observer.observe(contactoCard, { attributes: true, attributeFilter: ['data-loading'] });
+    });
+  </script>
 
