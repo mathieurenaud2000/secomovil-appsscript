@@ -1917,26 +1917,27 @@
       var contactEditBtn = document.getElementById('btnEditarContacto');
 
       function applyScaleFix(){
-        var fix = 1;
-        if (window.innerWidth <= 360){
-          fix = Math.max(0.75, window.innerWidth / 360);
-        } else if (window.innerWidth <= 420){
-          fix = Math.max(0.85, window.innerWidth / 420);
+          var cssW = window.innerWidth || document.documentElement.clientWidth;
+          var screenW = Math.min(window.screen.width || 375, window.screen.height || 812);
+          if (cssW >= 960 && cssW <= 1024) {
+            var fix = (980 / screenW) * 1.50;
+            document.documentElement.style.setProperty('--fix', fix.toFixed(3));
+          } else {
+            document.documentElement.style.setProperty('--fix', '1');
+          }
         }
-        document.documentElement.style.setProperty('--fix', String(fix));
-      }
 
-      function sizeHeaderImage(){
-        var img = document.getElementById('headerImg');
-        var wrapper = document.querySelector('.wrapper');
-        if (!img || !wrapper) return;
-        var avail = Math.floor(wrapper.clientWidth);
-        if (avail > 0) {
-          img.style.width = avail + 'px';
-          img.style.maxWidth = '100%';
-          img.removeAttribute('height');
+        function sizeHeaderImage(){
+          var img = document.getElementById('headerImg');
+          var wrap = document.querySelector('.wrapper');
+          if (!img || !wrap) return;
+          var w = Math.floor(wrap.clientWidth);
+          if (w > 0){
+            img.style.width = w + 'px';
+            img.style.maxWidth = '100%';
+            img.removeAttribute('height');
+          }
         }
-      }
 
       function obtenerElementoSector(){
         var labels = document.querySelectorAll('.contact-card .label');
