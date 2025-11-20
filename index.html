@@ -4,10 +4,70 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, shrink-to-fit=no">
   <title>SecoMovil</title>
+  <style>
+    .btn-noir[data-spinner="1"]{
+      position:relative;
+      color:transparent !important;
+      text-shadow:none !important;
+    }
+    .btn-noir[data-spinner="1"] > *{ visibility:hidden; }
+    .btn-noir[data-spinner="1"]::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      margin:auto;
+      width:36px;
+      height:36px;
+      border-radius:50%;
+      border:12px solid rgba(255,255,255,0.35);
+      border-top-color:#fff;
+      animation: btnNoirSpin 0.9s linear infinite;
+      pointer-events:none;
+    }
+    @keyframes btnNoirSpin{
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+  </style>
 </head>
 <body>
   <div id="app"></div>
   <script>
+    function activarSpinnerBotonNegro(btn){
+      if (!btn || btn.dataset.spinner === '1' || btn.disabled) return;
+      const rect = btn.getBoundingClientRect();
+      btn.dataset.originalInlineWidth = btn.style.width;
+      btn.dataset.originalInlineHeight = btn.style.height;
+      btn.style.width = rect.width + 'px';
+      btn.style.height = rect.height + 'px';
+      btn.disabled = true;
+      btn.dataset.spinner = '1';
+    }
+
+    function desactivarSpinnerBotonNegro(btn){
+      if (!btn) return;
+      btn.disabled = false;
+      if (btn.dataset.originalInlineWidth !== undefined){
+        btn.style.width = btn.dataset.originalInlineWidth;
+        delete btn.dataset.originalInlineWidth;
+      } else {
+        btn.style.width = '';
+      }
+      if (btn.dataset.originalInlineHeight !== undefined){
+        btn.style.height = btn.dataset.originalInlineHeight;
+        delete btn.dataset.originalInlineHeight;
+      } else {
+        btn.style.height = '';
+      }
+      btn.removeAttribute('data-spinner');
+    }
+
+    document.addEventListener('click', function(evt){
+      var btn = evt.target.closest('.btn-noir');
+      if (!btn) return;
+      activarSpinnerBotonNegro(btn);
+    }, true);
+
     const pageInit = {
   inicio: function(){
     (function(){
@@ -677,6 +737,14 @@
 
         function setButtonSpinner(btn, isLoading, color){
           if (!btn) return;
+          if (btn.classList.contains('btn-noir')){
+            if (isLoading){
+              activarSpinnerBotonNegro(btn);
+            } else {
+              desactivarSpinnerBotonNegro(btn);
+            }
+            return;
+          }
           if (isLoading){
             if (!btn.dataset.originalHtml){
               btn.dataset.originalHtml = btn.innerHTML;
@@ -910,6 +978,14 @@
 
         function setButtonSpinner(btn, isLoading, color){
           if (!btn) return;
+          if (btn.classList.contains('btn-noir')){
+            if (isLoading){
+              activarSpinnerBotonNegro(btn);
+            } else {
+              desactivarSpinnerBotonNegro(btn);
+            }
+            return;
+          }
           if (isLoading){
             if (!btn.dataset.originalHtml){
               btn.dataset.originalHtml = btn.innerHTML;
