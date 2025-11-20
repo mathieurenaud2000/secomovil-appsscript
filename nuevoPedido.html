@@ -167,20 +167,6 @@
       transition:0.15s ease;
     }
 
-    .btn.is-loading{
-      position: relative !important;
-      padding: 0 !important;            /* prevent size changes */
-      overflow: hidden !important;      /* keep layout stable */
-    }
-
-    .btn.is-loading .btn-spinner{
-      position: absolute !important;
-      top: 1px !important;              /* align with top */
-      left: 50% !important;
-      transform: translateX(-50%) !important;
-      margin: 0 !important;
-    }
-
     .btn-noir{
       background:#000; color:#fff; border-color:#000;
       box-shadow:0 20px 40px rgba(0,0,0,0.40);
@@ -201,26 +187,6 @@
       color: rgba(0,0,0,0.5);
     }
 
-    /* Boutons avec spinner interne */
-    .btn-spinner{
-      display:inline-block;
-      width: calc(24px * var(--fix));
-      height: calc(24px * var(--fix));
-      border-radius:50%;
-      border: 15px solid rgba(255,255,255,0.35);
-      border-top-color: #fff;
-      animation: btnSpin 0.9s linear infinite;
-    }
-
-    .btn-spinner.black{
-      border-color: rgba(0,0,0,0.35);
-      border-top-color: #000;
-    }
-
-    @keyframes btnSpin{
-      from { transform: rotate(0deg); }
-      to   { transform: rotate(360deg); }
-    }
   </style>
 <div class="wrapper">
 
@@ -284,23 +250,5 @@
   </div>
 
   <script>
-    function setButtonSpinner(btn, isLoading, color){
-      if (!btn) return;
-      if (isLoading){
-        if (!btn.dataset.originalHtml){
-          btn.dataset.originalHtml = btn.innerHTML;
-        }
-        btn.innerHTML = '<span class="btn-spinner' + (color === 'black' ? ' black' : '') + '" aria-hidden="true"></span>';
-        btn.disabled = true;
-        btn.classList.add('is-loading');
-      } else {
-        btn.disabled = false;
-        btn.classList.remove('is-loading');
-        if (btn.dataset.originalHtml){
-          btn.innerHTML = btn.dataset.originalHtml;
-          delete btn.dataset.originalHtml;
-        }
-      }
-    }
   </script>
 

@@ -191,27 +191,6 @@
       color: rgba(0,0,0,0.5);
     }
 
-    /* Boutons avec spinner interne */
-    .btn-spinner{
-      display:inline-block;
-      width: calc(18px * var(--fix));
-      height: calc(18px * var(--fix));
-      border-radius:50%;
-      border: 3px solid rgba(255,255,255,0.35);
-      border-top-color: #fff;
-      animation: btnSpin 0.9s linear infinite;
-    }
-
-    .btn-spinner.black{
-      border-color: rgba(0,0,0,0.35);
-      border-top-color: #000;
-    }
-
-    @keyframes btnSpin{
-      from { transform: rotate(0deg); }
-      to   { transform: rotate(360deg); }
-    }
-
     .error-text{
       color: #b00020;
       font-size: calc(11px * var(--fix));
