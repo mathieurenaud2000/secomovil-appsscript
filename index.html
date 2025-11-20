@@ -2380,6 +2380,12 @@
         if (idEl && ctx && ctx.pedidoId){
           idEl.textContent = ctx.pedidoId;
         }
+
+        var contactCard = document.getElementById('contactoCard');
+        if (contactCard){
+          contactCard.removeAttribute('data-loading');
+          contactCard.classList.remove('is-loading');
+        }
       }
 
       function cargarClienteDesdeServidor(){
