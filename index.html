@@ -2802,6 +2802,7 @@
           const app = document.getElementById('app');
           if (app) {
             app.innerHTML = html;
+            window.scrollTo({ top: 0, behavior: 'instant' });
             if (pageInit[pageName]) {
               pageInit[pageName]();
             }
