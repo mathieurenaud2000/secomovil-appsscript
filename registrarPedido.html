@@ -231,7 +231,15 @@
       padding: calc(6px * var(--fix)) 0;
       position:relative;
     }
-    .contact-card[data-loading="true"] > *:not(.contact-card-loader){ visibility:hidden; }
+    .contact-card[data-loading="true"]{
+      padding: calc(3px * var(--fix)) 0;
+      min-height: calc(150px * var(--fix));
+      overflow:hidden;
+    }
+    .contact-card[data-loading="true"] > *:not(.contact-card-loader){
+      visibility:hidden;
+      opacity:0;
+    }
     .contact-card-loader{
       position:absolute;
       inset:0;
@@ -242,9 +250,9 @@
     }
     .contact-card:not([data-loading="true"]) .contact-card-loader{ display:none; }
     .contact-card-spinner{
-      width: calc(36px * var(--fix));
-      height: calc(36px * var(--fix));
-      border-width: calc(4px * var(--fix));
+      width: calc(72px * var(--fix));
+      height: calc(72px * var(--fix));
+      border-width: calc(6px * var(--fix));
     }
 
     .contact-top{
@@ -473,38 +481,4 @@
       <ul class="dd-overlay-list" id="ddOverlayList" role="listbox" aria-label="Options"></ul>
     </div>
   </div>
-
-  <script>
-    (function(){
-      var contactCard = document.getElementById('contactoCard');
-      if (!contactCard) return;
-
-      function mostrarContacto(){
-        contactCard.removeAttribute('data-loading');
-      }
-
-      function wrapPoblar(){
-        var original = window.poblarContacto;
-        if (typeof original !== 'function') return false;
-        window.poblarContacto = function(){
-          var result = original.apply(this, arguments);
-          mostrarContacto();
-          return result;
-        };
-        return true;
-      }
-
-      if (!wrapPoblar()){
-        var attempts = 0;
-        var timer = setInterval(function(){
-          attempts++;
-          if (wrapPoblar() || attempts > 100){
-            clearInterval(timer);
-          }
-        }, 50);
-      }
-
-      window.addEventListener('seco:contacto-cargado', mostrarContacto);
-    })();
-  </script>
 
