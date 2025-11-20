@@ -2588,6 +2588,7 @@
     if (btnCerrar){
       btnCerrar.addEventListener('click', function(){
         if (btnCerrar.disabled) return;
+        window.secoSetBlackButtonLoading(btnCerrar, true);
         loadPage('diaCerrado');
       });
     }
@@ -2641,6 +2642,7 @@
     var btnOk = document.querySelector('.btn-noir');
     if (btnOk){
       btnOk.addEventListener('click', function(){
+        window.secoSetBlackButtonLoading(btnOk, true);
         loadPage('inicio');
       });
     }
@@ -2776,6 +2778,7 @@
     if (btnConfigurar){
       btnConfigurar.addEventListener('click', function(){
         if (btnConfigurar.disabled) return;
+        window.secoSetBlackButtonLoading(btnConfigurar, true);
         loadPage('sistemaConfigurado');
       });
     }
@@ -2830,6 +2833,7 @@
     var btnOk = document.querySelector('.btn-noir');
     if (btnOk){
       btnOk.addEventListener('click', function(){
+        window.secoSetBlackButtonLoading(btnOk, true);
         loadPage('inicio');
       });
     }
