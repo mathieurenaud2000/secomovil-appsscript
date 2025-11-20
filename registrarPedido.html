@@ -84,6 +84,22 @@
     .btn-gris { background:#fff; color:#000; border-color: var(--gray20); }
     .btn-gris:active { color: rgba(0,0,0,0.5); }
 
+    /* Boutons avec spinner interne */
+    .btn-spinner{
+      display:inline-block;
+      width: calc(18px * var(--fix));
+      height: calc(18px * var(--fix));
+      border-radius:50%;
+      border: 3px solid rgba(255,255,255,0.35);
+      border-top-color: #fff;
+      animation: btnSpin 0.9s linear infinite;
+    }
+
+    .btn-spinner.black{
+      border-color: rgba(0,0,0,0.35);
+      border-top-color: #000;
+    }
+
     /* Textes */
     .txt-body  { font-size: calc(var(--font-body) * var(--fix)); font-weight:500; color:#111; }
     .txt-small { font-size: calc(var(--font-small) * var(--fix)); font-weight:400; color:#222; }
@@ -213,6 +229,22 @@
       flex-direction:column;
       gap: calc(6px * var(--fix));
       padding: calc(6px * var(--fix)) 0;
+      position:relative;
+    }
+    .contact-card[data-loading="true"] > *:not(.contact-card-loader){ visibility:hidden; }
+    .contact-card-loader{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      pointer-events:none;
+    }
+    .contact-card:not([data-loading="true"]) .contact-card-loader{ display:none; }
+    .contact-card-spinner{
+      width: calc(36px * var(--fix));
+      height: calc(36px * var(--fix));
+      border-width: calc(4px * var(--fix));
     }
 
     .contact-top{
@@ -289,6 +321,10 @@
       from{ transform:rotate(0deg); }
       to{ transform:rotate(360deg); }
     }
+    @keyframes btnSpin{
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
   </style>
 
   <div class="wrapper">
@@ -321,7 +357,10 @@
       <div class="section-title">CONTACTO</div>
       <div class="sep-black"></div>
 
-      <div class="section-block contact-card">
+      <div class="section-block contact-card" data-loading="true" id="contactoCard">
+        <div class="contact-card-loader" aria-hidden="true">
+          <span class="btn-spinner black contact-card-spinner" aria-label="Cargando"></span>
+        </div>
         <div class="contact-top">
           <div>
             <div class="label">Nombre</div>
@@ -434,4 +473,38 @@
       <ul class="dd-overlay-list" id="ddOverlayList" role="listbox" aria-label="Options"></ul>
     </div>
   </div>
+
+  <script>
+    (function(){
+      var contactCard = document.getElementById('contactoCard');
+      if (!contactCard) return;
+
+      function mostrarContacto(){
+        contactCard.removeAttribute('data-loading');
+      }
+
+      function wrapPoblar(){
+        var original = window.poblarContacto;
+        if (typeof original !== 'function') return false;
+        window.poblarContacto = function(){
+          var result = original.apply(this, arguments);
+          mostrarContacto();
+          return result;
+        };
+        return true;
+      }
+
+      if (!wrapPoblar()){
+        var attempts = 0;
+        var timer = setInterval(function(){
+          attempts++;
+          if (wrapPoblar() || attempts > 100){
+            clearInterval(timer);
+          }
+        }, 50);
+      }
+
+      window.addEventListener('seco:contacto-cargado', mostrarContacto);
+    })();
+  </script>
 
