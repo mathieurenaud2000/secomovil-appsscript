@@ -9,25 +9,19 @@ function doGet(e) {
 }
 
 function getPage(pageName) {
-  var htmlOutput = HtmlService.createHtmlOutputFromFile(pageName);
+  return HtmlService.createHtmlOutputFromFile(pageName).getContent();
+}
 
-  if (pageName === 'nuevoContacto') {
-    var ctx = {};
-    try {
-      var userProps = PropertiesService.getUserProperties();
-      var rawCtx = userProps.getProperty('SECOMOVIL_CTX_NUEVO_PEDIDO');
-      if (rawCtx) {
-        ctx = JSON.parse(rawCtx);
-      }
-    } catch (e) {
-      ctx = {};
-    }
-
-    ctx.sectores = leerSectores_();
-    inyectarContextoEnHtml_(htmlOutput, ctx, { aplicarContextoRegistrar: false });
+function listarSectores() {
+  try {
+    var sectores = leerSectores_();
+    return { ok: true, sectores: sectores };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e && e.message ? e.message : 'Error al leer sectores.'
+    };
   }
-
-  return htmlOutput.getContent();
 }
 
 
