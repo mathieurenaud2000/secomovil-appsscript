@@ -2725,9 +2725,6 @@
   },
   
   pedidoRegistrado: function() {
-    var baseCtx = window.SECO_CTX || {};
-    var pedido = baseCtx.pedido || baseCtx || {};
-
     function applyScaleFix(){
       var cssW = window.innerWidth || document.documentElement.clientWidth;
       var screenW = Math.min(window.screen.width || 375, window.screen.height || 812);
@@ -2751,223 +2748,160 @@
       }
     }
 
-    function parseCantidad(raw){
-      if (typeof raw === 'number' && isFinite(raw)) return raw;
-      if (!raw) return 0;
-      var s = String(raw).trim();
-      // ex: "2 secos", "2", "2.0"
-      var m = s.match(/^(\d+)/);
-      if (m){
-        var n = parseInt(m[1], 10);
-        if (!isNaN(n)) return n;
+    // Normalisation des nombres à partir de SECO_CTX
+    function getPedidoNormalizado(){
+      var ctx = window.SECO_CTX || {};
+      var p = ctx.pedido || ctx || {};
+
+      var rawCantidad = p.cantidad;
+      if (!(typeof rawCantidad === 'number' && isFinite(rawCantidad))) {
+        // fallback si on a un texte du style "2 secos"
+        if (p.cantidadSeleccionada){
+          var m = String(p.cantidadSeleccionada).match(/^(\d+)/);
+          if (m) rawCantidad = parseInt(m[1], 10);
+        }
       }
-      var n2 = Number(s.replace(',', '.'));
-      return isNaN(n2) ? 0 : n2;
-    }
+      var cantidad = (typeof rawCantidad === 'number' && isFinite(rawCantidad) && rawCantidad > 0)
+        ? rawCantidad
+        : 1;
 
-    function parseMoney(raw){
-      if (typeof raw === 'number' && isFinite(raw)) return raw;
-      if (!raw) return 0;
-      var s = String(raw).trim();
-      // enlève symboles et garde chiffres / point / virgule
-      s = s.replace(' ', ' ');
-      s = s.replace(/[^0-9.,-]/g, '');
-      s = s.replace(',', '.');
-      var n = Number(s);
-      return isNaN(n) ? 0 : n;
-    }
-
-    function formatMoneyText(n){
-      n = parseMoney(n);
-      return n.toFixed(2).replace('.', ',') + ' $';
-    }
-
-    // Regroupe toutes les valeurs nécessaires pour la carte et WhatsApp
-    function getFieldValues(){
-      var p = pedido || {};
-      var c = p.cliente || baseCtx.cliente || {};
-
-      var nombre =
-        p.clienteNombre ||
-        c.nombre ||
-        baseCtx.clienteNombre ||
-        'Cliente';
-
-      var sector =
-        p.sector ||
-        c.sector ||
-        baseCtx.sector ||
-        '';
-
-      var direccion =
-        p.direccion ||
-        c.direccion ||
-        baseCtx.direccion ||
-        '';
-
-      var nota =
-        p.nota ||
-        c.nota ||
-        baseCtx.nota ||
-        '';
-
-      var whatsappRaw =
-        p.whatsapp ||
-        c.whatsapp ||
-        c.telefono ||
-        baseCtx.whatsapp ||
-        (baseCtx.cliente && (baseCtx.cliente.whatsapp || baseCtx.cliente.telefono)) ||
-        '';
-
-      var hora =
-        (p.horaEntrega || p.hora || baseCtx.horaSeleccionada || '').toString().trim();
-
-      var fechaTexto =
-        (baseCtx.fechaSeleccionada || p.fechaEntrega || '').toString();
-
-      // Quantité
-      var cantidad = parseCantidad(p.cantidad);
-      if (!cantidad){
-        cantidad = parseCantidad(baseCtx.cantidadSeleccionada);
+      var rawUnit = p.precioUnitario;
+      if (!(typeof rawUnit === 'number' && isFinite(rawUnit) && rawUnit >= 0)) {
+        if (typeof p.precioBase === 'number' && isFinite(p.precioBase)) {
+          rawUnit = p.precioBase;
+        }
       }
+      var unitPrice = (typeof rawUnit === 'number' && isFinite(rawUnit) && rawUnit >= 0)
+        ? rawUnit
+        : 0;
 
-      // Total et prix unitaire
-      var total = parseMoney(p.total || baseCtx.total);
-      var unitPrice = parseMoney(p.precioUnitario);
-
-      if (!total && unitPrice && cantidad){
-        total = unitPrice * cantidad;
+      var rawTotal = p.total;
+      if (!(typeof rawTotal === 'number' && isFinite(rawTotal) && rawTotal >= 0)) {
+        rawTotal = unitPrice * cantidad;
       }
-      if (!unitPrice && total && cantidad){
-        unitPrice = total / cantidad;
-      }
-
-      var cantidadTexto = cantidad + ' seco' + (cantidad === 1 ? '' : 's');
+      var total = (typeof rawTotal === 'number' && isFinite(rawTotal) && rawTotal >= 0)
+        ? rawTotal
+        : 0;
 
       return {
-        pedidoId: p.pedidoId || baseCtx.pedidoId || '',
-        nombre: nombre,
-        sector: sector,
-        direccion: direccion,
-        nota: nota,
-        whatsappRaw: (whatsappRaw || '').toString(),
-        hora: hora,
-        fechaTexto: fechaTexto,
-        cantidad: cantidad,
-        cantidadTexto: cantidadTexto,
-        unitPrice: unitPrice,
-        unitPriceTxt: formatMoneyText(unitPrice),
-        total: total,
-        totalTxt: formatMoneyText(total)
+        pedidoId:      p.pedidoId || '',
+        nombre:        p.clienteNombre || (p.cliente && p.cliente.nombre) || '',
+        sector:        p.sector || '',
+        direccion:     p.direccion || '',
+        nota:          p.nota || '',
+        whatsapp:      p.whatsapp || (p.cliente && (p.cliente.whatsapp || p.cliente.telefono)) || '',
+        fechaEntrega:  p.fechaEntrega || '',
+        horaEntrega:   p.horaEntrega || '',
+        cantidad:      cantidad,
+        unitPrice:     unitPrice,
+        total:         total
       };
     }
 
-    function renderCard(){
-      var f = getFieldValues();
+    function formatMoney(value){
+      var n = Number(value);
+      if (!isFinite(n)) n = 0;
+      return n.toFixed(2).replace('.', ',') + ' $';
+    }
 
-      var pedidoIdEl     = document.getElementById('pedidoId');
-      var horaEl         = document.getElementById('confirmHora');
-      var sectorEl       = document.getElementById('confirmSector');
-      var nombreEl       = document.getElementById('confirmNombre');
-      var dirEl          = document.getElementById('confirmDireccion');
-      var notaEl         = document.getElementById('confirmNota');
-      var telEl          = document.getElementById('confirmWhatsapp');
-      var precioEl       = document.getElementById('confirmPrecio');
+    // Remplir la carte avec les données normalisées
+    (function rellenarTarjeta(){
+      var p = getPedidoNormalizado();
 
-      if (pedidoIdEl) pedidoIdEl.textContent = f.pedidoId || '';
+      var elHora     = document.getElementById('confirmHora');
+      var elSector   = document.getElementById('confirmSector');
+      var elNombre   = document.getElementById('confirmNombre');
+      var elDir      = document.getElementById('confirmDireccion');
+      var elNota     = document.getElementById('confirmNota');
+      var elWhatsapp = document.getElementById('confirmWhatsapp');
+      var elPrecio   = document.getElementById('confirmPrecio');
+      var elId       = document.getElementById('pedidoId');
 
-      if (horaEl)   horaEl.textContent   = f.hora || '—';
-      if (sectorEl) sectorEl.textContent = f.sector || '—';
+      if (elId)       elId.textContent       = p.pedidoId || '';
+      if (elHora)     elHora.textContent     = p.horaEntrega || '—';
+      if (elSector)   elSector.textContent   = p.sector || '—';
+      if (elNombre)   elNombre.textContent   = p.nombre || '—';
+      if (elDir)      elDir.textContent      = p.direccion || '—';
 
-      if (nombreEl) nombreEl.textContent = f.nombre || '—';
-
-      if (dirEl) dirEl.textContent = f.direccion || '—';
-
-      if (notaEl){
-        if (f.nota){
-          notaEl.textContent = 'Nota: ' + f.nota;
-          notaEl.style.display = '';
+      if (elNota){
+        if (p.nota){
+          elNota.textContent = 'Nota: ' + p.nota;
+          elNota.style.display = '';
         } else {
-          notaEl.textContent = '';
-          notaEl.style.display = 'none';
+          elNota.textContent = '';
+          elNota.style.display = 'none';
         }
       }
 
-      if (telEl){
-        var digits = (f.whatsappRaw || '').replace(/\D+/g, '');
-        // On met uniquement le numéro; l’icône sera gérée en CSS
-        telEl.textContent = digits ? digits : '—';
+      if (elWhatsapp){
+        elWhatsapp.textContent = p.whatsapp ? p.whatsapp : '—';
       }
 
-      if (precioEl){
-        // [quantité] x [prix unitaire] = [prix total]
-        precioEl.textContent =
-          f.cantidadTexto + ' x ' + f.unitPriceTxt + ' = ' + f.totalTxt;
-      }
-    }
+      if (elPrecio){
+        var q = p.cantidad;
+        var qtyTxt = q + ' seco' + (q === 1 ? '' : 's');
+        var unitTxt = formatMoney(p.unitPrice);
+        var totalTxt = formatMoney(p.total);
 
-    function buildWhatsappUrlFromFields(f){
-      var digits = (f.whatsappRaw || '').replace(/\D+/g, '');
-      if (!digits) return null;
-
-      var lines = [];
-
-      // début du message
-      lines.push('*Tu pedido SecoMóvil*');
-      lines.push('');
-      lines.push(f.nombre || 'Cliente');             // [Nom]
-      lines.push(f.cantidadTexto || '');             // [quantité]
-      lines.push(f.fechaTexto || '');                // [date]
-      lines.push(f.hora ? ('A las ' + f.hora) : ''); // A las [heure]
-      lines.push(f.direccion || '');                 // [direccion]
-      lines.push('Sector: ' + (f.sector || ''));     // Sector: [sector]
-      if (f.nota){
-        lines.push('Nota: ' + f.nota);               // Nota: [nota]
-      }
-      lines.push('');
-      lines.push('Total: ' + f.totalTxt);            // Total: [total]
-      lines.push('');
-      lines.push('SecoMóvil te agradece');
-      // fin du message
-
-      // Nettoie les vides de fin
-      while (lines.length && lines[lines.length - 1] === '') {
-        lines.pop();
+        elPrecio.innerHTML = qtyTxt + ' x ' + unitTxt + ' = <strong>' + totalTxt + '</strong>';
       }
 
-      var text = encodeURIComponent(lines.join('\n'));
-      return 'https://wa.me/' + digits + '?text=' + text;
+      // On garde aussi une version propre dans SECO_CTX pour WhatsApp
+      var ctx = window.SECO_CTX || {};
+      ctx.pedido = ctx.pedido || {};
+      ctx.pedido._normalizado = p;
+      window.SECO_CTX = ctx;
+    })();
+
+    // Bouton OK + envoi WhatsApp si coché
+    function bindBotonOk(){
+      var btnOk = document.getElementById('btnOk') || document.querySelector('.btn-noir');
+      var chk   = document.getElementById('chkEnviarWhatsapp');
+
+      if (!btnOk) return;
+
+      btnOk.addEventListener('click', function(){
+        if (window.secoSetBlackButtonLoading){
+          window.secoSetBlackButtonLoading(btnOk, true);
+        }
+
+        var ctx = window.SECO_CTX || {};
+        var pedido = (ctx.pedido && ctx.pedido._normalizado) || getPedidoNormalizado();
+
+        // Si pas de WhatsApp ou checkbox décoché → pas d’envoi, on retourne juste à inicio
+        var doitEnvoyer = chk && chk.checked && pedido.whatsapp;
+
+        if (!doitEnvoyer){
+          loadPage('inicio', function(){
+            if (window.secoSetBlackButtonLoading){
+              window.secoSetBlackButtonLoading(btnOk, false);
+            }
+          });
+          return;
+        }
+
+        google.script.run
+          .withSuccessHandler(function(){
+            loadPage('inicio', function(){
+              if (window.secoSetBlackButtonLoading){
+                window.secoSetBlackButtonLoading(btnOk, false);
+              }
+            });
+          })
+          .withFailureHandler(function(){
+            if (window.secoSetBlackButtonLoading){
+              window.secoSetBlackButtonLoading(btnOk, false);
+            }
+            loadPage('inicio');
+          })
+          .enviarWhatsappPedidoRegistrado(pedido);
+      });
     }
 
     function init(){
       applyScaleFix();
       sizeHeaderImage();
-      renderCard();
-
-      var chkEnviar = document.getElementById('chkEnviarWhatsapp');
-      var btnOk = document.getElementById('btnOk') || document.querySelector('.btn-noir');
-
-      if (btnOk){
-        btnOk.addEventListener('click', function(){
-          // Spinner sur le bouton noir
-          window.secoSetBlackButtonLoading(btnOk, true);
-
-          var f = getFieldValues();
-
-          // Envoi WhatsApp seulement si la case est cochée
-          if (!chkEnviar || chkEnviar.checked){
-            var url = buildWhatsappUrlFromFields(f);
-            if (url){
-              window.open(url, '_blank');
-            }
-          }
-
-          // Retour à l’accueil
-          loadPage('inicio', function(){
-            window.secoSetBlackButtonLoading(btnOk, false);
-          });
-        });
-      }
+      bindBotonOk();
     }
 
     if (document.readyState === 'loading'){
@@ -2981,6 +2915,7 @@
       sizeHeaderImage();
     });
   },
+
 
 
 
