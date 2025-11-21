@@ -128,6 +128,29 @@
       font-weight:700;
     }
 
+    /* Icône WhatsApp à la place du texte "Tel." dans la carte */
+    #confirmWhatsapp{
+      position: relative;
+      padding-left: calc(26px * var(--fix));
+      font-size: calc(var(--font-label) * var(--fix));
+      font-weight: 500;
+      color: #111;
+    }
+
+    #confirmWhatsapp::before{
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: calc(18px * var(--fix));
+      height: calc(18px * var(--fix));
+      background-image: url("https://lh3.googleusercontent.com/d/1tFj_LxwoWayTiX1Yb3PJM4unRNgvkXoL");
+      background-size: contain;
+      background-repeat: no-repeat;
+    }
+
+    
     /* ===== CASE À COCHER ===== */
     .checkbox-row{
       display:flex;
