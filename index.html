@@ -1972,7 +1972,7 @@
     });
   },
 
-  registrarPedido: function() {
+    registrarPedido: function() {
       var ctx = (typeof window !== 'undefined' && window.SECO_CTX) ? window.SECO_CTX : {};
       var clienteActual = ctx.cliente || null;
       var sectoresCtx = Array.isArray(ctx.sectores) ? ctx.sectores : [];
@@ -1988,9 +1988,9 @@
           } else {
             document.documentElement.style.setProperty('--fix', '1');
           }
-        }
+      }
 
-        function sizeHeaderImage(){
+      function sizeHeaderImage(){
           var img = document.getElementById('headerImg');
           var wrap = document.querySelector('.wrapper');
           if (!img || !wrap) return;
@@ -2000,7 +2000,7 @@
             img.style.maxWidth = '100%';
             img.removeAttribute('height');
           }
-        }
+      }
 
       function obtenerElementoSector(){
         var labels = document.querySelectorAll('.contact-card .label');
@@ -2178,14 +2178,15 @@
         return '';
       }
 
-      function buildDatesStartingTomorrow(count){
+      // Liste de dates: aujourd’hui + les jours suivants
+      function buildDatesStartingToday(count){
         const res = [];
         const hoy = new Date();
-        for (let i = 1; i <= count; i++){
+        for (let i = 0; i < count; i++){
           const d = new Date(hoy);
           d.setDate(hoy.getDate() + i);
-          const dd  = String(d.getDate()).padStart(2,"0");
-          const mm  = String(d.getMonth()+1).padStart(2,"0");
+          const dd   = String(d.getDate()).padStart(2,"0");
+          const mm   = String(d.getMonth()+1).padStart(2,"0");
           const yyyy = d.getFullYear();
           const etiqueta = formatFechaEtiqueta(yyyy + "-" + mm + "-" + dd);
           res.push(etiqueta);
@@ -2363,11 +2364,20 @@
 
         if (ddFecha){
           var dataElF = ddFecha.querySelector('.dd-data');
-          var fechas = buildDatesStartingTomorrow(7);
+          var fechas = buildDatesStartingToday(7);
           if (dataElF){
             dataElF.textContent = JSON.stringify(fechas);
           }
-          var preferida = ctx.fechaSeleccionada || (fechas.length ? fechas[0] : '');
+
+          var preferida = ctx.fechaSeleccionada || '';
+          if (!preferida && fechas.length){
+            if (fechas.length >= 2){
+              preferida = fechas[1]; // demain
+            } else {
+              preferida = fechas[0];
+            }
+          }
+
           if (preferida){
             setDropdownValue(ddFecha, preferida, preferida, false);
           }
@@ -2473,7 +2483,7 @@
           .withSuccessHandler(function(resp){
             if (resp && resp.ok && resp.data && resp.data.cliente){
               clienteActual = resp.data.cliente;
-              sectoresCtx = Array.isArray(resp.data.sectores) ? resp.data.sectores : sectoresCtx;
+              sectoresCtx = Array.isArray(resp.data.sectores) ? resp.sectores : sectoresCtx;
               ctx.cliente = clienteActual;
               ctx.sectores = sectoresCtx;
               window.SECO_CTX = ctx;
@@ -2534,13 +2544,16 @@
 
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
-      } else { init(); }
+      } else { 
+        init(); 
+      }
 
       window.addEventListener('resize', function(){
         applyScaleFix();
         sizeHeaderImage();
       });
   },
+
 
   cerrarElDia: function(){
     function applyScaleFix(){
