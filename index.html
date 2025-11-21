@@ -2724,7 +2724,7 @@
       });
   },
   
-  pedidoRegistrado: function(){
+    pedidoRegistrado: function(){
     // Contexte brut envoyé depuis registrarPedido / Apps Script
     var baseCtx = (typeof window !== 'undefined' && window.SECO_CTX) ? window.SECO_CTX : {};
 
@@ -2916,68 +2916,95 @@
       if (!digits) return null;
 
       // Nom
-      var nombre = r.nombre ||
-                   p.clienteNombre ||
-                   (p.cliente && p.cliente.nombre) ||
-                   baseCtx.clienteNombre ||
-                   (baseCtx.cliente && baseCtx.cliente.nombre) ||
-                   'Cliente';
+      var nombre =
+        r.nombre ||
+        p.clienteNombre ||
+        (p.cliente && p.cliente.nombre) ||
+        baseCtx.clienteNombre ||
+        (baseCtx.cliente && baseCtx.cliente.nombre) ||
+        'Cliente';
 
-      // Quantité / total
-      var cantidad = (typeof r.cantidad === 'number') ? r.cantidad : Number(p.cantidad || 0);
+      // Quantité (texte)
+      var cantidad = (typeof r.cantidad === 'number')
+        ? r.cantidad
+        : Number(p.cantidad || 0);
       if (!isFinite(cantidad) || cantidad < 0) cantidad = 0;
-      var cantTxt  = r.cantTxt || (cantidad + ' seco' + (cantidad === 1 ? '' : 's'));
 
-      var total    = (typeof r.total === 'number') ? r.total : Number(p.total || 0);
+      var cantidadTexto = r.cantTxt || (cantidad + ' seco' + (cantidad === 1 ? '' : 's'));
+
+      // Total formaté
+      var total = (typeof r.total === 'number')
+        ? r.total
+        : Number(p.total || 0);
       if (!isFinite(total) || total < 0) total = 0;
+
       var totalTxt = r.totalTxt || formatMoney(total);
 
-      // Date (texte)
-      var fechaLabel =
+      // Date (texte telle qu’affichée dans le dropdown)
+      var fechaFormateada =
         baseCtx.fechaSeleccionada ||
         p.fechaEntrega ||
         '';
 
-      // Hora / adresse / secteur / note
-      var horaTxt    = r.horaTxt    || (p.horaEntrega || p.hora || baseCtx.horaSeleccionada || '').toString().trim();
-      var direccion  = r.direccion  || p.direccion || baseCtx.direccion || '';
-      var sectorTxt  = r.sectorTxt  ||
-                       p.sector ||
-                       (p.cliente && p.cliente.sector) ||
-                       baseCtx.sector ||
-                       (baseCtx.cliente && baseCtx.cliente.sector) ||
-                       '';
-      var nota       = r.nota       ||
-                       p.nota ||
-                       (p.cliente && p.cliente.nota) ||
-                       baseCtx.nota ||
-                       (baseCtx.cliente && baseCtx.cliente.nota) ||
-                       '';
+      // Heure
+      var horaEntrega =
+        r.horaTxt ||
+        (p.horaEntrega || p.hora || baseCtx.horaSeleccionada || '')
+          .toString().trim();
 
-      // Construction du message selon ton format
+      // Adresse / secteur / note
+      var direccion =
+        r.direccion ||
+        p.direccion ||
+        baseCtx.direccion ||
+        (baseCtx.cliente && baseCtx.cliente.direccion) ||
+        '';
+
+      var sector =
+        r.sectorTxt ||
+        p.sector ||
+        (p.cliente && p.cliente.sector) ||
+        baseCtx.sector ||
+        (baseCtx.cliente && baseCtx.cliente.sector) ||
+        '';
+
+      var nota =
+        r.nota ||
+        p.nota ||
+        (p.cliente && p.cliente.nota) ||
+        baseCtx.nota ||
+        (baseCtx.cliente && baseCtx.cliente.nota) ||
+        '';
+
+      // Construction du message EXACTEMENT comme demandé
       var lines = [];
 
       lines.push('*Tu pedido SecoMóvil*');
-      lines.push(
-        nombre + ', recibiras ' +
-        cantTxt + (fechaLabel ? ' ' + fechaLabel : '') +
-        (horaTxt ? ' a las ' + horaTxt : '') + '.'
-      );
-      if (direccion){
-        lines.push('Dirección : ' + direccion);
-      }
-      if (sectorTxt){
-        lines.push('Sector : ' + sectorTxt);
-      }
+      lines.push('');
+
+      var lineaPrincipal =
+        nombre +
+        ', recibirás ' + cantidadTexto +
+        (fechaFormateada ? ' el ' + fechaFormateada : '') +
+        (horaEntrega ? ' a las ' + horaEntrega : '');
+
+      lines.push(lineaPrincipal);
+      lines.push('Dirección: ' + direccion);
+      lines.push('Sector: ' + sector);
+
       if (nota){
-        lines.push('Nota : ' + nota);
+        lines.push('Nota: ' + nota);
       }
-      lines.push('Total a cancelar : ' + totalTxt);
-      lines.push('SecoMóvil te agradezco para tu pedido.');
+
+      lines.push('');
+      lines.push('Total a cancelar: *' + totalTxt + '*');
+      lines.push('');
+      lines.push('SecoMóvil te agradece');
 
       var text = encodeURIComponent(lines.join('\n'));
       return 'https://wa.me/' + digits + '?text=' + text;
     }
+
 
     function bindOkButton(){
       var btnOk = document.getElementById('btnOk');
@@ -3031,6 +3058,7 @@
       sizeHeaderImage();
     });
   },
+
 
 
 
