@@ -2497,30 +2497,96 @@ function enviarWhatsappMensaje_(telefono, mensaje) {
   return true;
 }
 
-function enviarWhatsappPedidoRegistrado(payload) {
-  try {
-    var datos = payload || {};
-    var telefono = (datos.whatsapp || (datos.cliente && datos.cliente.telefono) || '').toString().trim();
-    if (!telefono) {
-      return { ok: false, error: 'No se proporcionó número de WhatsApp.', data: null };
-    }
+/**
+ * Envoie un message WhatsApp avec le détail du pedido.
+ * Le paramètre `pedido` vient du front et peut contenir _normalizado.
+ */
+function enviarWhatsappPedidoRegistrado(pedido) {
+  pedido = pedido || {};
 
-    var mensaje = construirMensajePedidoRegistrado_(datos);
-    enviarWhatsappMensaje_(telefono, mensaje);
+  // Si on a déjà la version normalisée depuis le front, on l'utilise
+  var p = pedido._normalizado || pedido;
 
-    return {
-      ok: true,
-      error: null,
-      data: { mensaje: mensaje }
-    };
-  } catch (e) {
-    return {
-      ok: false,
-      error: e && e.message ? e.message : 'Error al enviar el mensaje de WhatsApp.',
-      data: null
-    };
+  // Sécurité : re-normaliser côté serveur si jamais quelque chose manque
+  var cantidad = Number(p.cantidad);
+  if (!isFinite(cantidad) || cantidad < 1) cantidad = 1;
+
+  var unitPrice = Number(p.unitPrice || p.precioUnitario);
+  if (!isFinite(unitPrice) || unitPrice < 0) unitPrice = 0;
+
+  var total = Number(p.total);
+  if (!isFinite(total) || total < 0) {
+    total = unitPrice * cantidad;
   }
+
+  var nombre    = (p.nombre || p.clienteNombre || (p.cliente && p.cliente.nombre) || '').toString().trim();
+  var direccion = (p.direccion || '').toString().trim();
+  var sector    = (p.sector || '').toString().trim();
+  var nota      = (p.nota || '').toString().trim();
+  var hora      = (p.horaEntrega || '').toString().trim();
+  var fechaISO  = (p.fechaEntrega || '').toString().trim();
+  var whatsapp  = (p.whatsapp || (p.cliente && (p.cliente.whatsapp || p.cliente.telefono)) || '').toString().trim();
+
+  // Quantité en texte
+  var cantidadTexto = cantidad + ' seco' + (cantidad === 1 ? '' : 's');
+
+  // Format date courte en espagnol: "Sábado, 22 de nov."
+  var fechaFormateada = '';
+  if (fechaISO) {
+    var d = normalizarFechaDesdeTexto_(fechaISO) || new Date(fechaISO);
+    if (d && !isNaN(d.getTime())) {
+      var dias   = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+      var mesesC = ['ene.','feb.','mar.','abr.','may.','jun.','jul.','ago.','sep.','oct.','nov.','dic.'];
+      fechaFormateada = dias[d.getDay()] + ', ' + d.getDate() + ' de ' + mesesC[d.getMonth()];
+    }
+  }
+  if (!fechaFormateada) {
+    fechaFormateada = 'la fecha acordada';
+  }
+
+  // Totaux en texte
+  var totalTxt = total.toFixed(2).replace('.', ',') + ' $';
+
+  // Construction du message EXACTEMENT comme demandé
+  var lignes = [
+    '*Tu pedido SecoMóvil*',
+    '',
+    nombre || 'Cliente',
+    cantidadTexto,
+    fechaFormateada,
+    hora ? ('A las ' + hora) : '',
+    direccion ? direccion : '',
+    sector ? ('Sector: ' + sector) : '',
+    nota ? ('Nota: ' + nota) : '',
+    '',
+    'Total: *' + totalTxt + '*',
+    '',
+    'SecoMóvil te agradece'
+  ];
+
+  // On filtre les lignes vides pour éviter les doubles sauts
+  var msg = lignes.filter(function(l){ return l !== ''; }).join('\n');
+
+  if (!whatsapp) {
+    throw new Error('Número de WhatsApp no disponible para este pedido.');
+  }
+
+  // Normalisation du numéro (simple, à adapter si besoin)
+  var numero = whatsapp.replace(/[^\d]/g, '');
+  if (numero.indexOf('0') === 0) {
+    numero = '593' + numero.substring(1);  // exemple: remplacer 0xxxx par 593xxxx
+  }
+
+  var url = 'https://wa.me/' + numero + '?text=' + encodeURIComponent(msg);
+
+  // On renvoie l’URL; le front la garde pour une éventuelle utilisation future si besoin.
+  return {
+    ok: true,
+    url: url,
+    mensaje: msg
+  };
 }
+
 
 /**
  * Crea un pedido nuevo en PEDIDOS DIARIOS a partir de los datos
