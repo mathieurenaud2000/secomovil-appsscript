@@ -2294,6 +2294,11 @@
             li.dataset.col = String(col);
 
             li.addEventListener('click', function(){
+
+              // --- Flash visuel immédiat sur mobile ---
+              li.classList.add('is-tapflash');
+              setTimeout(() => li.classList.remove('is-tapflash'), 120);
+              // ----------------------------------------
               label.textContent = txt;
               button.removeAttribute('data-placeholder');
               dropdown.dataset.value = txt;
