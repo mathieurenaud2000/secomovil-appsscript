@@ -2400,18 +2400,63 @@
         var ddCantidad = document.querySelector('.dropdown[data-name="cantidad"]');
         var ddHora     = document.querySelector('.dropdown[data-name="hora"]');
 
+        // ===== FECHA =====
         if (ddFecha){
           var dataElF = ddFecha.querySelector('.dd-data');
-          var fechas = buildDatesStartingTomorrow(7);
+          var fechas = [];
+
           if (dataElF){
-            dataElF.textContent = JSON.stringify(fechas);
+            try {
+              var raw = (dataElF.textContent || '').trim();
+              fechas = raw ? JSON.parse(raw) : [];
+            } catch (e){
+              fechas = [];
+            }
           }
-          var preferida = ctx.fechaSeleccionada || (fechas.length ? fechas[0] : '');
+
+          // petit helper local: construit l'étiquette "demain"
+          function etiquetaManana(){
+            var hoy = new Date();
+            hoy.setDate(hoy.getDate() + 1);
+            var yyyy = String(hoy.getFullYear());
+            var mm   = String(hoy.getMonth() + 1).padStart(2, "0");
+            var dd   = String(hoy.getDate()).padStart(2, "0");
+            var iso  = yyyy + "-" + mm + "-" + dd;
+            return formatFechaEtiqueta(iso);
+          }
+
+          var preferida = null;
+
+          if (ctx && ctx.origen === 'registrarPedido' && ctx.fechaSeleccionada){
+            // On revient après avoir édité le contact → on respecte la date déjà choisie
+            preferida = ctx.fechaSeleccionada;
+          } else if (fechas.length){
+            // Cas normal: page ouverte depuis nuevoPedido → forcer DEMAIN
+            var etqManana = etiquetaManana();
+            var idx = fechas.indexOf(etqManana);
+
+            if (idx >= 0){
+              // On a trouvé "demain" tel qu'affiché dans la liste
+              preferida = fechas[idx];
+            } else if (fechas.length > 1){
+              // Fallback: si la liste est [AUJOURD’HUI, DEMAIN, ...],
+              // on prend le 2e élément comme "demain"
+              preferida = fechas[1];
+            } else {
+              // Dernier recours: on prend le seul élément disponible
+              preferida = fechas[0];
+            }
+
+            ctx.fechaSeleccionada = preferida;
+            window.SECO_CTX = ctx;
+          }
+
           if (preferida){
             setDropdownValue(ddFecha, preferida, preferida, false);
           }
         }
 
+        // ===== CANTIDAD =====
         if (ddCantidad){
           var dataElC = ddCantidad.querySelector('.dd-data');
           if (dataElC){
@@ -2428,6 +2473,7 @@
           }
         }
 
+        // ===== HORA =====
         if (ddHora){
           var seleccionHora = normalizarHora(ctx.horaSeleccionada);
           var phHora = ddHora.dataset.ph || 'Hora de entrega';
@@ -2439,6 +2485,7 @@
 
         actualizarPrecio();
       }
+
 
       function poblarContacto(){
         var nombreEl = document.getElementById('contactoNombre');
