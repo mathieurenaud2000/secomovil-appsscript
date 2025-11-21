@@ -2142,32 +2142,50 @@
         if (!raw) return "";
 
         var meses = ["Ene.","Feb.","Mar.","Abr.","May.","Jun.","Jul.","Ago.","Sep.","Oct.","Nov.","Dic."];
-        var dias = ["Domingo","Lunes","Martes","Miercoles","Jueves","Viernes","Sabado"];
+        var dias  = ["Domingo","Lunes","Martes","Miercoles","Jueves","Viernes","Sabado"];
 
         var d = null;
-        var s = String(raw).trim();
 
-        var m1 = s.match(/(\d{2})\/(\d{2})\/(\d{4})/);
-        if (m1){
-          var dd = parseInt(m1[1], 10);
-          var mm = parseInt(m1[2], 10) - 1;
-          var yyyy = parseInt(m1[3], 10);
-          d = new Date(yyyy, mm, dd);
+        // 1) Si on reçoit déjà un objet Date
+        if (raw instanceof Date){
+          d = raw;
         } else {
-          var dIso = new Date(s);
-          if (!isNaN(dIso.getTime())){
-            d = dIso;
+          var s = String(raw).trim();
+
+          // 2) Format dd/mm/yyyy → on le parse en local
+          var m1 = s.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+          if (m1){
+            var dd1  = parseInt(m1[1], 10);
+            var mm1  = parseInt(m1[2], 10) - 1;
+            var yy1  = parseInt(m1[3], 10);
+            d = new Date(yy1, mm1, dd1);
+          } else {
+            // 3) Format yyyy-mm-dd → on le parse aussi en local (et surtout PAS new Date(s))
+            var mIso = s.match(/(\d{4})-(\d{2})-(\d{2})/);
+            if (mIso){
+              var yy2 = parseInt(mIso[1], 10);
+              var mm2 = parseInt(mIso[2], 10) - 1;
+              var dd2 = parseInt(mIso[3], 10);
+              d = new Date(yy2, mm2, dd2);
+            } else {
+              // 4) Dernier recours : new Date(s) (pour d’autres formats éventuels)
+              var dIso = new Date(s);
+              if (!isNaN(dIso.getTime())){
+                d = dIso;
+              }
+            }
           }
         }
 
         if (!d || isNaN(d.getTime())) return raw;
 
-        var dow  = dias[d.getDay()];
-        var day  = d.getDate();
-        var mes  = meses[d.getMonth()];
+        var dow = dias[d.getDay()];
+        var day = d.getDate();
+        var mes = meses[d.getMonth()];
 
         return dow + ", " + day + " de " + mes;
       }
+
 
       function buildTimes(){
         const out=[];
