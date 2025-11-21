@@ -2725,6 +2725,9 @@
   },
   
   pedidoRegistrado: function(){
+    // Contexte brut envoyé depuis registrarPedido / Apps Script
+    var baseCtx = (typeof window !== 'undefined' && window.SECO_CTX) ? window.SECO_CTX : {};
+
     function applyScaleFix(){
       var cssW = window.innerWidth || document.documentElement.clientWidth;
       var screenW = Math.min(window.screen.width || 375, window.screen.height || 812);
@@ -2749,9 +2752,8 @@
     }
 
     function getPedidoCtx(){
-      var ctx = (typeof window !== 'undefined' && window.SECO_CTX) ? window.SECO_CTX : {};
-      if (ctx && ctx.pedido) return ctx.pedido;
-      return ctx || {};
+      if (baseCtx && baseCtx.pedido) return baseCtx.pedido;
+      return baseCtx || {};
     }
 
     function formatMoney(num){
@@ -2772,21 +2774,56 @@
       var waEl         = document.getElementById('confirmWhatsapp');
       var precioEl     = document.getElementById('confirmPrecio');
 
+      // ID de pedido
       if (pedidoIdEl) pedidoIdEl.textContent = p.pedidoId || '';
 
-      var horaTxt   = (p.horaEntrega || p.hora || '').toString().trim() || '--:--';
-      var sectorTxt = (p.sector || '—').toString().trim() || '—';
+      // ==== HORA + SECTOR (corrigé) ====
+      var horaTxt =
+        (p.horaEntrega || p.hora || baseCtx.horaSeleccionada || '')
+          .toString().trim();
+      if (!horaTxt) horaTxt = '--:--';
+
+      var sectorTxt =
+        (p.sector ||
+         (p.cliente && p.cliente.sector) ||
+         baseCtx.sector ||
+         (baseCtx.cliente && baseCtx.cliente.sector) ||
+         '—')
+          .toString().trim() || '—';
+
       if (horaEl)   horaEl.textContent   = horaTxt;
       if (sectorEl) sectorEl.textContent = sectorTxt;
 
-      var nombre = (p.clienteNombre || (p.cliente && p.cliente.nombre) || '').toString().trim();
+      // ==== NOM DU CLIENT ====
+      var nombre = (p.clienteNombre ||
+                    (p.cliente && p.cliente.nombre) ||
+                    baseCtx.clienteNombre ||
+                    (baseCtx.cliente && baseCtx.cliente.nombre) ||
+                    '').toString().trim();
+
       if (!nombre) nombre = 'Contacto';
       if (nombreEl) nombreEl.textContent = nombre.toUpperCase();
 
-      var direccion = (p.direccion || (p.cliente && p.cliente.direccion) || '—').toString().trim() || '—';
+      // ==== ADRESSE ====
+      var direccion = (
+        p.direccion ||
+        (p.cliente && p.cliente.direccion) ||
+        baseCtx.direccion ||
+        (baseCtx.cliente && baseCtx.cliente.direccion) ||
+        '—'
+      ).toString().trim() || '—';
+
       if (dirEl) dirEl.textContent = direccion;
 
-      var nota = (p.nota || (p.cliente && p.cliente.nota) || '').toString().trim();
+      // ==== NOTE ====
+      var nota = (
+        p.nota ||
+        (p.cliente && p.cliente.nota) ||
+        baseCtx.nota ||
+        (baseCtx.cliente && baseCtx.cliente.nota) ||
+        ''
+      ).toString().trim();
+
       if (notaEl){
         if (nota){
           notaEl.textContent = 'Nota : ' + nota;
@@ -2797,20 +2834,45 @@
         }
       }
 
-      var wa = (p.whatsapp || (p.cliente && (p.cliente.telefono || p.cliente.whatsapp)) || '').toString().trim();
+      // ==== WHATSAPP ====
+      var wa = (
+        p.whatsapp ||
+        (p.cliente && (p.cliente.telefono || p.cliente.whatsapp)) ||
+        baseCtx.whatsapp ||
+        (baseCtx.cliente && (baseCtx.cliente.telefono || baseCtx.cliente.whatsapp)) ||
+        ''
+      ).toString().trim();
+
       if (waEl) waEl.textContent = wa ? ('WhatsApp: ' + wa) : 'WhatsApp: —';
 
-      var cantidad = Number(p.cantidad || 0);
+      // ==== QUANTITÉ / UNIT / TOTAL (corrigé) ====
+      var rawCant = p.cantidad;
+
+      if (!rawCant && baseCtx.cantidadSeleccionada){
+        var m = String(baseCtx.cantidadSeleccionada).match(/^(\d+)/);
+        if (m) rawCant = parseInt(m[1], 10);
+      }
+
+      var cantidad = Number(rawCant || 0);
       if (!isFinite(cantidad) || cantidad < 0) cantidad = 0;
 
-      var unit = Number(p.precioUnitario || 0);
-      if (!isFinite(unit) || unit < 0) unit = 0;
+      var total = Number(p.total);
+      if (!isFinite(total) || total <= 0){
+        var tAlt = Number(p.totalCalculado);
+        if (isFinite(tAlt) && tAlt > 0) total = tAlt;
+      }
 
-      var total = Number(p.total || (unit * cantidad));
-      if (!isFinite(total) || total < 0) total = 0;
+      var unit = Number(p.precioUnitario);
+      if (!isFinite(unit) || unit <= 0){
+        if (cantidad > 0 && total > 0){
+          unit = total / cantidad;
+        } else {
+          unit = 0;
+        }
+      }
 
-      var cantTxt = cantidad + ' seco' + (cantidad === 1 ? '' : 's');
-      var unitTxt = formatMoney(unit);
+      var cantTxt  = cantidad + ' seco' + (cantidad === 1 ? '' : 's');
+      var unitTxt  = formatMoney(unit);
       var totalTxt = formatMoney(total);
 
       if (precioEl){
@@ -2820,33 +2882,98 @@
           precioEl.textContent = totalTxt;
         }
       }
+
+      // On garde ces valeurs sur baseCtx pour WhatsApp
+      baseCtx._resolvedPedido = {
+        nombre: nombre,
+        cantidad: cantidad,
+        cantTxt: cantTxt,
+        total: total,
+        unit: unit,
+        totalTxt: totalTxt,
+        horaTxt: horaTxt,
+        sectorTxt: sectorTxt,
+        direccion: direccion,
+        nota: nota,
+        whatsapp: wa
+      };
     }
 
-    function buildWhatsappUrl(p){
-      var rawPhone = (p.whatsapp || (p.cliente && (p.cliente.telefono || p.cliente.whatsapp)) || '').toString();
+    function buildWhatsappUrl(){
+      var p = getPedidoCtx() || {};
+      var r = baseCtx._resolvedPedido || {};
+
+      // Numéro WhatsApp
+      var rawPhone =
+        (p.whatsapp ||
+         (p.cliente && (p.cliente.telefono || p.cliente.whatsapp)) ||
+         baseCtx.whatsapp ||
+         (baseCtx.cliente && (baseCtx.cliente.telefono || baseCtx.cliente.whatsapp)) ||
+         r.whatsapp ||
+         '').toString();
+
       var digits = rawPhone.replace(/\D+/g, '');
       if (!digits) return null;
 
-      var cantidad = Number(p.cantidad || 0);
-      var unit     = Number(p.precioUnitario || 0);
-      var total    = Number(p.total || (unit * cantidad));
+      // Nom
+      var nombre = r.nombre ||
+                   p.clienteNombre ||
+                   (p.cliente && p.cliente.nombre) ||
+                   baseCtx.clienteNombre ||
+                   (baseCtx.cliente && baseCtx.cliente.nombre) ||
+                   'Cliente';
 
-      var cantTxt = cantidad + ' seco' + (cantidad === 1 ? '' : 's');
-      var unitTxt = formatMoney(unit);
-      var totalTxt = formatMoney(total);
+      // Quantité / total
+      var cantidad = (typeof r.cantidad === 'number') ? r.cantidad : Number(p.cantidad || 0);
+      if (!isFinite(cantidad) || cantidad < 0) cantidad = 0;
+      var cantTxt  = r.cantTxt || (cantidad + ' seco' + (cantidad === 1 ? '' : 's'));
 
+      var total    = (typeof r.total === 'number') ? r.total : Number(p.total || 0);
+      if (!isFinite(total) || total < 0) total = 0;
+      var totalTxt = r.totalTxt || formatMoney(total);
+
+      // Date (texte)
+      var fechaLabel =
+        baseCtx.fechaSeleccionada ||
+        p.fechaEntrega ||
+        '';
+
+      // Hora / adresse / secteur / note
+      var horaTxt    = r.horaTxt    || (p.horaEntrega || p.hora || baseCtx.horaSeleccionada || '').toString().trim();
+      var direccion  = r.direccion  || p.direccion || baseCtx.direccion || '';
+      var sectorTxt  = r.sectorTxt  ||
+                       p.sector ||
+                       (p.cliente && p.cliente.sector) ||
+                       baseCtx.sector ||
+                       (baseCtx.cliente && baseCtx.cliente.sector) ||
+                       '';
+      var nota       = r.nota       ||
+                       p.nota ||
+                       (p.cliente && p.cliente.nota) ||
+                       baseCtx.nota ||
+                       (baseCtx.cliente && baseCtx.cliente.nota) ||
+                       '';
+
+      // Construction du message selon ton format
       var lines = [];
-      lines.push('SecoMobil – Pedido registrado');
-      if (p.pedidoId)      lines.push('Pedido: ' + p.pedidoId);
-      if (p.clienteNombre || (p.cliente && p.cliente.nombre)){
-        lines.push('Cliente: ' + (p.clienteNombre || p.cliente.nombre));
+
+      lines.push('*Tu pedido SecoMóvil*');
+      lines.push(
+        nombre + ', recibiras ' +
+        cantTxt + (fechaLabel ? ' ' + fechaLabel : '') +
+        (horaTxt ? ' a las ' + horaTxt : '') + '.'
+      );
+      if (direccion){
+        lines.push('Dirección : ' + direccion);
       }
-      if (p.fechaEntrega)  lines.push('Fecha: ' + p.fechaEntrega);
-      if (p.horaEntrega)   lines.push('Hora: ' + p.horaEntrega);
-      lines.push('Cantidad: ' + cantTxt);
-      lines.push('Importe: ' + cantTxt + ' x ' + unitTxt + ' = ' + totalTxt);
-      if (p.direccion)     lines.push('Dirección: ' + p.direccion);
-      if (p.nota)          lines.push('Nota: ' + p.nota);
+      if (sectorTxt){
+        lines.push('Sector : ' + sectorTxt);
+      }
+      if (nota){
+        lines.push('Nota : ' + nota);
+      }
+      lines.push('Total a cancelar : ' + totalTxt);
+      lines.push('SecoMóvil te agradezco para tu pedido.');
 
       var text = encodeURIComponent(lines.join('\n'));
       return 'https://wa.me/' + digits + '?text=' + text;
@@ -2860,20 +2987,22 @@
       btnOk.addEventListener('click', function(){
         if (btnOk.disabled) return;
 
+        // Spinner noir sur le bouton
         if (window.secoSetBlackButtonLoading){
           window.secoSetBlackButtonLoading(btnOk, true);
         } else {
           btnOk.disabled = true;
         }
 
-        var p = getPedidoCtx();
+        // WhatsApp si coché
         if (chk && chk.checked){
-          var url = buildWhatsappUrl(p);
+          var url = buildWhatsappUrl();
           if (url){
             try { window.open(url, '_blank'); } catch(e){}
           }
         }
 
+        // Retour à inicio
         loadPage('inicio', function(){
           if (window.secoSetBlackButtonLoading){
             window.secoSetBlackButtonLoading(btnOk, false);
@@ -2902,6 +3031,7 @@
       sizeHeaderImage();
     });
   },
+
 
 
   cerrarElDia: function(){
