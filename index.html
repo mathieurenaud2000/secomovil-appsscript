@@ -2395,7 +2395,7 @@
         dropdown.dataset.value = valueText || '';
       }
 
-      function inicializarFechaCantidadHora(){
+            function inicializarFechaCantidadHora(){
         var ddFecha    = document.querySelector('.dropdown[data-name="fecha"]');
         var ddCantidad = document.querySelector('.dropdown[data-name="cantidad"]');
         var ddHora     = document.querySelector('.dropdown[data-name="hora"]');
@@ -2405,48 +2405,36 @@
           var dataElF = ddFecha.querySelector('.dd-data');
           var fechas = [];
 
-          if (dataElF){
-            try {
-              var raw = (dataElF.textContent || '').trim();
-              fechas = raw ? JSON.parse(raw) : [];
-            } catch (e){
-              fechas = [];
-            }
+          // Construire la liste à partir d'AUJOURD'HUI (7 jours)
+          var hoy = new Date();
+          for (var i = 0; i < 7; i++){
+            var d = new Date(hoy);
+            d.setDate(hoy.getDate() + i);
+
+            var yyyy = String(d.getFullYear());
+            var mm   = String(d.getMonth() + 1).padStart(2, "0");
+            var dd   = String(d.getDate()).padStart(2, "0");
+            var iso  = yyyy + "-" + mm + "-" + dd;
+
+            fechas.push(formatFechaEtiqueta(iso));
           }
 
-          // petit helper local: construit l'étiquette "demain"
-          function etiquetaManana(){
-            var hoy = new Date();
-            hoy.setDate(hoy.getDate() + 1);
-            var yyyy = String(hoy.getFullYear());
-            var mm   = String(hoy.getMonth() + 1).padStart(2, "0");
-            var dd   = String(hoy.getDate()).padStart(2, "0");
-            var iso  = yyyy + "-" + mm + "-" + dd;
-            return formatFechaEtiqueta(iso);
+          if (dataElF){
+            dataElF.textContent = JSON.stringify(fechas);
           }
 
           var preferida = null;
 
           if (ctx && ctx.origen === 'registrarPedido' && ctx.fechaSeleccionada){
-            // On revient après avoir édité le contact → on respecte la date déjà choisie
+            // Retour après editarContacto → on respecte la date déjà choisie
             preferida = ctx.fechaSeleccionada;
           } else if (fechas.length){
-            // Cas normal: page ouverte depuis nuevoPedido → forcer DEMAIN
-            var etqManana = etiquetaManana();
-            var idx = fechas.indexOf(etqManana);
-
-            if (idx >= 0){
-              // On a trouvé "demain" tel qu'affiché dans la liste
-              preferida = fechas[idx];
-            } else if (fechas.length > 1){
-              // Fallback: si la liste est [AUJOURD’HUI, DEMAIN, ...],
-              // on prend le 2e élément comme "demain"
-              preferida = fechas[1];
+            // Arrivée "normale" → on force DEMAIN = 2e élément si disponible
+            if (fechas.length > 1){
+              preferida = fechas[1]; // demain
             } else {
-              // Dernier recours: on prend le seul élément disponible
-              preferida = fechas[0];
+              preferida = fechas[0]; // fallback: aujourd'hui si un seul élément
             }
-
             ctx.fechaSeleccionada = preferida;
             window.SECO_CTX = ctx;
           }
@@ -2485,7 +2473,6 @@
 
         actualizarPrecio();
       }
-
 
       function poblarContacto(){
         var nombreEl = document.getElementById('contactoNombre');
