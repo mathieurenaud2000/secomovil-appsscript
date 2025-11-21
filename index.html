@@ -2751,13 +2751,34 @@
       }
     }
 
-    function formatMoneyNumber(n){
-      if (typeof n !== 'number' || !isFinite(n)) n = 0;
-      return n;
+    function parseCantidad(raw){
+      if (typeof raw === 'number' && isFinite(raw)) return raw;
+      if (!raw) return 0;
+      var s = String(raw).trim();
+      // ex: "2 secos", "2", "2.0"
+      var m = s.match(/^(\d+)/);
+      if (m){
+        var n = parseInt(m[1], 10);
+        if (!isNaN(n)) return n;
+      }
+      var n2 = Number(s.replace(',', '.'));
+      return isNaN(n2) ? 0 : n2;
+    }
+
+    function parseMoney(raw){
+      if (typeof raw === 'number' && isFinite(raw)) return raw;
+      if (!raw) return 0;
+      var s = String(raw).trim();
+      // enlève symboles et garde chiffres / point / virgule
+      s = s.replace(' ', ' ');
+      s = s.replace(/[^0-9.,-]/g, '');
+      s = s.replace(',', '.');
+      var n = Number(s);
+      return isNaN(n) ? 0 : n;
     }
 
     function formatMoneyText(n){
-      n = formatMoneyNumber(n);
+      n = parseMoney(n);
       return n.toFixed(2).replace('.', ',') + ' $';
     }
 
@@ -2799,32 +2820,27 @@
         '';
 
       var hora =
-        p.horaEntrega ||
-        p.hora ||
-        baseCtx.horaSeleccionada ||
-        '';
+        (p.horaEntrega || p.hora || baseCtx.horaSeleccionada || '').toString().trim();
 
       var fechaTexto =
-        baseCtx.fechaSeleccionada ||   // texte du dropdown (ex: "Sábado, 22 de Nov.")
-        p.fechaEntrega ||
-        '';
+        (baseCtx.fechaSeleccionada || p.fechaEntrega || '').toString();
 
-      var cantidad = (typeof p.cantidad === 'number')
-        ? p.cantidad
-        : Number(baseCtx.cantidadSeleccionada || 0);
-      if (!isFinite(cantidad) || cantidad < 0) cantidad = 0;
-
-      var unitPrice = (typeof p.precioUnitario === 'number')
-        ? p.precioUnitario
-        : null;
-      if (unitPrice === null && p.total && cantidad > 0){
-        unitPrice = Number(p.total) / cantidad;
+      // Quantité
+      var cantidad = parseCantidad(p.cantidad);
+      if (!cantidad){
+        cantidad = parseCantidad(baseCtx.cantidadSeleccionada);
       }
-      unitPrice = formatMoneyNumber(unitPrice);
 
-      var total = (typeof p.total === 'number')
-        ? p.total
-        : formatMoneyNumber(0);
+      // Total et prix unitaire
+      var total = parseMoney(p.total || baseCtx.total);
+      var unitPrice = parseMoney(p.precioUnitario);
+
+      if (!total && unitPrice && cantidad){
+        total = unitPrice * cantidad;
+      }
+      if (!unitPrice && total && cantidad){
+        unitPrice = total / cantidad;
+      }
 
       var cantidadTexto = cantidad + ' seco' + (cantidad === 1 ? '' : 's');
 
@@ -2835,8 +2851,8 @@
         direccion: direccion,
         nota: nota,
         whatsappRaw: (whatsappRaw || '').toString(),
-        hora: (hora || '').toString().trim(),
-        fechaTexto: (fechaTexto || '').toString(),
+        hora: hora,
+        fechaTexto: fechaTexto,
         cantidad: cantidad,
         cantidadTexto: cantidadTexto,
         unitPrice: unitPrice,
@@ -2879,7 +2895,8 @@
 
       if (telEl){
         var digits = (f.whatsappRaw || '').replace(/\D+/g, '');
-        telEl.textContent = 'Tel.: ' + (digits ? digits : '—');
+        // On met uniquement le numéro; l’icône sera gérée en CSS
+        telEl.textContent = digits ? digits : '—';
       }
 
       if (precioEl){
@@ -2898,22 +2915,22 @@
       // début du message
       lines.push('*Tu pedido SecoMóvil*');
       lines.push('');
-      lines.push(f.nombre || 'Cliente');                 // [Nom]
-      lines.push(f.cantidadTexto || '');                 // [quantité]
-      lines.push(f.fechaTexto || '');                   // [date]
-      lines.push(f.hora ? ('A las ' + f.hora) : '');    // A las [heure]
-      lines.push(f.direccion || '');                    // [direccion]
-      lines.push('Sector: ' + (f.sector || ''));        // Sector: [sector]
+      lines.push(f.nombre || 'Cliente');             // [Nom]
+      lines.push(f.cantidadTexto || '');             // [quantité]
+      lines.push(f.fechaTexto || '');                // [date]
+      lines.push(f.hora ? ('A las ' + f.hora) : ''); // A las [heure]
+      lines.push(f.direccion || '');                 // [direccion]
+      lines.push('Sector: ' + (f.sector || ''));     // Sector: [sector]
       if (f.nota){
-        lines.push('Nota: ' + f.nota);                  // Nota: [nota]
+        lines.push('Nota: ' + f.nota);               // Nota: [nota]
       }
       lines.push('');
-      lines.push('Total: ' + f.totalTxt);               // Total: [total]
+      lines.push('Total: ' + f.totalTxt);            // Total: [total]
       lines.push('');
       lines.push('SecoMóvil te agradece');
       // fin du message
 
-      // Nettoyage des lignes vides en trop en fin de tableau
+      // Nettoie les vides de fin
       while (lines.length && lines[lines.length - 1] === '') {
         lines.pop();
       }
@@ -2964,6 +2981,7 @@
       sizeHeaderImage();
     });
   },
+
 
 
 
