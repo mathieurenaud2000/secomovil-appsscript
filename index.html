@@ -1984,7 +1984,7 @@
     });
   },
 
-    registrarPedido: function() {
+      registrarPedido: function() {
       var ctx = (typeof window !== 'undefined' && window.SECO_CTX) ? window.SECO_CTX : {};
       var clienteActual = ctx.cliente || null;
       var sectoresCtx = Array.isArray(ctx.sectores) ? ctx.sectores : [];
@@ -2000,9 +2000,9 @@
           } else {
             document.documentElement.style.setProperty('--fix', '1');
           }
-      }
+        }
 
-      function sizeHeaderImage(){
+        function sizeHeaderImage(){
           var img = document.getElementById('headerImg');
           var wrap = document.querySelector('.wrapper');
           if (!img || !wrap) return;
@@ -2012,7 +2012,7 @@
             img.style.maxWidth = '100%';
             img.removeAttribute('height');
           }
-      }
+        }
 
       function obtenerElementoSector(){
         var labels = document.querySelectorAll('.contact-card .label');
@@ -2051,7 +2051,7 @@
             ? Number(sec.precio)
             : null;
 
-          if (!nombre || precioValido === null) return;
+        if (!nombre || precioValido === null) return;
           tabla[nombre.toLowerCase()] = precioValido;
         });
 
@@ -2145,6 +2145,7 @@
         var d = null;
         var s = String(raw).trim();
 
+        // dd/mm/yyyy
         var m1 = s.match(/(\d{2})\/(\d{2})\/(\d{4})/);
         if (m1){
           var dd = parseInt(m1[1], 10);
@@ -2190,17 +2191,19 @@
         return '';
       }
 
-      // Liste de dates: aujourd’hui + les jours suivants
+      // NOUVELLE VERSION : construit une liste de labels à partir D’AUJOURD’HUI
+      // index 0 = aujourd’hui, index 1 = demain, etc.
       function buildDatesStartingToday(count){
         const res = [];
         const hoy = new Date();
         for (let i = 0; i < count; i++){
           const d = new Date(hoy);
           d.setDate(hoy.getDate() + i);
-          const dd   = String(d.getDate()).padStart(2,"0");
-          const mm   = String(d.getMonth()+1).padStart(2,"0");
+          const dd  = String(d.getDate()).padStart(2,"0");
+          const mm  = String(d.getMonth()+1).padStart(2,"0");
           const yyyy = d.getFullYear();
-          const etiqueta = formatFechaEtiqueta(yyyy + "-" + mm + "-" + dd);
+          // On passe en dd/mm/yyyy pour éviter le décalage de jour avec "YYYY-MM-DD"
+          const etiqueta = formatFechaEtiqueta(dd + "/" + mm + "/" + yyyy);
           res.push(etiqueta);
         }
         return res;
@@ -2369,43 +2372,38 @@
         dropdown.dataset.value = valueText || '';
       }
 
-            function buildDatesFromToday(count){
-        const res = [];
-        const hoy = new Date();
-        for (let i = 0; i < count; i++){
-          const d = new Date(hoy);
-          d.setDate(hoy.getDate() + i);
-          const dd   = String(d.getDate()).padStart(2, "0");
-          const mm   = String(d.getMonth() + 1).padStart(2, "0");
-          const yyyy = d.getFullYear();
-          const etiqueta = formatFechaEtiqueta(yyyy + "-" + mm + "-" + dd);
-          res.push(etiqueta);
-        }
-        return res;
-      }
-
       function inicializarFechaCantidadHora(){
         var ddFecha    = document.querySelector('.dropdown[data-name="fecha"]');
         var ddCantidad = document.querySelector('.dropdown[data-name="cantidad"]');
         var ddHora     = document.querySelector('.dropdown[data-name="hora"]');
 
-        // ====== FECHA ======
+        // LISTE DE DATES: AUJOURD’HUI EN PREMIER, PUIS LES 6 JOURS SUIVANTS
         if (ddFecha){
           var dataElF = ddFecha.querySelector('.dd-data');
-          var fechas = buildDatesFromToday(7); // Aujourd’hui + 6 jours
+          var fechas = buildDatesStartingToday(7);
           if (dataElF){
             dataElF.textContent = JSON.stringify(fechas);
           }
 
-          // Si une date a déjà été choisie, on la respecte.
-          // Sinon: on sélectionne DEMAIN (fechas[1]) ou, à défaut, aujourd’hui (fechas[0]).
-          var preferida = ctx.fechaSeleccionada || (fechas[1] || fechas[0] || '');
+          // Sélection par défaut:
+          // - si ctx.fechaSeleccionada existe, on la garde
+          // - sinon, on choisit demain (index 1) si possible, sinon aujourd’hui (index 0)
+          var preferida = ctx.fechaSeleccionada || '';
+          if (!preferida){
+            if (fechas.length >= 2){
+              preferida = fechas[1];   // demain
+            } else if (fechas.length === 1){
+              preferida = fechas[0];   // au moins aujourd’hui
+            } else {
+              preferida = '';
+            }
+          }
+
           if (preferida){
             setDropdownValue(ddFecha, preferida, preferida, false);
           }
         }
 
-        // ====== CANTIDAD ======
         if (ddCantidad){
           var dataElC = ddCantidad.querySelector('.dd-data');
           if (dataElC){
@@ -2422,7 +2420,6 @@
           }
         }
 
-        // ====== HORA ======
         if (ddHora){
           var seleccionHora = normalizarHora(ctx.horaSeleccionada);
           var phHora = ddHora.dataset.ph || 'Hora de entrega';
@@ -2434,7 +2431,6 @@
 
         actualizarPrecio();
       }
-
 
       function poblarContacto(){
         var nombreEl = document.getElementById('contactoNombre');
@@ -2508,7 +2504,7 @@
           .withSuccessHandler(function(resp){
             if (resp && resp.ok && resp.data && resp.data.cliente){
               clienteActual = resp.data.cliente;
-              sectoresCtx = Array.isArray(resp.data.sectores) ? resp.sectores : sectoresCtx;
+              sectoresCtx = Array.isArray(resp.data.sectores) ? resp.data.sectores : sectoresCtx;
               ctx.cliente = clienteActual;
               ctx.sectores = sectoresCtx;
               window.SECO_CTX = ctx;
@@ -2569,15 +2565,14 @@
 
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
-      } else { 
-        init(); 
-      }
+      } else { init(); }
 
       window.addEventListener('resize', function(){
         applyScaleFix();
         sizeHeaderImage();
       });
   },
+
 
 
   cerrarElDia: function(){
