@@ -46,7 +46,6 @@
       display:grid; grid-template-columns: 1fr;
       align-items:end;
       gap: calc(8px * var(--fix));
-      /* espace normal au-dessus et au-dessous du titre */
       padding: calc(12px * var(--fix)) 0;
     }
     .header-title{
@@ -67,8 +66,6 @@
       display:flex;
       flex-direction:column;
       gap: calc(var(--gap) * var(--fix));
-      /* espace normal entre le titre et la carte (PAS de séparateur) */
-      margin-top: calc(var(--gap) * var(--fix));
     }
 
     .txt-body  { font-size: calc(var(--font-body) * var(--fix)); font-weight:500; color:#111; }
@@ -164,7 +161,7 @@
     }
   </style>
 
-<div class="wrapper">
+  <div class="wrapper">
 
     <!-- ENTÊTE -->
     <header class="header">
@@ -198,18 +195,18 @@
 
         <div class="confirm-info">
           <div class="confirm-line-time">
-            <span id="confirmHora">11:40</span>
-            <span id="confirmSector">MIRADOR</span>
+            <span id="confirmHora">--:--</span>
+            <span id="confirmSector">—</span>
           </div>
 
-          <div class="confirm-name" id="confirmNombre">LORENZO DESPACITO</div>
+          <div class="confirm-name" id="confirmNombre">—</div>
 
-          <div class="confirm-text" id="confirmDireccion">Al frente de la tienda Juanita</div>
-          <div class="confirm-text" id="confirmNota">Nota : Dejar a la puerta</div>
+          <div class="confirm-text" id="confirmDireccion">—</div>
+          <div class="confirm-text" id="confirmNota">Nota : —</div>
           <div class="confirm-text" id="confirmWhatsapp">WhatsApp: —</div>
 
           <div class="confirm-price">
-            <span id="confirmPrecio">1 seco x 1,00 $ = <strong>1,00 $</strong></span>
+            <span id="confirmPrecio">—</span>
           </div>
         </div>
       </div>
