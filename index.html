@@ -2723,8 +2723,185 @@
         sizeHeaderImage();
       });
   },
+  
+  pedidoRegistrado: function(){
+    function applyScaleFix(){
+      var cssW = window.innerWidth || document.documentElement.clientWidth;
+      var screenW = Math.min(window.screen.width || 375, window.screen.height || 812);
+      if (cssW >= 960 && cssW <= 1024) {
+        var fix = (980 / screenW) * 1.50;
+        document.documentElement.style.setProperty('--fix', fix.toFixed(3));
+      } else {
+        document.documentElement.style.setProperty('--fix', '1');
+      }
+    }
 
+    function sizeHeaderImage(){
+      var img = document.getElementById('headerImg');
+      var wrap = document.querySelector('.wrapper');
+      if (!img || !wrap) return;
+      var w = Math.floor(wrap.clientWidth);
+      if (w > 0){
+        img.style.width = w + 'px';
+        img.style.maxWidth = '100%';
+        img.removeAttribute('height');
+      }
+    }
 
+    function getPedidoCtx(){
+      var ctx = (typeof window !== 'undefined' && window.SECO_CTX) ? window.SECO_CTX : {};
+      if (ctx && ctx.pedido) return ctx.pedido;
+      return ctx || {};
+    }
+
+    function formatMoney(num){
+      var n = Number(num);
+      if (!isFinite(n)) n = 0;
+      return n.toFixed(2).replace('.', ',') + ' $';
+    }
+
+    function renderPedido(){
+      var p = getPedidoCtx() || {};
+
+      var pedidoIdEl   = document.getElementById('pedidoId');
+      var horaEl       = document.getElementById('confirmHora');
+      var sectorEl     = document.getElementById('confirmSector');
+      var nombreEl     = document.getElementById('confirmNombre');
+      var dirEl        = document.getElementById('confirmDireccion');
+      var notaEl       = document.getElementById('confirmNota');
+      var waEl         = document.getElementById('confirmWhatsapp');
+      var precioEl     = document.getElementById('confirmPrecio');
+
+      if (pedidoIdEl) pedidoIdEl.textContent = p.pedidoId || '';
+
+      var horaTxt   = (p.horaEntrega || p.hora || '').toString().trim() || '--:--';
+      var sectorTxt = (p.sector || '—').toString().trim() || '—';
+      if (horaEl)   horaEl.textContent   = horaTxt;
+      if (sectorEl) sectorEl.textContent = sectorTxt;
+
+      var nombre = (p.clienteNombre || (p.cliente && p.cliente.nombre) || '').toString().trim();
+      if (!nombre) nombre = 'Contacto';
+      if (nombreEl) nombreEl.textContent = nombre.toUpperCase();
+
+      var direccion = (p.direccion || (p.cliente && p.cliente.direccion) || '—').toString().trim() || '—';
+      if (dirEl) dirEl.textContent = direccion;
+
+      var nota = (p.nota || (p.cliente && p.cliente.nota) || '').toString().trim();
+      if (notaEl){
+        if (nota){
+          notaEl.textContent = 'Nota : ' + nota;
+          notaEl.style.display = '';
+        } else {
+          notaEl.textContent = '';
+          notaEl.style.display = 'none';
+        }
+      }
+
+      var wa = (p.whatsapp || (p.cliente && (p.cliente.telefono || p.cliente.whatsapp)) || '').toString().trim();
+      if (waEl) waEl.textContent = wa ? ('WhatsApp: ' + wa) : 'WhatsApp: —';
+
+      var cantidad = Number(p.cantidad || 0);
+      if (!isFinite(cantidad) || cantidad < 0) cantidad = 0;
+
+      var unit = Number(p.precioUnitario || 0);
+      if (!isFinite(unit) || unit < 0) unit = 0;
+
+      var total = Number(p.total || (unit * cantidad));
+      if (!isFinite(total) || total < 0) total = 0;
+
+      var cantTxt = cantidad + ' seco' + (cantidad === 1 ? '' : 's');
+      var unitTxt = formatMoney(unit);
+      var totalTxt = formatMoney(total);
+
+      if (precioEl){
+        if (cantidad > 0 && unit > 0){
+          precioEl.innerHTML = cantTxt + ' x ' + unitTxt + ' = <strong>' + totalTxt + '</strong>';
+        } else {
+          precioEl.textContent = totalTxt;
+        }
+      }
+    }
+
+    function buildWhatsappUrl(p){
+      var rawPhone = (p.whatsapp || (p.cliente && (p.cliente.telefono || p.cliente.whatsapp)) || '').toString();
+      var digits = rawPhone.replace(/\D+/g, '');
+      if (!digits) return null;
+
+      var cantidad = Number(p.cantidad || 0);
+      var unit     = Number(p.precioUnitario || 0);
+      var total    = Number(p.total || (unit * cantidad));
+
+      var cantTxt = cantidad + ' seco' + (cantidad === 1 ? '' : 's');
+      var unitTxt = formatMoney(unit);
+      var totalTxt = formatMoney(total);
+
+      var lines = [];
+      lines.push('SecoMobil – Pedido registrado');
+      if (p.pedidoId)      lines.push('Pedido: ' + p.pedidoId);
+      if (p.clienteNombre || (p.cliente && p.cliente.nombre)){
+        lines.push('Cliente: ' + (p.clienteNombre || p.cliente.nombre));
+      }
+      if (p.fechaEntrega)  lines.push('Fecha: ' + p.fechaEntrega);
+      if (p.horaEntrega)   lines.push('Hora: ' + p.horaEntrega);
+      lines.push('Cantidad: ' + cantTxt);
+      lines.push('Importe: ' + cantTxt + ' x ' + unitTxt + ' = ' + totalTxt);
+      if (p.direccion)     lines.push('Dirección: ' + p.direccion);
+      if (p.nota)          lines.push('Nota: ' + p.nota);
+
+      var text = encodeURIComponent(lines.join('\n'));
+      return 'https://wa.me/' + digits + '?text=' + text;
+    }
+
+    function bindOkButton(){
+      var btnOk = document.getElementById('btnOk');
+      var chk   = document.getElementById('chkEnviarWhatsapp');
+      if (!btnOk) return;
+
+      btnOk.addEventListener('click', function(){
+        if (btnOk.disabled) return;
+
+        if (window.secoSetBlackButtonLoading){
+          window.secoSetBlackButtonLoading(btnOk, true);
+        } else {
+          btnOk.disabled = true;
+        }
+
+        var p = getPedidoCtx();
+        if (chk && chk.checked){
+          var url = buildWhatsappUrl(p);
+          if (url){
+            try { window.open(url, '_blank'); } catch(e){}
+          }
+        }
+
+        loadPage('inicio', function(){
+          if (window.secoSetBlackButtonLoading){
+            window.secoSetBlackButtonLoading(btnOk, false);
+          } else {
+            btnOk.disabled = false;
+          }
+        });
+      });
+    }
+
+    function init(){
+      applyScaleFix();
+      sizeHeaderImage();
+      renderPedido();
+      bindOkButton();
+    }
+
+    if (document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+
+    window.addEventListener('resize', function(){
+      applyScaleFix();
+      sizeHeaderImage();
+    });
+  },
 
 
   cerrarElDia: function(){
