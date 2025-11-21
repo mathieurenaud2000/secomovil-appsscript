@@ -1984,12 +1984,14 @@
     });
   },
 
-      registrarPedido: function() {
+  registrarPedido: function() {
       var ctx = (typeof window !== 'undefined' && window.SECO_CTX) ? window.SECO_CTX : {};
       var clienteActual = ctx.cliente || null;
       var sectoresCtx = Array.isArray(ctx.sectores) ? ctx.sectores : [];
       var overlay, overlayList, currentDropdown = null;
       var contactEditBtn = document.getElementById('btnEditarContacto');
+      var btnRegistrar = document.getElementById('btnRegistrar');
+      var btnVolver = document.getElementById('btnVolver');
 
       function applyScaleFix(){
           var cssW = window.innerWidth || document.documentElement.clientWidth;
@@ -2051,7 +2053,7 @@
             ? Number(sec.precio)
             : null;
 
-        if (!nombre || precioValido === null) return;
+          if (!nombre || precioValido === null) return;
           tabla[nombre.toLowerCase()] = precioValido;
         });
 
@@ -2145,7 +2147,6 @@
         var d = null;
         var s = String(raw).trim();
 
-        // dd/mm/yyyy
         var m1 = s.match(/(\d{2})\/(\d{2})\/(\d{4})/);
         if (m1){
           var dd = parseInt(m1[1], 10);
@@ -2191,22 +2192,44 @@
         return '';
       }
 
-      // NOUVELLE VERSION : construit une liste de labels à partir D’AUJOURD’HUI
-      // index 0 = aujourd’hui, index 1 = demain, etc.
-      function buildDatesStartingToday(count){
+      function buildDatesStartingTomorrow(count){
         const res = [];
         const hoy = new Date();
-        for (let i = 0; i < count; i++){
+        for (let i = 1; i <= count; i++){
           const d = new Date(hoy);
           d.setDate(hoy.getDate() + i);
           const dd  = String(d.getDate()).padStart(2,"0");
           const mm  = String(d.getMonth()+1).padStart(2,"0");
           const yyyy = d.getFullYear();
-          // On passe en dd/mm/yyyy pour éviter le décalage de jour avec "YYYY-MM-DD"
-          const etiqueta = formatFechaEtiqueta(dd + "/" + mm + "/" + yyyy);
+          const etiqueta = formatFechaEtiqueta(yyyy + "-" + mm + "-" + dd);
           res.push(etiqueta);
         }
         return res;
+      }
+
+      function setButtonSpinner(btn, isLoading, color){
+        if (!btn) return;
+        if (btn.classList.contains('btn-noir')){
+          if (isLoading){
+            window.secoSetBlackButtonLoading(btn, true);
+          } else {
+            window.secoSetBlackButtonLoading(btn, false);
+          }
+          return;
+        }
+        if (isLoading){
+          if (!btn.dataset.originalHtml){
+            btn.dataset.originalHtml = btn.innerHTML;
+          }
+          btn.innerHTML = '<span class="btn-spinner' + (color === 'black' ? ' black' : '') + '" aria-hidden="true"></span>';
+          btn.disabled = true;
+        } else {
+          btn.disabled = false;
+          if (btn.dataset.originalHtml){
+            btn.innerHTML = btn.dataset.originalHtml;
+            delete btn.dataset.originalHtml;
+          }
+        }
       }
 
       function openOverlayFor(dropdown){
@@ -2377,28 +2400,13 @@
         var ddCantidad = document.querySelector('.dropdown[data-name="cantidad"]');
         var ddHora     = document.querySelector('.dropdown[data-name="hora"]');
 
-        // LISTE DE DATES: AUJOURD’HUI EN PREMIER, PUIS LES 6 JOURS SUIVANTS
         if (ddFecha){
           var dataElF = ddFecha.querySelector('.dd-data');
-          var fechas = buildDatesStartingToday(7);
+          var fechas = buildDatesStartingTomorrow(7);
           if (dataElF){
             dataElF.textContent = JSON.stringify(fechas);
           }
-
-          // Sélection par défaut:
-          // - si ctx.fechaSeleccionada existe, on la garde
-          // - sinon, on choisit demain (index 1) si possible, sinon aujourd’hui (index 0)
-          var preferida = ctx.fechaSeleccionada || '';
-          if (!preferida){
-            if (fechas.length >= 2){
-              preferida = fechas[1];   // demain
-            } else if (fechas.length === 1){
-              preferida = fechas[0];   // au moins aujourd’hui
-            } else {
-              preferida = '';
-            }
-          }
-
+          var preferida = ctx.fechaSeleccionada || (fechas.length ? fechas[0] : '');
           if (preferida){
             setDropdownValue(ddFecha, preferida, preferida, false);
           }
@@ -2530,6 +2538,54 @@
         window.SECO_CTX = ctx;
       }
 
+      function construirPayloadRegistro(){
+        var ddFecha    = document.querySelector('.dropdown[data-name="fecha"]');
+        var ddHora     = document.querySelector('.dropdown[data-name="hora"]');
+        var fechaTexto = '';
+        var horaTexto  = '';
+
+        if (ddFecha){
+          fechaTexto = ddFecha.dataset.value || '';
+          if (!fechaTexto){
+            var lf = ddFecha.querySelector('.dd-label');
+            if (lf && lf.textContent) fechaTexto = lf.textContent.trim();
+          }
+        }
+
+        if (ddHora){
+          horaTexto = ddHora.dataset.value || '';
+          if (!horaTexto){
+            var lh = ddHora.querySelector('.dd-label');
+            if (lh && lh.textContent) horaTexto = lh.textContent.trim();
+          }
+        }
+
+        var cantidad = obtenerCantidadSeleccionada();
+        var unitPrice = getPrecioBaseDesdeCtx();
+        var totalCalc = unitPrice * cantidad;
+
+        var cliente = clienteActual || ctx.cliente || {};
+
+        var payload = {
+          origen: 'registrarPedido',
+          cliente: cliente,
+          clienteNombre: (cliente && cliente.nombre) || ctx.clienteNombre || '',
+          whatsapp: (cliente.telefono || cliente.whatsapp || ctx.whatsapp || '').toString().trim(),
+          direccion: (cliente.direccion || ctx.direccion || '').toString().trim(),
+          sector: (cliente.sector || ctx.sector || obtenerSectorDesdePagina() || '').toString().trim(),
+          nota: (cliente.nota || ctx.nota || '').toString().trim(),
+          fechaTexto: fechaTexto,
+          hora: horaTexto,
+          cantidad: cantidad,
+          precioUnitario: unitPrice,
+          totalCalculado: totalCalc,
+          pedidoId: (ctx.pedidoId || '').toString().trim(),
+          idContacto: (ctx.idContacto || cliente.idCliente || '').toString().trim()
+        };
+
+        return payload;
+      }
+
       function bindEditarContacto(){
         if (!contactEditBtn) return;
         contactEditBtn.addEventListener('click', function(){
@@ -2561,6 +2617,44 @@
         observarCambiosSector();
         bindEditarContacto();
         cargarClienteDesdeServidor();
+
+        if (btnVolver){
+          btnVolver.addEventListener('click', function(){
+            if (btnVolver.disabled) return;
+            setButtonSpinner(btnVolver, true, 'black');
+            guardarCtxSeleccion();
+            loadPage('inicio', function(){
+              setButtonSpinner(btnVolver, false, 'black');
+            });
+          });
+        }
+
+        if (btnRegistrar){
+          btnRegistrar.addEventListener('click', function(){
+            if (btnRegistrar.disabled) return;
+            setButtonSpinner(btnRegistrar, true);
+            guardarCtxSeleccion();
+            var payload = construirPayloadRegistro();
+
+            google.script.run
+              .withSuccessHandler(function(resp){
+                setButtonSpinner(btnRegistrar, false);
+                if (resp && resp.ok){
+                  loadPage('pedidoRegistrado');
+                } else if (window.alert){
+                  var msg = (resp && resp.error) ? resp.error : 'Error al registrar el pedido.';
+                  alert(msg);
+                }
+              })
+              .withFailureHandler(function(){
+                setButtonSpinner(btnRegistrar, false);
+                if (window.alert){
+                  alert('Error al registrar el pedido.');
+                }
+              })
+              .registrarPedidoDesdeRegistrar(payload);
+          });
+        }
       }
 
       if (document.readyState === 'loading') {
@@ -2572,6 +2666,7 @@
         sizeHeaderImage();
       });
   },
+
 
 
 
