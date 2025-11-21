@@ -2725,22 +2725,8 @@
   },
   
   pedidoRegistrado: function() {
-    var viewPedido = {
-      nombre: '',
-      cantidad: 0,
-      cantidadTxt: '',
-      fechaLabel: '',
-      horaTxt: '',
-      direccion: '',
-      sector: '',
-      nota: '',
-      total: 0,
-      totalTxt: '',
-      unitPrice: 0,
-      unitTxt: '',
-      whatsappRaw: '',
-      whatsappDigits: ''
-    };
+    var baseCtx = window.SECO_CTX || {};
+    var pedido = baseCtx.pedido || baseCtx || {};
 
     function applyScaleFix(){
       var cssW = window.innerWidth || document.documentElement.clientWidth;
@@ -2765,237 +2751,206 @@
       }
     }
 
-    function formatMoneyLocal(n){
+    function formatMoneyNumber(n){
       if (typeof n !== 'number' || !isFinite(n)) n = 0;
+      return n;
+    }
+
+    function formatMoneyText(n){
+      n = formatMoneyNumber(n);
       return n.toFixed(2).replace('.', ',') + ' $';
     }
 
-    function formatFechaBonita(fechaISO){
-      if (!fechaISO) return '';
-      var d = new Date(fechaISO);
-      if (isNaN(d.getTime())){
-        // tente quand même de parser
-        d = new Date(String(fechaISO));
-        if (isNaN(d.getTime())) return '';
-      }
-      var meses = ["Ene.","Feb.","Mar.","Abr.","May.","Jun.","Jul.","Ago.","Sep.","Oct.","Nov.","Dic."];
-      var dias  = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
-      var dow = dias[d.getDay()];
-      var day = d.getDate();
-      var mes = meses[d.getMonth()];
-      return dow + ", " + day + " de " + mes;
-    }
+    // Regroupe toutes les valeurs nécessaires pour la carte et WhatsApp
+    function getFieldValues(){
+      var p = pedido || {};
+      var c = p.cliente || baseCtx.cliente || {};
 
-    function getCtx(){
-      return (typeof window !== 'undefined' && window.SECO_CTX) ? window.SECO_CTX : {};
-    }
+      var nombre =
+        p.clienteNombre ||
+        c.nombre ||
+        baseCtx.clienteNombre ||
+        'Cliente';
 
-    function getPedidoCtx(){
-      var ctx = getCtx();
-      return ctx.pedido || ctx || {};
-    }
+      var sector =
+        p.sector ||
+        c.sector ||
+        baseCtx.sector ||
+        '';
 
-    function hydratePedidoCard(){
-      var ctx = getCtx();
-      var p   = getPedidoCtx();
+      var direccion =
+        p.direccion ||
+        c.direccion ||
+        baseCtx.direccion ||
+        '';
 
-      // Récupération de base
-      var pedidoId = p.pedidoId || ctx.pedidoId || '';
-      var nombre   = p.clienteNombre ||
-                     (p.cliente && p.cliente.nombre) ||
-                     (ctx.cliente && ctx.cliente.nombre) ||
-                     ctx.clienteNombre ||
-                     'Cliente';
-
-      var cantidad = Number(p.cantidad || 0);
-      if (!isFinite(cantidad) || cantidad < 0) cantidad = 0;
-      var cantidadTxt = cantidad + ' seco' + (cantidad === 1 ? '' : 's');
-
-      var unitPrice = (typeof p.precioUnitario === 'number' && isFinite(p.precioUnitario))
-        ? p.precioUnitario
-        : null;
-      if (unitPrice === null){
-        // secours: total / quantité si dispo
-        var tTmp = Number(p.total || 0);
-        if (isFinite(tTmp) && cantidad > 0){
-          unitPrice = tTmp / cantidad;
-        } else {
-          unitPrice = 0;
-        }
-      }
-
-      var total = (typeof p.total === 'number' && isFinite(p.total))
-        ? p.total
-        : (unitPrice * cantidad);
-
-      if (!isFinite(total) || total < 0) total = 0;
-
-      var fechaISO = p.fechaEntrega || ctx.fechaEntrega || '';
-      var fechaLabel = formatFechaBonita(fechaISO);
-
-      var horaTxt = (p.horaEntrega || p.hora || ctx.horaEntrega || ctx.horaSeleccionada || '')
-        .toString().trim();
-
-      var direccion = p.direccion ||
-                      ctx.direccion ||
-                      (p.cliente && p.cliente.direccion) ||
-                      (ctx.cliente && ctx.cliente.direccion) ||
-                      '';
-
-      var sector = p.sector ||
-                   (p.cliente && p.cliente.sector) ||
-                   ctx.sector ||
-                   (ctx.cliente && ctx.cliente.sector) ||
-                   '';
-
-      var nota = p.nota ||
-                 (p.cliente && p.cliente.nota) ||
-                 ctx.nota ||
-                 (ctx.cliente && ctx.cliente.nota) ||
-                 '';
+      var nota =
+        p.nota ||
+        c.nota ||
+        baseCtx.nota ||
+        '';
 
       var whatsappRaw =
         p.whatsapp ||
-        (p.cliente && (p.cliente.telefono || p.cliente.whatsapp)) ||
-        ctx.whatsapp ||
-        (ctx.cliente && (ctx.cliente.telefono || ctx.cliente.whatsapp)) ||
+        c.whatsapp ||
+        c.telefono ||
+        baseCtx.whatsapp ||
+        (baseCtx.cliente && (baseCtx.cliente.whatsapp || baseCtx.cliente.telefono)) ||
         '';
 
-      var whatsappDigits = whatsappRaw.toString().replace(/\D+/g, '');
+      var hora =
+        p.horaEntrega ||
+        p.hora ||
+        baseCtx.horaSeleccionada ||
+        '';
 
-      var unitTxt  = formatMoneyLocal(unitPrice);
-      var totalTxt = formatMoneyLocal(total);
+      var fechaTexto =
+        baseCtx.fechaSeleccionada ||   // texte du dropdown (ex: "Sábado, 22 de Nov.")
+        p.fechaEntrega ||
+        '';
 
-      // Mémoriser pour WhatsApp
-      viewPedido = {
+      var cantidad = (typeof p.cantidad === 'number')
+        ? p.cantidad
+        : Number(baseCtx.cantidadSeleccionada || 0);
+      if (!isFinite(cantidad) || cantidad < 0) cantidad = 0;
+
+      var unitPrice = (typeof p.precioUnitario === 'number')
+        ? p.precioUnitario
+        : null;
+      if (unitPrice === null && p.total && cantidad > 0){
+        unitPrice = Number(p.total) / cantidad;
+      }
+      unitPrice = formatMoneyNumber(unitPrice);
+
+      var total = (typeof p.total === 'number')
+        ? p.total
+        : formatMoneyNumber(0);
+
+      var cantidadTexto = cantidad + ' seco' + (cantidad === 1 ? '' : 's');
+
+      return {
+        pedidoId: p.pedidoId || baseCtx.pedidoId || '',
         nombre: nombre,
-        cantidad: cantidad,
-        cantidadTxt: cantidadTxt,
-        fechaLabel: fechaLabel,
-        horaTxt: horaTxt,
-        direccion: direccion,
         sector: sector,
+        direccion: direccion,
         nota: nota,
-        total: total,
-        totalTxt: totalTxt,
+        whatsappRaw: (whatsappRaw || '').toString(),
+        hora: (hora || '').toString().trim(),
+        fechaTexto: (fechaTexto || '').toString(),
+        cantidad: cantidad,
+        cantidadTexto: cantidadTexto,
         unitPrice: unitPrice,
-        unitTxt: unitTxt,
-        whatsappRaw: whatsappRaw.toString(),
-        whatsappDigits: whatsappDigits
+        unitPriceTxt: formatMoneyText(unitPrice),
+        total: total,
+        totalTxt: formatMoneyText(total)
       };
+    }
 
-      // ==== Injection dans la carte ====
-      var elPedidoId      = document.getElementById('pedidoId');
-      var elHora          = document.getElementById('confirmHora');
-      var elSector        = document.getElementById('confirmSector');
-      var elNombre        = document.getElementById('confirmNombre');
-      var elDireccion     = document.getElementById('confirmDireccion');
-      var elNota          = document.getElementById('confirmNota');
-      var elWhatsapp      = document.getElementById('confirmWhatsapp');
-      var elPrecioLinea   = document.getElementById('confirmPrecio');
+    function renderCard(){
+      var f = getFieldValues();
 
-      if (elPedidoId)  elPedidoId.textContent  = pedidoId || '';
-      if (elHora)      elHora.textContent      = horaTxt || '—';
-      if (elSector)    elSector.textContent    = sector || '—';
-      if (elNombre)    elNombre.textContent    = nombre || '—';
-      if (elDireccion) elDireccion.textContent = direccion || '—';
+      var pedidoIdEl     = document.getElementById('pedidoId');
+      var horaEl         = document.getElementById('confirmHora');
+      var sectorEl       = document.getElementById('confirmSector');
+      var nombreEl       = document.getElementById('confirmNombre');
+      var dirEl          = document.getElementById('confirmDireccion');
+      var notaEl         = document.getElementById('confirmNota');
+      var telEl          = document.getElementById('confirmWhatsapp');
+      var precioEl       = document.getElementById('confirmPrecio');
 
-      if (elNota){
-        if (nota){
-          elNota.textContent = 'Nota: ' + nota;
-          elNota.style.display = '';
+      if (pedidoIdEl) pedidoIdEl.textContent = f.pedidoId || '';
+
+      if (horaEl)   horaEl.textContent   = f.hora || '—';
+      if (sectorEl) sectorEl.textContent = f.sector || '—';
+
+      if (nombreEl) nombreEl.textContent = f.nombre || '—';
+
+      if (dirEl) dirEl.textContent = f.direccion || '—';
+
+      if (notaEl){
+        if (f.nota){
+          notaEl.textContent = 'Nota: ' + f.nota;
+          notaEl.style.display = '';
         } else {
-          elNota.textContent = '';
-          elNota.style.display = 'none';
+          notaEl.textContent = '';
+          notaEl.style.display = 'none';
         }
       }
 
-      if (elWhatsapp){
-        var waTxt = whatsappDigits ? 'WhatsApp: ' + whatsappRaw : 'WhatsApp: —';
-        elWhatsapp.textContent = waTxt;
+      if (telEl){
+        var digits = (f.whatsappRaw || '').replace(/\D+/g, '');
+        telEl.textContent = 'Tel.: ' + (digits ? digits : '—');
       }
 
-      // Ligne prix : "2 secos x 1,25 $ = 2,50 $"
-      if (elPrecioLinea){
-        if (cantidad > 0 && unitPrice > 0){
-          elPrecioLinea.textContent =
-            cantidadTxt + ' x ' + unitTxt + ' = ' + totalTxt;
-        } else {
-          elPrecioLinea.textContent = totalTxt;
-        }
+      if (precioEl){
+        // [quantité] x [prix unitaire] = [prix total]
+        precioEl.textContent =
+          f.cantidadTexto + ' x ' + f.unitPriceTxt + ' = ' + f.totalTxt;
       }
     }
 
-    // ===== MESSAGE WHATSAPP =====
-    function buildWhatsappUrl(){
-      var p = viewPedido;
-      if (!p || !p.whatsappDigits) return null;
+    function buildWhatsappUrlFromFields(f){
+      var digits = (f.whatsappRaw || '').replace(/\D+/g, '');
+      if (!digits) return null;
 
       var lines = [];
 
       // début du message
       lines.push('*Tu pedido SecoMóvil*');
       lines.push('');
-
-      lines.push(p.nombre || 'Cliente');
-      lines.push(p.cantidadTxt || '');
-      lines.push(p.fechaLabel || '');
-      if (p.horaTxt){
-        lines.push('A las ' + p.horaTxt);
+      lines.push(f.nombre || 'Cliente');                 // [Nom]
+      lines.push(f.cantidadTexto || '');                 // [quantité]
+      lines.push(f.fechaTexto || '');                   // [date]
+      lines.push(f.hora ? ('A las ' + f.hora) : '');    // A las [heure]
+      lines.push(f.direccion || '');                    // [direccion]
+      lines.push('Sector: ' + (f.sector || ''));        // Sector: [sector]
+      if (f.nota){
+        lines.push('Nota: ' + f.nota);                  // Nota: [nota]
       }
-      lines.push(p.direccion || '');
-      lines.push('Sector: ' + (p.sector || ''));
-
-      if (p.nota){
-        lines.push('Nota: ' + p.nota);
-      }
-
       lines.push('');
-      lines.push('Total: ' + p.totalTxt);
+      lines.push('Total: ' + f.totalTxt);               // Total: [total]
       lines.push('');
       lines.push('SecoMóvil te agradece');
       // fin du message
 
+      // Nettoyage des lignes vides en trop en fin de tableau
+      while (lines.length && lines[lines.length - 1] === '') {
+        lines.pop();
+      }
+
       var text = encodeURIComponent(lines.join('\n'));
-      return 'https://wa.me/' + p.whatsappDigits + '?text=' + text;
-    }
-
-    function bindOkButton(){
-      var btnOk = document.getElementById('btnOk');
-      if (!btnOk) return;
-
-      var chkWhatsapp = document.getElementById('chkEnviarWhatsapp');
-
-      btnOk.addEventListener('click', function(){
-        if (btnOk.dataset.loading === '1') return;
-        btnOk.dataset.loading = '1';
-        if (window.secoSetBlackButtonLoading){
-          window.secoSetBlackButtonLoading(btnOk, true);
-        }
-
-        var shouldSend = chkWhatsapp && chkWhatsapp.checked;
-        var waUrl = shouldSend ? buildWhatsappUrl() : null;
-
-        if (shouldSend && waUrl){
-          // On ouvre WhatsApp d’abord
-          window.open(waUrl, '_blank');
-        }
-
-        // Puis on revient à l’accueil
-        loadPage('inicio', function(){
-          btnOk.dataset.loading = '0';
-          if (window.secoSetBlackButtonLoading){
-            window.secoSetBlackButtonLoading(btnOk, false);
-          }
-        });
-      });
+      return 'https://wa.me/' + digits + '?text=' + text;
     }
 
     function init(){
       applyScaleFix();
       sizeHeaderImage();
-      hydratePedidoCard();
-      bindOkButton();
+      renderCard();
+
+      var chkEnviar = document.getElementById('chkEnviarWhatsapp');
+      var btnOk = document.getElementById('btnOk') || document.querySelector('.btn-noir');
+
+      if (btnOk){
+        btnOk.addEventListener('click', function(){
+          // Spinner sur le bouton noir
+          window.secoSetBlackButtonLoading(btnOk, true);
+
+          var f = getFieldValues();
+
+          // Envoi WhatsApp seulement si la case est cochée
+          if (!chkEnviar || chkEnviar.checked){
+            var url = buildWhatsappUrlFromFields(f);
+            if (url){
+              window.open(url, '_blank');
+            }
+          }
+
+          // Retour à l’accueil
+          loadPage('inicio', function(){
+            window.secoSetBlackButtonLoading(btnOk, false);
+          });
+        });
+      }
     }
 
     if (document.readyState === 'loading'){
@@ -3009,6 +2964,7 @@
       sizeHeaderImage();
     });
   },
+
 
 
 
