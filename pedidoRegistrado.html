@@ -46,6 +46,7 @@
       display:grid; grid-template-columns: 1fr;
       align-items:end;
       gap: calc(8px * var(--fix));
+      /* espace normal au-dessus et au-dessous du titre */
       padding: calc(12px * var(--fix)) 0;
     }
     .header-title{
@@ -66,6 +67,8 @@
       display:flex;
       flex-direction:column;
       gap: calc(var(--gap) * var(--fix));
+      /* espace normal entre le titre et la carte (PAS de séparateur) */
+      margin-top: calc(var(--gap) * var(--fix));
     }
 
     .txt-body  { font-size: calc(var(--font-body) * var(--fix)); font-weight:500; color:#111; }
@@ -133,7 +136,7 @@
       display:flex;
       align-items:center;
       gap: calc(8px * var(--fix));
-      font-size: calc(var(--font-small) * var(--fix)); /* taille ajustée */
+      font-size: calc(var(--font-small) * var(--fix));
       color:#111;
     }
     .checkbox-row input[type="checkbox"]{
@@ -174,14 +177,14 @@
       <div class="sep-black"></div>
 
       <div class="header-grid">
-      <div class="header-title">
-        <span>PEDIDO</span>
-        <span>REGISTRADO</span>
+        <div class="header-title">
+          <span>PEDIDO</span>
+          <span>REGISTRADO</span>
+        </div>
+        <div class="header-id" id="pedidoId"></div>
       </div>
-      <div class="header-id" id="pedidoId"></div>
-    </div>
 
-      <div class="sep-black"></div>
+      <!-- IMPORTANT : plus de séparateur ici -->
     </header>
 
     <!-- CONTENU -->
