@@ -1572,36 +1572,48 @@
       return raw;
     }
 
-    function formatFechaEtiqueta(raw){
-      if (!raw) return "";
+          function formatFechaEtiqueta(raw){
+        if (!raw) return "";
 
-      var meses = ["Ene.","Feb.","Mar.","Abr.","May.","Jun.","Jul.","Ago.","Sep.","Oct.","Nov.","Dic."];
-      var dias = ["Domingo","Lunes","Martes","Miercoles","Jueves","Viernes","Sabado"];
+        var meses = ["Ene.","Feb.","Mar.","Abr.","May.","Jun.","Jul.","Ago.","Sep.","Oct.","Nov.","Dic."];
+        var dias  = ["Domingo","Lunes","Martes","Miercoles","Jueves","Viernes","Sabado"];
 
-      var d = null;
-      var s = String(raw).trim();
+        var d = null;
+        var s = String(raw).trim();
 
-      var m1 = s.match(/(\d{2})\/(\d{2})\/(\d{4})/);
-      if (m1){
-        var dd = parseInt(m1[1], 10);
-        var mm = parseInt(m1[2], 10) - 1;
-        var yyyy = parseInt(m1[3], 10);
-        d = new Date(yyyy, mm, dd);
-      } else {
-        var dIso = new Date(s);
-        if (!isNaN(dIso.getTime())){
-          d = dIso;
+        // Format DD/MM/YYYY
+        var mSlash = s.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+        if (mSlash){
+          var dd = parseInt(mSlash[1], 10);
+          var mm = parseInt(mSlash[2], 10) - 1;
+          var yyyy = parseInt(mSlash[3], 10);
+          d = new Date(yyyy, mm, dd); // LOCAL, pas UTC
+        } else {
+          // Format YYYY-MM-DD
+          var mDash = s.match(/(\d{4})-(\d{2})-(\d{2})/);
+          if (mDash){
+            var yyyy2 = parseInt(mDash[1], 10);
+            var mm2   = parseInt(mDash[2], 10) - 1;
+            var dd2   = parseInt(mDash[3], 10);
+            d = new Date(yyyy2, mm2, dd2); // LOCAL, pas UTC
+          } else {
+            // Fallback: laisser le moteur essayer
+            var dIso = new Date(s);
+            if (!isNaN(dIso.getTime())){
+              d = dIso;
+            }
+          }
         }
+
+        if (!d || isNaN(d.getTime())) return raw;
+
+        var dow = dias[d.getDay()];
+        var day = d.getDate();
+        var mes = meses[d.getMonth()];
+
+        return dow + ", " + day + " de " + mes;
       }
 
-      if (!d || isNaN(d.getTime())) return raw;
-
-      var dow  = dias[d.getDay()];
-      var day  = d.getDate();
-      var mes  = meses[d.getMonth()];
-
-      return dow + ", " + day + " de " + mes;
-    }
 
     function buildDatesStartingTomorrow(count){
       const res = [];
@@ -2357,32 +2369,43 @@
         dropdown.dataset.value = valueText || '';
       }
 
+            function buildDatesFromToday(count){
+        const res = [];
+        const hoy = new Date();
+        for (let i = 0; i < count; i++){
+          const d = new Date(hoy);
+          d.setDate(hoy.getDate() + i);
+          const dd   = String(d.getDate()).padStart(2, "0");
+          const mm   = String(d.getMonth() + 1).padStart(2, "0");
+          const yyyy = d.getFullYear();
+          const etiqueta = formatFechaEtiqueta(yyyy + "-" + mm + "-" + dd);
+          res.push(etiqueta);
+        }
+        return res;
+      }
+
       function inicializarFechaCantidadHora(){
         var ddFecha    = document.querySelector('.dropdown[data-name="fecha"]');
         var ddCantidad = document.querySelector('.dropdown[data-name="cantidad"]');
         var ddHora     = document.querySelector('.dropdown[data-name="hora"]');
 
+        // ====== FECHA ======
         if (ddFecha){
           var dataElF = ddFecha.querySelector('.dd-data');
-          var fechas = buildDatesStartingToday(7);
+          var fechas = buildDatesFromToday(7); // Aujourd’hui + 6 jours
           if (dataElF){
             dataElF.textContent = JSON.stringify(fechas);
           }
 
-          var preferida = ctx.fechaSeleccionada || '';
-          if (!preferida && fechas.length){
-            if (fechas.length >= 2){
-              preferida = fechas[1]; // demain
-            } else {
-              preferida = fechas[0];
-            }
-          }
-
+          // Si une date a déjà été choisie, on la respecte.
+          // Sinon: on sélectionne DEMAIN (fechas[1]) ou, à défaut, aujourd’hui (fechas[0]).
+          var preferida = ctx.fechaSeleccionada || (fechas[1] || fechas[0] || '');
           if (preferida){
             setDropdownValue(ddFecha, preferida, preferida, false);
           }
         }
 
+        // ====== CANTIDAD ======
         if (ddCantidad){
           var dataElC = ddCantidad.querySelector('.dd-data');
           if (dataElC){
@@ -2399,6 +2422,7 @@
           }
         }
 
+        // ====== HORA ======
         if (ddHora){
           var seleccionHora = normalizarHora(ctx.horaSeleccionada);
           var phHora = ddHora.dataset.ph || 'Hora de entrega';
@@ -2410,6 +2434,7 @@
 
         actualizarPrecio();
       }
+
 
       function poblarContacto(){
         var nombreEl = document.getElementById('contactoNombre');
