@@ -24,31 +24,29 @@
       animation: btnNoirSpin 0.9s linear infinite;
       pointer-events:none;
     }
-    /* Spinner noir pour boutons blancs */
-    button.btn-blanc[data-spinner="1"]::after {
-      content: "";
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: calc(20px * var(--fix));
-      height: calc(20px * var(--fix));
-      margin-top: calc(-10px * var(--fix));
-      margin-left: calc(-10px * var(--fix));
-      border-radius: 50%;
-      border: 3px solid #000;           /* noir */
-      border-top-color: transparent;    /* effet rotation */
-      animation: spin 0.8s linear infinite;
+    /* Spinner noir pour les boutons blancs VOLVER AL INICIO */
+    .btn-blanc[data-spinner="1"] > *{ visibility:hidden; }
+    .btn-blanc[data-spinner="1"]::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      margin:auto;
+      width:calc(28px * var(--fix));
+      height:calc(28px * var(--fix));
+      border-radius:50%;
+      border:calc(12px * var(--fix)) solid rgba(0,0,0,0.35);
+      border-top-color:#000;
+      animation: btnNoirSpin 0.9s linear infinite;
+      pointer-events:none;
     }
+
+
 
     @keyframes btnNoirSpin{
       from { transform: rotate(0deg); }
       to   { transform: rotate(360deg); }
     }
-    
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to   { transform: rotate(360deg); }
-    }
+
 
 
     
