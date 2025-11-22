@@ -85,7 +85,7 @@
     }
 
     /* ===== BOUTONS GLOBAUX ===== */
-    .btn{
+    .btn{ 
       display:block; width:100%;
       text-transform:uppercase; font-weight:700;
       font-size: calc(var(--btn-fs) * var(--fix)); line-height:1.2;
@@ -99,6 +99,12 @@
     .btn-noir{
       background:#000; color:#fff; border-color:#000;
       box-shadow:0 20px 40px rgba(0,0,0,0.40);
+    }
+    .btn-blanc{
+      background:#fff; color:#000; border-color: var(--gray20);
+    }
+    .btn-blanc:active{
+      color: rgba(0,0,0,0.5);
     }
 
     .stack{
