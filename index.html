@@ -3003,6 +3003,8 @@
 //  VENTA DIRECTA (SPA)
 // =====================
 ventaDirecta: function() {
+  var precioFormatTimer = null;
+
   function applyScaleFix(){
     var cssW = window.innerWidth || document.documentElement.clientWidth;
     var screenW = Math.min(window.screen.width || 375, window.screen.height || 812);
@@ -3120,11 +3122,23 @@ ventaDirecta: function() {
 
     if (inputPrecio){
       inputPrecio.addEventListener('input', function(){
+        // MAJ instantanée du total
         updateTotalAndButton();
+
+        // Formatage retardé (3 secondes)
+        if (precioFormatTimer){
+          clearTimeout(precioFormatTimer);
+        }
+        precioFormatTimer = setTimeout(function(){
+          var v = getPrecio();
+          if (v > 0){
+            inputPrecio.value = formatMoney(v);
+          }
+        }, 3000);
       });
     }
 
-    // Recalculer après sélection dans n’importe quel overlay (harmless ailleurs)
+    // Recalculer après sélection d'une option du dropdown (1 à 10 secos)
     document.addEventListener('click', function(e){
       if (e.target && e.target.closest('.dd-overlay-option')){
         setTimeout(updateTotalAndButton, 0);
@@ -3148,17 +3162,19 @@ ventaDirecta: function() {
 
         google.script.run
           .withSuccessHandler(function(resp){
-            if (window.secoSetBlackButtonLoading){
-              window.secoSetBlackButtonLoading(btnRegistrar, false);
-            }
-
             if (resp && resp.ok && resp.data && resp.data.venta){
               // Contexte pour ventaRegistrada
               window.SECO_CTX = { venta: resp.data.venta };
+              // On NE coupe PAS le spinner ici : la page change, le bouton disparaît.
               loadPage('ventaRegistrada');
-            } else if (window.alert){
-              var msg = (resp && resp.error) ? resp.error : 'Error al registrar la venta.';
-              alert(msg);
+            } else {
+              if (window.secoSetBlackButtonLoading){
+                window.secoSetBlackButtonLoading(btnRegistrar, false);
+              }
+              if (window.alert){
+                var msg = (resp && resp.error) ? resp.error : 'Error al registrar la venta.';
+                alert(msg);
+              }
             }
           })
           .withFailureHandler(function(){
@@ -3191,6 +3207,7 @@ ventaDirecta: function() {
     sizeHeaderImage();
   });
 },
+
 
 
       
