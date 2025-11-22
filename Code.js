@@ -689,6 +689,19 @@ function getFirstEmptyRowInColumn_(sheet, colIndex) {
   return sheet.getLastRow() + 1;
 }
 
+function sortPedidosDiarios_() {
+  var sheet = getSheet_('PEDIDOS DIARIOS');
+  var lastRow = sheet.getLastRow();
+  var lastCol = sheet.getLastColumn();
+  if (lastRow <= 1) return; // aucune donnée
+
+  var range = sheet.getRange(2, 1, lastRow - 1, lastCol);
+  range.sort([
+    { column: 1, ascending: true }, // Fecha
+    { column: 8, ascending: true }  // Hora
+  ]);
+}
+
 
 
 
@@ -2428,6 +2441,8 @@ function registrarPedidoDesdeRegistrar(payload) {
     var userProps = PropertiesService.getUserProperties();
     userProps.setProperty('SECOMOVIL_CTX_NUEVO_PEDIDO', JSON.stringify(ctx));
 
+    sortPedidosDiarios_();
+
     return {
       ok: true,
       error: null,
@@ -3035,7 +3050,8 @@ function getPedidosDelDia(fecha) {
  */
 function getProximaEntrega() {
   try {
-    var hoyStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+    var tz = Session.getScriptTimeZone();
+    var hoyStr = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
     var resp = getPedidosDelDia(hoyStr);
 
     if (!resp.ok) {
@@ -3046,16 +3062,42 @@ function getProximaEntrega() {
       };
     }
 
-    var pedidos = resp.data.pedidos || [];
-    var siguiente = null;
+    var pedidos = (resp.data && resp.data.pedidos) || [];
 
-    for (var i = 0; i < pedidos.length; i++) {
-      var est = (pedidos[i].estado || '').toLowerCase();
-      if (est === 'pendiente') {
-        siguiente = pedidos[i];
-        break;
-      }
+    var pendientesDeHoy = pedidos.filter(function (pedido) {
+      var fechaEntrega = (pedido.fechaEntrega || '').toString();
+      var estado = (pedido.estado || '').toString().toLowerCase();
+      return fechaEntrega === hoyStr && estado === 'pendiente';
+    });
+
+    function horaToMinutes(horaStr) {
+      var texto = (horaStr || '').toString().trim();
+      var partes = texto.split(':');
+      if (partes.length !== 2) return null;
+      var h = Number(partes[0]);
+      var m = Number(partes[1]);
+      if (!isFinite(h) || !isFinite(m)) return null;
+      if (h < 0 || h > 23 || m < 0 || m > 59) return null;
+      return h * 60 + m;
     }
+
+    pendientesDeHoy.sort(function (a, b) {
+      var fechaA = (a.fechaEntrega || '').toString();
+      var fechaB = (b.fechaEntrega || '').toString();
+      if (fechaA !== fechaB) {
+        return fechaA < fechaB ? -1 : 1;
+      }
+
+      var horaA = horaToMinutes(a.horaEntrega);
+      var horaB = horaToMinutes(b.horaEntrega);
+
+      if (horaA === horaB) return 0;
+      if (horaA === null) return 1;
+      if (horaB === null) return -1;
+      return horaA - horaB;
+    });
+
+    var siguiente = pendientesDeHoy.length > 0 ? pendientesDeHoy[0] : null;
 
     return {
       ok: true,
@@ -3150,8 +3192,29 @@ function editarPedidoPorId(data) {
       sheetPedidos.getRange(filaEncontrada, 9).setValue(data.notas); // I
     }
 
-    // Volver a leer la fila para construir PedidoFront
-    var rowValues = sheetPedidos.getRange(filaEncontrada, 1, 1, 11).getValues()[0];
+    sortPedidosDiarios_();
+
+    // Volver a ubicar la fila tras el ordenamiento
+    var rowValues = null;
+    var lastRowOrdenado = sheetPedidos.getLastRow();
+    if (lastRowOrdenado > 1) {
+      var dataPedidosOrdenados = sheetPedidos.getRange(2, 1, lastRowOrdenado - 1, 11).getValues();
+      for (var idx = 0; idx < dataPedidosOrdenados.length; idx++) {
+        var idFila = (dataPedidosOrdenados[idx][10] || '').toString().trim();
+        if (idFila === idObjetivo) {
+          rowValues = dataPedidosOrdenados[idx];
+          break;
+        }
+      }
+    }
+
+    if (!rowValues) {
+      return {
+        ok: false,
+        error: 'No se encontró el pedido con el ID especificado.',
+        data: null
+      };
+    }
 
     var fechaCell   = rowValues[0];  // A
     var clienteNom  = rowValues[1];  // B
@@ -3330,8 +3393,29 @@ function cambiarHoraPedido(data) {
     // Actualiser la hora (col H = 8)
     sheetPedidos.getRange(filaEncontrada, 8).setValue(nuevaHora);
 
+    sortPedidosDiarios_();
+
     // Reconstruire PedidoFront comme dans editarPedidoPorId
-    var rowValues = sheetPedidos.getRange(filaEncontrada, 1, 1, 11).getValues()[0];
+    var rowValues = null;
+    var lastRowOrdenado = sheetPedidos.getLastRow();
+    if (lastRowOrdenado > 1) {
+      var dataPedidosOrdenados = sheetPedidos.getRange(2, 1, lastRowOrdenado - 1, 11).getValues();
+      for (var idx = 0; idx < dataPedidosOrdenados.length; idx++) {
+        var idFila = (dataPedidosOrdenados[idx][10] || '').toString().trim();
+        if (idFila === idObjetivo) {
+          rowValues = dataPedidosOrdenados[idx];
+          break;
+        }
+      }
+    }
+
+    if (!rowValues) {
+      return {
+        ok: false,
+        error: 'No se encontró el pedido con el ID especificado.',
+        data: null
+      };
+    }
 
     var fechaCell   = rowValues[0];
     var clienteNom  = rowValues[1];
