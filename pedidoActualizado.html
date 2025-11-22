@@ -1,4 +1,4 @@
-  <style>
+<style>
     :root{
       --fix: 1;
       --gap: 12px;
@@ -30,7 +30,7 @@
     .wrapper{ padding: 0 50px; }
 
     /* ===== ENTÊTE ===== */
-    .header{ display:block; margin: calc(var(--gap) * var(--fix)) 0; }
+    .header{ display:block; margin: calc(var(--gap) * var(--fix)) 0 0 0; }
     .header-logo{ display:block; width:100%; line-height:0; margin:0; }
     .header-img{
       display:block; width:100%; height:auto;
@@ -46,7 +46,7 @@
       display:grid; grid-template-columns: 1fr;
       align-items:end;
       gap: calc(8px * var(--fix));
-      padding: calc(12px * var(--fix)) 0;
+      padding: calc(12px * var(--fix)) 0 0 0;
     }
     .header-title{
       text-transform: uppercase; font-weight: 900;
@@ -54,6 +54,13 @@
       line-height: calc(20px * var(--fix));
     }
     .header-title span{ display:block; }
+    .header-id{
+      font-size: calc(10px * var(--fix));
+      font-weight:700;
+      text-transform:uppercase;
+      margin-top: calc(4px * var(--fix));
+      display:none;
+    }
 
     /* ===== CONTENU ===== */
     .stack{
@@ -122,12 +129,35 @@
       font-weight:700;
     }
 
+    /* Icône WhatsApp à la place du texte "Tel." dans la carte */
+    #confirmWhatsapp{
+      position: relative;
+      padding-left: calc(26px * var(--fix));
+      font-size: calc(var(--font-label) * var(--fix));
+      font-weight: 500;
+      color: #111;
+    }
+
+    #confirmWhatsapp::before{
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: calc(14.4px * var(--fix));
+      height: calc(14.4px * var(--fix));
+      background-image: url("https://lh3.googleusercontent.com/d/1tFj_LxwoWayTiX1Yb3PJM4unRNgvkXoL");
+      background-size: contain;
+      background-repeat: no-repeat;
+    }
+
+    
     /* ===== CASE À COCHER ===== */
     .checkbox-row{
       display:flex;
       align-items:center;
       gap: calc(8px * var(--fix));
-      font-size: calc(var(--font-small) * var(--fix)); /* taille ajustée */
+      font-size: calc(var(--font-small) * var(--fix));
       color:#111;
     }
     .checkbox-row input[type="checkbox"]{
@@ -154,8 +184,7 @@
       box-shadow:0 20px 40px rgba(0,0,0,0.40);
     }
   </style>
-</head>
-<body>
+
   <div class="wrapper">
 
     <!-- ENTÊTE -->
@@ -173,9 +202,10 @@
           <span>PEDIDO</span>
           <span>ACTUALIZADO</span>
         </div>
+        <div class="header-id" id="pedidoId"></div>
       </div>
 
-      <div class="sep-black"></div>
+      <!-- IMPORTANT : plus de séparateur ici -->
     </header>
 
     <!-- CONTENU -->
@@ -184,37 +214,37 @@
       <div class="confirm-card">
         <div class="confirm-icon">
           <img src="https://lh3.googleusercontent.com/d/1ejYqmcRjgWxEfPf8TPAbwYYNv5ulYNAo"
-               alt="Pedido actualizado">
+               alt="Pedido registrado">
         </div>
 
         <div class="confirm-info">
           <div class="confirm-line-time">
-            <span>11:40</span>
-            <span>MIRADOR</span>
+            <span id="confirmHora">--:--</span>
+            <span id="confirmSector">—</span>
           </div>
 
-          <div class="confirm-name">LORENZO DESPACITO</div>
+          <div class="confirm-name" id="confirmNombre">—</div>
 
-          <div class="confirm-text">Al frente de la tienda Juanita</div>
-          <div class="confirm-text">Nota : Dejar a la puerta</div>
+          <div class="confirm-text" id="confirmDireccion">—</div>
+          <div class="confirm-text" id="confirmNota">Nota : —</div>
+          <div class="confirm-text" id="confirmWhatsapp">WhatsApp: —</div>
 
           <div class="confirm-price">
-            1 seco x 1,00 $ = <strong>1,00 $</strong>
+            <span id="confirmPrecio">—</span>
           </div>
         </div>
       </div>
 
       <label class="checkbox-row">
-        <input type="checkbox" checked>
+        <input type="checkbox" id="chkEnviarWhatsapp" checked>
         <span>Enviar pedido actualizado</span>
       </label>
 
       <div class="sep-gray"></div>
 
-      <button class="btn btn-noir">OK</button>
+      <button class="btn btn-noir" id="btnOk">OK</button>
 
       <div style="height:0;"></div>
 
     </div>
   </div>
-
