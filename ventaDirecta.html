@@ -81,7 +81,7 @@
     .txt-small { font-size: calc(var(--font-small) * var(--fix)); font-weight:400; color:#222; }
     .label     { font-size: calc(var(--font-label) * var(--fix)); font-weight:400; color:#222; }
 
-    /* label -> élément : gap/2 (approuvé) */
+    /* label -> élément : gap/2 */
     .label + .field,
     .label + .dropdown { margin-top: calc((-1 * var(--gap) / 2) * var(--fix)); }
 
@@ -227,6 +227,24 @@
         <span class="dd-label">1 seco</span>
         <span class="dd-caret" aria-hidden="true"></span>
       </button>
+
+      <!-- Overlay plein écran avec valeurs 1 à 10 -->
+      <div class="dd-overlay" data-open="false">
+        <div class="dd-overlay-inner">
+          <ul class="dd-overlay-list">
+            <li class="dd-overlay-option" data-value="1" aria-selected="true">1 seco</li>
+            <li class="dd-overlay-option" data-value="2">2 secos</li>
+            <li class="dd-overlay-option" data-value="3">3 secos</li>
+            <li class="dd-overlay-option" data-value="4">4 secos</li>
+            <li class="dd-overlay-option" data-value="5">5 secos</li>
+            <li class="dd-overlay-option" data-value="6">6 secos</li>
+            <li class="dd-overlay-option" data-value="7">7 secos</li>
+            <li class="dd-overlay-option" data-value="8">8 secos</li>
+            <li class="dd-overlay-option" data-value="9">9 secos</li>
+            <li class="dd-overlay-option" data-value="10">10 secos</li>
+          </ul>
+        </div>
+      </div>
     </div>
 
     <!-- Total -->
