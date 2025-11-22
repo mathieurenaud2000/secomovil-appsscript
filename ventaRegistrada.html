@@ -61,6 +61,8 @@
       white-space:nowrap;
     }
 
+    .sep-gray{ height:0; border-top: 2px solid var(--gray20); }
+
     /* ===== CONTENU ===== */
     .stack{
       display:flex;
@@ -128,44 +130,46 @@
 
 <div class="wrapper">
 
-  <!-- ENTÊTE -->
-  <header class="header">
-    <div class="header-logo">
-      <img class="header-img" id="headerImg"
-           src="https://lh3.googleusercontent.com/d/15N5N0TgMBTxmn2v-sKsG53mEAKaxXYtA"
-           alt="Logo SecoMobil">
-    </div>
-
-    <div class="sep-black"></div>
-
-    <div class="header-grid">
-      <div class="header-title">
-        <span>VENTA</span>
-        <span>REGISTRADA</span>
-      </div>
-      <div class="header-id" id="ventaId"></div>
-    </div>
-  </header>
-
-  <!-- CONTENU -->
-  <div class="stack">
-
-    <div class="confirm-card">
-      <div class="confirm-icon">
-        <img src="https://lh3.googleusercontent.com/d/1ejYqmcRjgWxEf8TPAbwYYNv5ulYNAo"
-             alt="Venta registrada">
+    <!-- ENTÊTE -->
+    <header class="header">
+      <div class="header-logo">
+        <img class="header-img" id="headerImg"
+             src="https://lh3.googleusercontent.com/d/15N5N0TgMBTxmn2v-sKsG53mEAKaxXYtA"
+             alt="Logo SecoMobil">
       </div>
 
-      <div class="confirm-info">
-        <div class="confirm-price" id="confirmResumen">
-          <!-- Rempli par index.html (ventaRegistrada) -->
+      <div class="sep-black"></div>
+
+      <div class="header-grid">
+        <div class="header-title">
+          <span>VENTA</span>
+          <span>REGISTRADA</span>
+        </div>
+        <div class="header-id" id="ventaId">V-00001</div>
+      </div>
+
+      <div class="sep-gray"></div>
+    </header>
+
+    <!-- CONTENU -->
+    <div class="stack">
+
+      <div class="confirm-card">
+        <div class="confirm-icon">
+          <img src="https://lh3.googleusercontent.com/d/1ejYqmcRjgWxEfPf8TPAbwYYNv5ulYNAo"
+               alt="Venta registrada">
+        </div>
+
+        <div class="confirm-info">
+          <div class="confirm-price" id="confirmResumen">
+            1 seco x 1,00 $ = <strong>1,00 $</strong>
+          </div>
         </div>
       </div>
+
+      <button class="btn btn-noir" id="btnOk">OK</button>
+
+      <div style="height:0;"></div>
+
     </div>
-
-    <button class="btn btn-noir" id="btnOk">OK</button>
-
-    <div style="height:0;"></div>
-
-  </div>
 </div>
