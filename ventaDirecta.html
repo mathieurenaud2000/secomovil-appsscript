@@ -112,6 +112,23 @@
     .btn-blanc:active { color: rgba(0,0,0,0.5); }
     .btn-desactive { background: var(--gray10); color:#fff; border:0; box-shadow:none; cursor:default; }
 
+    .btn-blanc[data-spinner="1"] > *{ visibility:hidden; }
+    .btn-blanc[data-spinner="1"]::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      margin:auto;
+      width:calc(28px * var(--fix));
+      height:calc(28px * var(--fix));
+      border-radius:50%;
+      border:calc(12px * var(--fix)) solid rgba(0,0,0,0.35); /* noir au lieu de blanc */
+      border-top-color:#000;                                 /* noir au lieu de blanc */
+      animation: btnNoirSpin 0.9s linear infinite;           /* même animation */
+      pointer-events:none;
+    }
+
+
+    
     /* ===== DROPDOWN (COMPOSANT) ===== */
     .dropdown{
       position: relative; width:100%;
