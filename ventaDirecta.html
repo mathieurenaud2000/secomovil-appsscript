@@ -183,45 +183,69 @@
 
 <div class="wrapper">
 
-    <!-- ===== ENTÊTE ===== -->
-    <header class="header" id="pageHeader">
-      <div class="header-logo">
-        <img class="header-img" id="headerImg"
-             src="https://lh3.googleusercontent.com/d/15N5N0TgMBTxmn2v-sKsG53mEAKaxXYtA"
-             alt="Logo SecoMobil">
+  <!-- ===== ENTÊTE ===== -->
+  <header class="header" id="pageHeader">
+    <div class="header-logo">
+      <img class="header-img" id="headerImg"
+           src="https://lh3.googleusercontent.com/d/15N5N0TgMBTxmn2v-sKsG53mEAKaxXYtA"
+           alt="Logo SecoMobil">
+    </div>
+
+    <div class="sep-black"></div>
+
+    <div class="header-grid">
+      <div class="header-title">
+        <span>VENTA</span>
+        <span>DIRECTA</span>
       </div>
-
-      <div class="sep-black"></div>
-
-      <div class="header-grid">
-        <div class="header-title">
-          <span>VENTA</span>
-          <span>DIRECTA</span>
-        </div>
-        <div class="header-id" id="ventaIdHeader">
-          <span class="venta-id-loader" aria-label="Cargando ID" role="status">
-            <span class="dot"></span>
-            <span class="dot"></span>
-            <span class="dot"></span>
-          </span>
-        </div>
+      <div class="header-id" id="ventaIdHeader">
+        <span class="venta-id-loader" aria-label="Cargando ID" role="status">
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+        </span>
       </div>
+    </div>
 
-      <div class="sep-black"></div>
-    </header>
+    <div class="sep-black"></div>
+  </header>
 
-    <!-- ===== CONTENU ===== -->
-    <div class="stack">
+  <!-- ===== CONTENU ===== -->
+  <div class="stack">
 
-      <!-- Titre de section -->
-      <div class="txt-body">Registrar una venta</div>
+    <!-- Titre de section -->
+    <div class="txt-body">Registrar una venta</div>
 
-      <!-- Prix -->
-      <div class="label">Precio ($)</div>
-      <input class="field" id="precio" type="text" inputmode="decimal" autocomplete="off">
+    <!-- Prix -->
+    <div class="label">Precio ($)</div>
+    <input class="field" id="precio" type="text" inputmode="decimal" autocomplete="off">
 
-      <!-- Quantité -->
-      <div class="dropdown" data-variant="boxed" data-list-variant="fullscreen" data-name="cantidad">
-        <button type="button" class="dd-button">
-          <span class="dd-label">1 seco</span><span class="dd-caret" aria-hidden="true"></span>
-        </button>
+    <!-- Quantité -->
+    <div class="label">Cantidad</div>
+    <div class="dropdown" data-variant="boxed" data-list-variant="fullscreen" data-name="cantidad">
+      <button type="button" class="dd-button">
+        <span class="dd-label">1 seco</span>
+        <span class="dd-caret" aria-hidden="true"></span>
+      </button>
+    </div>
+
+    <!-- Total -->
+    <div class="total-row" id="ventaTotalRow">
+      Total a cancelar = <strong>0,00 $</strong>
+    </div>
+
+    <div class="sep-gray"></div>
+
+    <!-- Boutons -->
+    <button class="btn btn-noir btn-desactive" id="btnRegistrarVenta" disabled>
+      REGISTRAR
+    </button>
+
+    <button class="btn btn-blanc" id="btnVolverInicioVenta">
+      VOLVER AL INICIO
+    </button>
+
+    <div style="height:0;"></div>
+
+  </div>
+</div>
