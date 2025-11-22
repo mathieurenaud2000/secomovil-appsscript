@@ -266,6 +266,35 @@
           });
         }
 
+
+         // FONCTION SPINNER SUR BOUTONS VOLVER AL INICIO
+        function bindVolverInicioButtons(){
+          var buttons = document.querySelectorAll('button[data-role="volver-inicio"]');
+          if (!buttons || !buttons.length) return;
+
+          buttons.forEach(function(btn){
+            btn.addEventListener('click', function(){
+              // Empêche les doubles clics
+              if (btn.disabled) return;
+
+              // Active le spinner (même mécanique que les boutons noirs)
+              if (window.secoSetBlackButtonLoading){
+                window.secoSetBlackButtonLoading(btn, true);
+              } else {
+                btn.disabled = true;
+                btn.dataset.spinner = '1';
+              }
+
+              // Navigation vers l'accueil
+              loadPage('inicio', function(){
+                // La page change → le bouton disparaît avec le fragment.
+                // On ne réactive jamais le texte ni ne coupe le spinner ici.
+              });
+            });
+          });
+        }
+
+      
         function bindTopHalfAction(btn, pageName){
           if (!btn) return;
           btn.addEventListener('click', function(){
