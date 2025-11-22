@@ -3133,7 +3133,7 @@ ventaDirecta: function() {
         }
       })
       .initVentaDirecta();
-  }
+    }
 
   // Dropdown cantidad : ouvre un overlay plein écran avec 1–10 secos
   function setupCantidadDropdown(){
@@ -3224,9 +3224,13 @@ ventaDirecta: function() {
     setupCantidadDropdown();   // assure l’ouverture du menu cantidad sur cette page
     updateTotalAndButton();
 
+    // Uniformise le comportement de VOLVER AL INICIO (spinner + retour inicio)
+    if (typeof bindVolverInicioButtons === 'function'){
+      bindVolverInicioButtons();
+    }
+
     var inputPrecio = document.getElementById('precio');
     var btnRegistrar = document.getElementById('btnRegistrarVenta');
-    var btnVolver = document.getElementById('btnVolverInicioVenta');
 
     if (inputPrecio){
       inputPrecio.addEventListener('input', function(){
@@ -3268,41 +3272,35 @@ ventaDirecta: function() {
           notas: ''
         };
 
-        google.script.run
-          .withSuccessHandler(function(resp){
-            if (resp && resp.ok && resp.data && resp.data.venta){
-              // Contexte pour ventaRegistrada
-              window.SECO_CTX = { venta: resp.data.venta };
-              // On NE coupe PAS le spinner ici : la page change, le bouton disparaît.
-              loadPage('ventaRegistrada');
-            } else {
-              if (window.secoSetBlackButtonLoading){
-                window.secoSetBlackButtonLoading(btnRegistrar, false);
-              }
-              if (window.alert){
-                var msg = (resp && resp.error) ? resp.error : 'Error al registrar la venta.';
-                alert(msg);
-              }
-            }
-          })
-          .withFailureHandler(function(){
+        google.script.run.withSuccessHandler(function(resp){
+          if (resp && resp.ok && resp.data && resp.data.venta){
+            // Contexte pour ventaRegistrada
+            window.SECO_CTX = { venta: resp.data.venta };
+            // On NE coupe PAS le spinner ici : la page change, le bouton disparaît.
+            loadPage('ventaRegistrada');
+          } else {
             if (window.secoSetBlackButtonLoading){
               window.secoSetBlackButtonLoading(btnRegistrar, false);
             }
             if (window.alert){
-              alert('Error al registrar la venta.');
+              var msg = (resp && resp.error) ? resp.error : 'Error al registrar la venta.';
+              alert(msg);
             }
-          })
-          .registrarVentaDirecta(payload);
-      });
-    }
-
-    if (btnVolver){
-      btnVolver.addEventListener('click', function(){
-        loadPage('inicio');
+          }
+        })
+        .withFailureHandler(function(){
+          if (window.secoSetBlackButtonLoading){
+            window.secoSetBlackButtonLoading(btnRegistrar, false);
+          }
+          if (window.alert){
+            alert('Error al registrar la venta.');
+          }
+        })
+        .registrarVentaDirecta(payload);
       });
     }
   }
+
 
   if (document.readyState === 'loading'){
     document.addEventListener('DOMContentLoaded', init);
