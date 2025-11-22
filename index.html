@@ -2694,25 +2694,38 @@
             var payload = construirPayloadRegistro();
 
             google.script.run
-              .withSuccessHandler(function(resp){
-                setButtonSpinner(btnRegistrar, false);
-                if (resp && resp.ok){
-                  loadPage('pedidoRegistrado');
-                } else if (window.alert){
-                  var msg = (resp && resp.error) ? resp.error : 'Error al registrar el pedido.';
-                  alert(msg);
-                }
-              })
-              .withFailureHandler(function(){
-                setButtonSpinner(btnRegistrar, false);
-                if (window.alert){
-                  alert('Error al registrar el pedido.');
-                }
-              })
-              .registrarPedidoDesdeRegistrar(payload);
-          });
-        }
-      }
+            .withSuccessHandler(function(resp){
+              setButtonSpinner(btnRegistrar, false);
+
+          if (resp && resp.ok){
+            // On injecte le contexte du pedido dans la SPA
+            var pedido = resp.data && resp.data.pedido ? resp.data.pedido : null;
+            if (pedido){
+              // pedidoRegistrado lit baseCtx.pedido || baseCtx
+              window.SECO_CTX = { pedido: pedido };
+            } else {
+              // fallback minimal : contexte vide
+              window.SECO_CTX = {};
+            }
+
+            // Puis on ouvre la page de confirmation
+            loadPage('pedidoRegistrado');
+          } else if (window.alert){
+            var msg = (resp && resp.error) ? resp.error : 'Error al registrar el pedido.';
+            alert(msg);
+          }
+        })
+        .withFailureHandler(function(){
+          setButtonSpinner(btnRegistrar, false);
+          if (window.alert){
+            alert('Error al registrar el pedido.');
+          }
+        })
+        .registrarPedidoDesdeRegistrar(payload);
+    });
+  }
+}
+
 
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
