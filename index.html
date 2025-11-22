@@ -3106,6 +3106,84 @@ ventaDirecta: function() {
       .initVentaDirecta();
   }
 
+  // Dropdown cantidad : ouvre un overlay plein écran avec 1–10 secos
+  function setupCantidadDropdown(){
+    var dd = document.querySelector('.dropdown[data-name="cantidad"]');
+    if (!dd) return;
+
+    var btn = dd.querySelector('.dd-button');
+    var labelEl = dd.querySelector('.dd-label');
+    if (!btn || !labelEl) return;
+
+    var overlay = dd.querySelector('.dd-overlay');
+    if (!overlay){
+      overlay = document.createElement('div');
+      overlay.className = 'dd-overlay';
+      overlay.setAttribute('data-open', 'false');
+
+      var inner = document.createElement('div');
+      inner.className = 'dd-overlay-inner';
+
+      var list = document.createElement('ul');
+      list.className = 'dd-overlay-list';
+
+      for (var i = 1; i <= 10; i++){
+        var li = document.createElement('li');
+        li.className = 'dd-overlay-option';
+        li.setAttribute('data-value', String(i));
+        if (i === 1){
+          li.setAttribute('aria-selected', 'true');
+          li.textContent = '1 seco';
+        } else {
+          li.textContent = i + ' secos';
+        }
+        list.appendChild(li);
+      }
+
+      inner.appendChild(list);
+      overlay.appendChild(inner);
+      dd.appendChild(overlay);
+    }
+
+    function openOverlay(){
+      overlay.setAttribute('data-open', 'true');
+    }
+
+    function closeOverlay(){
+      overlay.setAttribute('data-open', 'false');
+    }
+
+    btn.addEventListener('click', function(){
+      openOverlay();
+    });
+
+    overlay.addEventListener('click', function(ev){
+      var opt = ev.target.closest('.dd-overlay-option');
+      if (opt){
+        var value = opt.getAttribute('data-value') || '';
+        var n = parseInt(value, 10);
+        if (!isNaN(n) && n > 0){
+          labelEl.textContent = (n === 1) ? '1 seco' : (n + ' secos');
+
+          var allOpts = overlay.querySelectorAll('.dd-overlay-option');
+          if (allOpts.forEach){
+            allOpts.forEach(function(o){ o.removeAttribute('aria-selected'); });
+          } else {
+            Array.prototype.forEach.call(allOpts, function(o){
+              o.removeAttribute('aria-selected');
+            });
+          }
+          opt.setAttribute('aria-selected', 'true');
+        }
+        closeOverlay();
+        updateTotalAndButton();
+      } else if (ev.target === overlay){
+        // clic sur le fond blanc plein écran -> fermer
+        closeOverlay();
+      }
+    });
+  }
+
   function init(){
     applyScaleFix();
     sizeHeaderImage();
@@ -3114,6 +3192,7 @@ ventaDirecta: function() {
     }
 
     initVentaId();
+    setupCantidadDropdown();   // assure l’ouverture du menu cantidad sur cette page
     updateTotalAndButton();
 
     var inputPrecio = document.getElementById('precio');
@@ -3125,7 +3204,7 @@ ventaDirecta: function() {
         // MAJ instantanée du total
         updateTotalAndButton();
 
-        // Formatage retardé (3 secondes)
+        // Formatage retardé (1,5 seconde d'inactivité)
         if (precioFormatTimer){
           clearTimeout(precioFormatTimer);
         }
@@ -3134,7 +3213,7 @@ ventaDirecta: function() {
           if (v > 0){
             inputPrecio.value = formatMoney(v);
           }
-        }, 1300);
+        }, 1500);
       });
     }
 
@@ -3207,6 +3286,7 @@ ventaDirecta: function() {
     sizeHeaderImage();
   });
 },
+
 
 
 
