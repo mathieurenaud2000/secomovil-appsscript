@@ -46,7 +46,7 @@
       display:grid; grid-template-columns: 1fr;
       align-items:end;
       gap: calc(8px * var(--fix));
-      padding: calc(12px * var(--fix)) 0 0 0;
+      padding: calc(12px * var(--fix)) 0 calc(12px * var(--fix)) 0;
     }
     .header-title{
       text-transform: uppercase; font-weight: 900;
@@ -132,7 +132,7 @@
     /* Icône WhatsApp à la place du texte "Tel." dans la carte */
     #confirmWhatsapp{
       position: relative;
-      padding-left: calc(26px * var(--fix));
+      padding-left: calc(18px * var(--fix));
       font-size: calc(var(--font-label) * var(--fix));
       font-weight: 500;
       color: #111;
