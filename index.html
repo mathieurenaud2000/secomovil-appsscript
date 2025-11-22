@@ -3223,6 +3223,10 @@ ventaDirecta: function() {
       btnVolver.addEventListener('click', function(){
         if (btnVolver.disabled) return;
 
+        // 1) Masquer le texte immédiatement
+        btnVolver.style.color = 'transparent';
+
+        // 2) Activer le spinner (même mécanique que les boutons noirs)
         if (window.secoSetBlackButtonLoading){
           window.secoSetBlackButtonLoading(btnVolver, true);
         } else {
@@ -3230,10 +3234,15 @@ ventaDirecta: function() {
           btnVolver.dataset.spinner = '1';
         }
 
-        loadPage('inicio');
-        // Pas de callback : la page change, le bouton disparaît avec son spinner.
+        // 3) Laisser le temps au navigateur d'afficher l'état "chargement"
+        setTimeout(function(){
+          loadPage('inicio');
+          // Pas de callback : la page change, le bouton disparaît avec son spinner.
+        }, 150); // 150 ms = suffisant pour voir le changement sans ralentir l'UX
       });
     }
+
+    
   }
 
   if (document.readyState === 'loading'){
