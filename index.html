@@ -3133,84 +3133,6 @@ ventaDirecta: function() {
         }
       })
       .initVentaDirecta();
-    }
-
-  // Dropdown cantidad : ouvre un overlay plein écran avec 1–10 secos
-  function setupCantidadDropdown(){
-    var dd = document.querySelector('.dropdown[data-name="cantidad"]');
-    if (!dd) return;
-
-    var btn = dd.querySelector('.dd-button');
-    var labelEl = dd.querySelector('.dd-label');
-    if (!btn || !labelEl) return;
-
-    var overlay = dd.querySelector('.dd-overlay');
-    if (!overlay){
-      overlay = document.createElement('div');
-      overlay.className = 'dd-overlay';
-      overlay.setAttribute('data-open', 'false');
-
-      var inner = document.createElement('div');
-      inner.className = 'dd-overlay-inner';
-
-      var list = document.createElement('ul');
-      list.className = 'dd-overlay-list';
-
-      for (var i = 1; i <= 10; i++){
-        var li = document.createElement('li');
-        li.className = 'dd-overlay-option';
-        li.setAttribute('data-value', String(i));
-        if (i === 1){
-          li.setAttribute('aria-selected', 'true');
-          li.textContent = '1 seco';
-        } else {
-          li.textContent = i + ' secos';
-        }
-        list.appendChild(li);
-      }
-
-      inner.appendChild(list);
-      overlay.appendChild(inner);
-      dd.appendChild(overlay);
-    }
-
-    function openOverlay(){
-      overlay.setAttribute('data-open', 'true');
-    }
-
-    function closeOverlay(){
-      overlay.setAttribute('data-open', 'false');
-    }
-
-    btn.addEventListener('click', function(){
-      openOverlay();
-    });
-
-    overlay.addEventListener('click', function(ev){
-      var opt = ev.target.closest('.dd-overlay-option');
-      if (opt){
-        var value = opt.getAttribute('data-value') || '';
-        var n = parseInt(value, 10);
-        if (!isNaN(n) && n > 0){
-          labelEl.textContent = (n === 1) ? '1 seco' : (n + ' secos');
-
-          var allOpts = overlay.querySelectorAll('.dd-overlay-option');
-          if (allOpts.forEach){
-            allOpts.forEach(function(o){ o.removeAttribute('aria-selected'); });
-          } else {
-            Array.prototype.forEach.call(allOpts, function(o){
-              o.removeAttribute('aria-selected');
-            });
-          }
-          opt.setAttribute('aria-selected', 'true');
-        }
-        closeOverlay();
-        updateTotalAndButton();
-      } else if (ev.target === overlay){
-        // clic sur le fond blanc plein écran -> fermer
-        closeOverlay();
-      }
-    });
   }
 
   function init(){
@@ -3221,10 +3143,9 @@ ventaDirecta: function() {
     }
 
     initVentaId();
-    setupCantidadDropdown();   // assure l’ouverture du menu cantidad sur cette page
     updateTotalAndButton();
 
-    // Uniformise le comportement de VOLVER AL INICIO (spinner + retour inicio)
+    // Branche tous les boutons data-role="volver-inicio" (dont VOLVER AL INICIO)
     if (typeof bindVolverInicioButtons === 'function'){
       bindVolverInicioButtons();
     }
@@ -3272,35 +3193,35 @@ ventaDirecta: function() {
           notas: ''
         };
 
-        google.script.run.withSuccessHandler(function(resp){
-          if (resp && resp.ok && resp.data && resp.data.venta){
-            // Contexte pour ventaRegistrada
-            window.SECO_CTX = { venta: resp.data.venta };
-            // On NE coupe PAS le spinner ici : la page change, le bouton disparaît.
-            loadPage('ventaRegistrada');
-          } else {
+        google.script.run
+          .withSuccessHandler(function(resp){
+            if (resp && resp.ok && resp.data && resp.data.venta){
+              // Contexte pour ventaRegistrada
+              window.SECO_CTX = { venta: resp.data.venta };
+              // On NE coupe PAS le spinner ici : la page change, le bouton disparaît.
+              loadPage('ventaRegistrada');
+            } else {
+              if (window.secoSetBlackButtonLoading){
+                window.secoSetBlackButtonLoading(btnRegistrar, false);
+              }
+              if (window.alert){
+                var msg = (resp && resp.error) ? resp.error : 'Error al registrar la venta.';
+                alert(msg);
+              }
+            }
+          })
+          .withFailureHandler(function(){
             if (window.secoSetBlackButtonLoading){
               window.secoSetBlackButtonLoading(btnRegistrar, false);
             }
             if (window.alert){
-              var msg = (resp && resp.error) ? resp.error : 'Error al registrar la venta.';
-              alert(msg);
+              alert('Error al registrar la venta.');
             }
-          }
-        })
-        .withFailureHandler(function(){
-          if (window.secoSetBlackButtonLoading){
-            window.secoSetBlackButtonLoading(btnRegistrar, false);
-          }
-          if (window.alert){
-            alert('Error al registrar la venta.');
-          }
-        })
-        .registrarVentaDirecta(payload);
+          })
+          .registrarVentaDirecta(payload);
       });
     }
   }
-
 
   if (document.readyState === 'loading'){
     document.addEventListener('DOMContentLoaded', init);
@@ -3313,6 +3234,7 @@ ventaDirecta: function() {
     sizeHeaderImage();
   });
 },
+
 
 
 
