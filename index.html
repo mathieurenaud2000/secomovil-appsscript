@@ -3145,13 +3145,9 @@ ventaDirecta: function() {
     initVentaId();
     updateTotalAndButton();
 
-    // Branche tous les boutons data-role="volver-inicio" (dont VOLVER AL INICIO)
-    if (typeof bindVolverInicioButtons === 'function'){
-      bindVolverInicioButtons();
-    }
-
     var inputPrecio = document.getElementById('precio');
     var btnRegistrar = document.getElementById('btnRegistrarVenta');
+    var btnVolver = document.getElementById('btnVolverInicioVenta');
 
     if (inputPrecio){
       inputPrecio.addEventListener('input', function(){
@@ -3221,6 +3217,23 @@ ventaDirecta: function() {
           .registrarVentaDirecta(payload);
       });
     }
+
+    // VOLVER AL INICIO local : spinner noir sur bouton blanc, pas de retour du texte
+    if (btnVolver){
+      btnVolver.addEventListener('click', function(){
+        if (btnVolver.disabled) return;
+
+        if (window.secoSetBlackButtonLoading){
+          window.secoSetBlackButtonLoading(btnVolver, true);
+        } else {
+          btnVolver.disabled = true;
+          btnVolver.dataset.spinner = '1';
+        }
+
+        loadPage('inicio');
+        // Pas de callback : la page change, le bouton disparaît avec son spinner.
+      });
+    }
   }
 
   if (document.readyState === 'loading'){
@@ -3234,6 +3247,7 @@ ventaDirecta: function() {
     sizeHeaderImage();
   });
 },
+
 
 
 
