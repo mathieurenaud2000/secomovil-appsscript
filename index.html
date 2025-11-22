@@ -1579,6 +1579,7 @@
   editarPedido: function(){
     var ctx = (typeof window !== 'undefined' && window.SECO_CTX) ? window.SECO_CTX : {};
     var pedido = ctx && ctx.pedidoEnEdicion ? ctx.pedidoEnEdicion : null;
+    var sectoresCtx = Array.isArray(ctx.sectores) ? ctx.sectores : [];
 
     var overlay      = document.getElementById('ddOverlay');
     var overlayList  = document.getElementById('ddOverlayList');
@@ -1612,6 +1613,65 @@
         img.style.maxWidth = '100%';
         img.removeAttribute('height');
       }
+    }
+
+    function obtenerElementoSector(){
+      var labels = document.querySelectorAll('.contact-card .label');
+      for (var i = 0; i < labels.length; i++) {
+        var lbl = labels[i];
+        if ((lbl.textContent || '').toString().trim().toLowerCase() !== 'sector') continue;
+
+        var contenedor = lbl.parentElement;
+        if (contenedor) {
+          var txtBody = contenedor.querySelector('.txt-body');
+          if (txtBody && txtBody.textContent) {
+            return txtBody;
+          }
+        }
+
+        var siguiente = lbl.nextElementSibling;
+        if (siguiente && siguiente.classList.contains('txt-body') && siguiente.textContent) {
+          return siguiente;
+        }
+      }
+      return null;
+    }
+
+    function obtenerSectorDesdePagina(){
+      var el = obtenerElementoSector();
+      return el && el.textContent ? el.textContent.trim() : '';
+    }
+
+    function construirSectorPrices(){
+      var sectores = Array.isArray(sectoresCtx) ? sectoresCtx : [];
+      var tabla = {};
+
+      sectores.forEach(function(sec){
+        var nombre = (sec && sec.nombre) ? sec.nombre.toString().trim() : '';
+        var precioValido = (sec && typeof sec.precio === 'number' && !isNaN(sec.precio))
+          ? Number(sec.precio)
+          : null;
+
+        if (!nombre || precioValido === null) return;
+        tabla[nombre.toLowerCase()] = precioValido;
+      });
+
+      return tabla;
+    }
+
+    function getPrecioBaseDesdeCtx(){
+      if (ctx && typeof ctx.precioBase === 'number' && !isNaN(ctx.precioBase)){
+        return Number(ctx.precioBase);
+      }
+
+      var sectorTexto = (obtenerSectorDesdePagina() || '').toString().trim().toLowerCase();
+      var sectorPrices = construirSectorPrices();
+
+      if (sectorTexto && Object.prototype.hasOwnProperty.call(sectorPrices, sectorTexto)) {
+        return sectorPrices[sectorTexto];
+      }
+
+      return 0;
     }
 
     function buildTimes(){
@@ -1707,7 +1767,7 @@
     }
 
     function updatePrecioYBoton(){
-      var precioBase = 1.00;
+      var precioBase = getPrecioBaseDesdeCtx();
       var ddFecha    = document.querySelector('.dropdown[data-name="fecha"]');
       var ddHora     = document.querySelector('.dropdown[data-name="hora"]');
       var ddCantidad = document.querySelector('.dropdown[data-name="cantidad"]');
@@ -1722,18 +1782,20 @@
         return !isPlaceholder && val !== '';
       }
 
-      var cantidad = 1;
-      if (ddCantidad){
+      var cantidad = 0;
+      if (isFilled(ddCantidad)){
         var raw = ddCantidad.dataset.value || '';
         var m = raw.match(/^(\d+)/);
         if (m) cantidad = parseInt(m[1],10);
       }
-      if (!isFinite(cantidad) || cantidad < 1) cantidad = 1;
+      if (!isFinite(cantidad) || cantidad < 1) cantidad = 0;
 
       var total = precioBase * cantidad;
       if (precioEl){
-        var txt = total.toFixed(2).replace('.', ',') + ' $';
+        var txt = (cantidad && precioBase ? total : 0).toFixed(2).replace('.', ',') + ' $';
         precioEl.textContent = txt;
+        var isPlaceholder = !cantidad || !precioBase;
+        precioEl.style.color = isPlaceholder ? 'rgba(0,0,0,0.25)' : '#000';
       }
 
       var ok = isFilled(ddFecha) && isFilled(ddHora) && isFilled(ddCantidad);
@@ -1742,6 +1804,17 @@
         btn.classList.toggle('btn-noir', ok);
         btn.classList.toggle('btn-desactive', !ok);
       }
+    }
+
+    function observarCambiosSector(){
+      var sectorEl = obtenerElementoSector();
+      if (!sectorEl || typeof MutationObserver !== 'function') return;
+
+      var obs = new MutationObserver(function(){
+        updatePrecioYBoton();
+      });
+
+      obs.observe(sectorEl, { childList: true, characterData: true, subtree: true });
     }
 
     function formatISODate(d){
@@ -2145,6 +2218,7 @@
       initDropdowns();
       buildDatesAndCantidad();
       setDefaultHoraOuDesdePedido();
+      observarCambiosSector();
       bindActions();
     }
 
@@ -2962,6 +3036,48 @@
       return n.toFixed(2).replace('.', ',') + ' $';
     }
 
+    function formatHoraEntrega(raw){
+      if (raw instanceof Date && !isNaN(raw.getTime())){
+        var hDate = raw;
+        var hH = hDate.getHours();
+        var hM = String(hDate.getMinutes()).padStart(2, '0');
+        return hH + ':' + hM;
+      }
+
+      var rawStr = (raw === null || raw === undefined) ? '' : String(raw).trim();
+      if (!rawStr) return '';
+
+      var matchHM = rawStr.match(/(\d{1,2})\s*[:hH]\s*(\d{2})/);
+      if (matchHM){
+        var hh = parseInt(matchHM[1], 10);
+        var mm = matchHM[2];
+        if (!isNaN(hh)){
+          return hh + ':' + mm;
+        }
+      }
+
+      var numVal = Number(raw);
+      if (isFinite(numVal)){
+        var baseDate = new Date(1899, 11, 30);
+        var millis = Math.round(numVal * 24 * 60 * 60 * 1000);
+        var fromSerial = new Date(baseDate.getTime() + millis);
+        if (!isNaN(fromSerial.getTime())){
+          var sh = fromSerial.getHours();
+          var sm = String(fromSerial.getMinutes()).padStart(2, '0');
+          return sh + ':' + sm;
+        }
+      }
+
+      var parsed = new Date(rawStr);
+      if (!isNaN(parsed.getTime())){
+        var dh = parsed.getHours();
+        var dm = String(parsed.getMinutes()).padStart(2, '0');
+        return dh + ':' + dm;
+      }
+
+      return rawStr;
+    }
+
     // Regroupe toutes les valeurs nécessaires pour la carte et WhatsApp
     function getFieldValues(){
       var p = pedido || {};
@@ -2999,8 +3115,12 @@
         (baseCtx.cliente && (baseCtx.cliente.whatsapp || baseCtx.cliente.telefono)) ||
         '';
 
-      var hora =
-        (p.horaEntrega || p.hora || baseCtx.horaSeleccionada || '').toString().trim();
+      var horaRaw =
+        p.horaEntrega ||
+        p.hora ||
+        baseCtx.horaSeleccionada ||
+        '';
+      var hora = formatHoraEntrega(horaRaw);
 
       var fechaTexto =
         (baseCtx.fechaSeleccionada || p.fechaEntrega || '').toString();
