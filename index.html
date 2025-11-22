@@ -1526,6 +1526,8 @@
         });
     
         btnVolverIni.addEventListener('click', function(){
+          if (btnVolverIni.disabled) return;
+          window.secoSetBlackButtonLoading(btnVolverIni, true);
           loadPage('inicio');
         });
     
@@ -1992,6 +1994,8 @@
     function bindActions(){
       if (btnVolver){
         btnVolver.addEventListener('click', function(){
+          if (btnVolver.disabled) return;
+          window.secoSetBlackButtonLoading(btnVolver, true);
           loadPage('inicio');
         });
       }
@@ -3435,6 +3439,8 @@ ventaRegistrada: function() {
 
     if (btnVolver){
       btnVolver.addEventListener('click', function(){
+        if (btnVolver.disabled) return;
+        window.secoSetBlackButtonLoading(btnVolver, true);
         loadPage('inicio');
       });
     }
@@ -3625,6 +3631,8 @@ ventaRegistrada: function() {
 
     if (btnVolver){
       btnVolver.addEventListener('click', function(){
+        if (btnVolver.disabled) return;
+        window.secoSetBlackButtonLoading(btnVolver, true);
         loadPage('inicio');
       });
     }
