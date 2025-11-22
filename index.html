@@ -3243,24 +3243,23 @@ ventaDirecta: function() {
     // VOLVER AL INICIO local : spinner noir sur bouton blanc, pas de retour du texte
     if (btnVolver){
       btnVolver.addEventListener('click', function(){
+        // Empêche les clics multiples
         if (btnVolver.disabled) return;
 
-        // 1) Masquer le texte immédiatement
-        btnVolver.style.color = 'transparent';
+        // Active le spinner spécifique aux boutons blancs
+        btnVolver.disabled = true;
+        btnVolver.setAttribute('data-spinner', '1');
 
-        // 2) Activer le spinner (même mécanique que les boutons noirs)
-        if (window.secoSetBlackButtonLoading){
-          window.secoSetBlackButtonLoading(btnVolver, true);
-        } else {
-          btnVolver.disabled = true;
-          btnVolver.dataset.spinner = '1';
-        }
+        // Optionnel: masquer le texte immédiatement (double sécurité)
+        // btnVolver.style.color = 'transparent';
 
-        // 3) Laisser le temps au navigateur d'afficher l'état "chargement"
+        // On laisse une mini-frame pour que le spinner s'affiche,
+        // puis on navigue vers inicio
         setTimeout(function(){
           loadPage('inicio');
-          // Pas de callback : la page change, le bouton disparaît avec son spinner.
-        }, 150); // 150 ms = suffisant pour voir le changement sans ralentir l'UX
+          // On NE remet pas data-spinner ni disabled :
+          // le bouton disparaît avec la page.
+        }, 100);
       });
     }
 
