@@ -72,8 +72,6 @@
       }
     };
 
-    let SECO_APP = null;
-
     let currentPageName = null;
     let volverInicioHooks = new Map();
 
@@ -168,9 +166,9 @@
           xgray:   "https://lh3.googleusercontent.com/d/15wgAEpPLmV12eD0dFTr4dD9yZugrNiCs",
           checkBlk:"https://lh3.googleusercontent.com/d/1CiREwW0rHzmdha8SqKtDEqr9iPNW21eG",
           checkW:  "https://lh3.googleusercontent.com/d/1kIWQWxgpGWgRbdiBcm_X1BpwFZkUwX5l"
-  };
-
-      let normalHeight = null;
+        };
+    
+        let normalHeight = null;
         let currentHour = null;
         let pendingHour = null;
         let pedidoActual = null;
@@ -3913,12 +3911,10 @@ ventaRegistrada: function() {
       applyScaleFix();
       sizeHeaderImage();
     });
-    }
-      };
+  }
+    };
 
-    SECO_APP = pageInit;
-
-      function loadPage(pageName, onLoaded){
+    function loadPage(pageName, onLoaded){
       google.script.run
         .withSuccessHandler(function(html){
           const app = document.getElementById('app');
