@@ -24,9 +24,14 @@
       animation: btnNoirSpin 0.9s linear infinite;
       pointer-events:none;
     }
-    /* Spinner noir pour les boutons blancs VOLVER AL INICIO */
-    .btn-blanc[data-spinner="1"] > *{ visibility:hidden; }
-    .btn-blanc[data-spinner="1"]::before{
+    /* Spinner uniforme pour les boutons VOLVER AL INICIO */
+    button[data-role="volver-inicio"]{ position:relative; }
+    button[data-role="volver-inicio"][data-spinner="1"]{
+      color:transparent !important;
+      text-shadow:none !important;
+    }
+    button[data-role="volver-inicio"][data-spinner="1"] > *{ visibility:hidden; }
+    button[data-role="volver-inicio"][data-spinner="1"]::before{
       content:"";
       position:absolute;
       inset:0;
@@ -34,8 +39,8 @@
       width:calc(28px * var(--fix));
       height:calc(28px * var(--fix));
       border-radius:50%;
-      border:calc(12px * var(--fix)) solid rgba(0,0,0,0.35);
-      border-top-color:#000;
+      border:calc(12px * var(--fix)) solid rgba(255,255,255,0.35);
+      border-top-color:#fff;
       animation: btnNoirSpin 0.9s linear infinite;
       pointer-events:none;
     }
@@ -66,6 +71,39 @@
         btn.removeAttribute('data-spinner');
       }
     };
+
+    const volverInicioHooks = {};
+
+    function handleVolverInicioClick(btn){
+      if (!btn || btn.disabled) return;
+      if (window.secoSetBlackButtonLoading){
+        window.secoSetBlackButtonLoading(btn, true);
+      }
+      var hook = volverInicioHooks[btn.id];
+      if (typeof hook === 'function'){
+        hook(btn);
+      }
+      loadPage('inicio');
+    }
+
+    function registerVolverInicioHook(btn, beforeNavigate){
+      if (!btn || !btn.id || typeof beforeNavigate !== 'function') return;
+      volverInicioHooks[btn.id] = beforeNavigate;
+    }
+
+    function bindVolverInicioButtons(){
+      var buttons = document.querySelectorAll('button[data-role="volver-inicio"]');
+      if (!buttons || !buttons.length) return;
+
+      buttons.forEach(function(btn){
+        if (btn.dataset.volverBound === '1') return;
+        btn.dataset.volverBound = '1';
+
+        btn.addEventListener('click', function(){
+          handleVolverInicioClick(btn);
+        });
+      });
+    }
 
     const pageInit = {
   inicio: function(){
@@ -289,34 +327,6 @@
         }
 
 
-         // FONCTION SPINNER SUR BOUTONS VOLVER AL INICIO
-        function bindVolverInicioButtons(){
-          var buttons = document.querySelectorAll('button[data-role="volver-inicio"]');
-          if (!buttons || !buttons.length) return;
-
-          buttons.forEach(function(btn){
-            btn.addEventListener('click', function(){
-              // Empêche les doubles clics
-              if (btn.disabled) return;
-
-              // Active le spinner (même mécanique que les boutons noirs)
-              if (window.secoSetBlackButtonLoading){
-                window.secoSetBlackButtonLoading(btn, true);
-              } else {
-                btn.disabled = true;
-                btn.dataset.spinner = '1';
-              }
-
-              // Navigation vers l'accueil
-              loadPage('inicio', function(){
-                // La page change → le bouton disparaît avec le fragment.
-                // On ne réactive jamais le texte ni ne coupe le spinner ici.
-              });
-            });
-          });
-        }
-
-      
         function bindTopHalfAction(btn, pageName){
           if (!btn) return;
           btn.addEventListener('click', function(){
@@ -902,15 +912,6 @@
           }
         });
     
-        if (btnVolver){
-          btnVolver.addEventListener('click', function(){
-            setButtonSpinner(btnVolver, true, 'black');
-            loadPage('inicio', function(){
-              setButtonSpinner(btnVolver, false, 'black');
-            });
-          });
-        }
-    
         function init(){
           applyScaleFix();
           sizeHeaderImage();
@@ -1245,17 +1246,14 @@
             .registrarNuevoContacto(datosCliente, ctxActual);
         });
     
-        /* Clic sur VOLVER AL INICIO : reset + abrirInicio() */
-        btnVolverIni.addEventListener('click', function(){
-          setButtonSpinner(btnVolverIni, true, 'black');
+        registerVolverInicioHook(btnVolverIni, function(){
           if (btnGuardar) btnGuardar.disabled = true;
-          // Effacer les champs
+
           nombreEl.value   = '';
           dirEl.value      = '';
           notaEl.value     = '';
           whatsappEl.value = '';
-    
-          // Réinitialiser le dropdown Sector
+
           sectorBtn.setAttribute('data-placeholder', 'true');
           var lbl = sectorBtn.querySelector('.dd-label');
           if (lbl){
@@ -1266,9 +1264,6 @@
 
           window.SECO_CTX = null;
           ctxCache = null;
-
-          // Ouvrir la page inicio.html côté serveur
-          loadPage('inicio');
         });
     
         function init(){
@@ -1523,12 +1518,6 @@
               alert(msg);
             })
             .actualizarContactoDesdeEditar(datosCliente, ctxActual);
-        });
-    
-        btnVolverIni.addEventListener('click', function(){
-          if (btnVolverIni.disabled) return;
-          window.secoSetBlackButtonLoading(btnVolverIni, true);
-          loadPage('inicio');
         });
     
         function init(){
@@ -1992,14 +1981,6 @@
     }
 
     function bindActions(){
-      if (btnVolver){
-        btnVolver.addEventListener('click', function(){
-          if (btnVolver.disabled) return;
-          window.secoSetBlackButtonLoading(btnVolver, true);
-          loadPage('inicio');
-        });
-      }
-
       if (contactEditBtn){
         contactEditBtn.addEventListener('click', function(){
           if (contactEditLoading) return;
@@ -2731,13 +2712,8 @@
         cargarClienteDesdeServidor();
 
         if (btnVolver){
-          btnVolver.addEventListener('click', function(){
-            if (btnVolver.disabled) return;
-            setButtonSpinner(btnVolver, true, 'black');
+          registerVolverInicioHook(btnVolver, function(){
             guardarCtxSeleccion();
-            loadPage('inicio', function(){
-              setButtonSpinner(btnVolver, false, 'black');
-            });
           });
         }
 
@@ -3098,6 +3074,95 @@ ventaDirecta: function() {
     return n.toFixed(2).replace('.', ',') + ' $';
   }
 
+  function seedCantidadDropdown(){
+    var dataEl = document.querySelector('.dropdown[data-name="cantidad"] .dd-data');
+    if (!dataEl) return;
+
+    var opciones = [];
+    for (var i = 1; i <= 10; i++){
+      opciones.push(i + ' seco' + (i === 1 ? '' : 's'));
+    }
+
+    var json = JSON.stringify(opciones);
+    dataEl.textContent = json;
+    dataEl.setAttribute('data-options', json);
+  }
+
+  function getDropdownOptions(dd){
+    var dataEl = dd ? dd.querySelector('.dd-data') : null;
+    if (!dataEl) return [];
+    var raw = dataEl.getAttribute('data-options') || dataEl.textContent || '[]';
+    try {
+      return JSON.parse(raw);
+    } catch (err){
+      return [];
+    }
+  }
+
+  function initDropdowns(){
+    var overlay = document.getElementById('ddOverlay');
+    var overlayList = document.getElementById('ddOverlayList');
+
+    function closeOverlay(){
+      if (!overlay) return;
+      overlay.setAttribute('data-open','false');
+      document.body.style.overflow = '';
+    }
+
+    function openOverlay(dd){
+      if (!overlay || !overlayList || !dd) return;
+
+      overlayList.innerHTML = '';
+
+      var label = dd.querySelector('.dd-label');
+      var btn = dd.querySelector('.dd-button');
+      var options = getDropdownOptions(dd);
+
+      if (label){
+        var liPh = document.createElement('li');
+        liPh.className = 'dd-overlay-option placeholder';
+        liPh.textContent = (label.textContent || '').trim() || 'Seleccionar';
+        liPh.onclick = function(){ closeOverlay(); };
+        overlayList.appendChild(liPh);
+      }
+
+      options.forEach(function(opt){
+        var li = document.createElement('li');
+        li.className = 'dd-overlay-option';
+        li.textContent = opt;
+        li.onclick = function(){
+          if (label){
+            label.textContent = opt;
+          }
+          if (btn){
+            btn.removeAttribute('data-placeholder');
+          }
+          closeOverlay();
+          updateTotalAndButton();
+        };
+        overlayList.appendChild(li);
+      });
+
+      overlay.setAttribute('data-open','true');
+      document.body.style.overflow = 'hidden';
+    }
+
+    document.querySelectorAll('.dropdown').forEach(function(dd){
+      var btn = dd.querySelector('.dd-button');
+      if (btn){
+        btn.onclick = function(){ openOverlay(dd); };
+      }
+    });
+
+    if (overlay){
+      overlay.onclick = function(e){
+        if (e.target === overlay){
+          closeOverlay();
+        }
+      };
+    }
+  }
+
   function getCantidad(){
     var dd = document.querySelector('.dropdown[data-name="cantidad"] .dd-label');
     if (!dd) return 0;
@@ -3164,9 +3229,8 @@ ventaDirecta: function() {
   function init(){
     applyScaleFix();
     sizeHeaderImage();
-    if (typeof initDropdowns === 'function'){
-      initDropdowns();
-    }
+    seedCantidadDropdown();
+    initDropdowns();
 
     initVentaId();
     updateTotalAndButton();
@@ -3244,17 +3308,6 @@ ventaDirecta: function() {
       });
     }
 
-    // VOLVER AL INICIO local : spinner noir sur bouton blanc, pas de retour du texte
-    var btnVolverInicioVenta = document.getElementById('btnVolverInicioVenta');
-
-    if (btnVolverInicioVenta) {
-      btnVolverInicioVenta.addEventListener('click', function() {
-        window.secoSetBlackButtonLoading(btnVolverInicioVenta, true);
-        loadPage('inicio'); // le spinner s'arrête automatiquement quand la nouvelle page charge
-      });
-    }
-
-    
   }
 
   if (document.readyState === 'loading'){
@@ -3434,14 +3487,6 @@ ventaRegistrada: function() {
         if (btnCerrar.disabled) return;
         window.secoSetBlackButtonLoading(btnCerrar, true);
         loadPage('diaCerrado');
-      });
-    }
-
-    if (btnVolver){
-      btnVolver.addEventListener('click', function(){
-        if (btnVolver.disabled) return;
-        window.secoSetBlackButtonLoading(btnVolver, true);
-        loadPage('inicio');
       });
     }
 
@@ -3629,14 +3674,6 @@ ventaRegistrada: function() {
       });
     }
 
-    if (btnVolver){
-      btnVolver.addEventListener('click', function(){
-        if (btnVolver.disabled) return;
-        window.secoSetBlackButtonLoading(btnVolver, true);
-        loadPage('inicio');
-      });
-    }
-
     function init(){
       applyScaleFix();
       sizeHeaderImage();
@@ -3711,6 +3748,7 @@ ventaRegistrada: function() {
           if (app) {
             app.innerHTML = html;
             window.scrollTo({ top: 0, behavior: 'instant' });
+            bindVolverInicioButtons();
             if (pageInit[pageName]) {
               pageInit[pageName]();
             }
