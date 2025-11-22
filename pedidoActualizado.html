@@ -248,3 +248,228 @@
 
     </div>
   </div>
+
+  <script>
+    (function(){
+      var ctx = (typeof window !== 'undefined' && window.SECO_CTX) ? window.SECO_CTX : {};
+      var pedido = (ctx && ctx.pedido) || {};
+      var baseCtx = ctx || {};
+
+      function applyScaleFix(){
+        var cssW = window.innerWidth || document.documentElement.clientWidth;
+        var screenW = Math.min(window.screen.width || 375, window.screen.height || 812);
+        if (cssW >= 960 && cssW <= 1024) {
+          var fix = (980 / screenW) * 1.50;
+          document.documentElement.style.setProperty('--fix', fix.toFixed(3));
+        } else {
+          document.documentElement.style.setProperty('--fix', '1');
+        }
+      }
+
+      function sizeHeaderImage(){
+        var img = document.getElementById('headerImg');
+        var wrap = document.querySelector('.wrapper');
+        if (!img || !wrap) return;
+        var w = Math.floor(wrap.clientWidth);
+        if (w > 0){
+          img.style.width = w + 'px';
+          img.style.maxWidth = '100%';
+          img.removeAttribute('height');
+        }
+      }
+
+      function parseCantidad(raw){
+        if (typeof raw === 'number' && isFinite(raw)) return raw;
+        if (!raw) return 0;
+        var s = String(raw).trim();
+        var m = s.match(/^(\d+)/);
+        if (m){
+          var n = parseInt(m[1], 10);
+          if (!isNaN(n)) return n;
+        }
+        var n2 = Number(s.replace(',', '.'));
+        return isNaN(n2) ? 0 : n2;
+      }
+
+      function parseMoney(raw){
+        if (typeof raw === 'number' && isFinite(raw)) return raw;
+        if (!raw) return 0;
+        var s = String(raw).trim();
+        s = s.replace(/[^0-9.,-]/g, '');
+        s = s.replace(',', '.');
+        var n = Number(s);
+        return isNaN(n) ? 0 : n;
+      }
+
+      function formatMoneyText(n){
+        n = parseMoney(n);
+        return n.toFixed(2).replace('.', ',') + ' $';
+      }
+
+      function formatHoraEntrega(raw){
+        if (raw instanceof Date && !isNaN(raw.getTime())){
+          var hDate = raw;
+          var hH = hDate.getHours();
+          var hM = String(hDate.getMinutes()).padStart(2, '0');
+          return hH + ':' + hM;
+        }
+
+        var rawStr = (raw === null || raw === undefined) ? '' : String(raw).trim();
+        if (!rawStr) return '';
+
+        var matchHM = rawStr.match(/(\d{1,2})\s*[:hH]\s*(\d{2})/);
+        if (matchHM){
+          var hh = parseInt(matchHM[1], 10);
+          var mm = matchHM[2];
+          if (!isNaN(hh)){
+            return hh + ':' + mm;
+          }
+        }
+
+        var numVal = Number(raw);
+        if (isFinite(numVal)){
+          var baseDate = new Date(1899, 11, 30);
+          var millis = Math.round(numVal * 24 * 60 * 60 * 1000);
+          var fromSerial = new Date(baseDate.getTime() + millis);
+          if (!isNaN(fromSerial.getTime())){
+            var sh = fromSerial.getHours();
+            var sm = String(fromSerial.getMinutes()).padStart(2, '0');
+            return sh + ':' + sm;
+          }
+        }
+
+        var parsed = new Date(rawStr);
+        if (!isNaN(parsed.getTime())){
+          var dh = parsed.getHours();
+          var dm = String(parsed.getMinutes()).padStart(2, '0');
+          return dh + ':' + dm;
+        }
+
+        return rawStr;
+      }
+
+      function buildSectorPrices(){
+        var sectores = Array.isArray(ctx && ctx.sectores) ? ctx.sectores : [];
+        var tabla = {};
+        sectores.forEach(function(sec){
+          var nombre = (sec && sec.nombre) ? sec.nombre.toString().trim().toLowerCase() : '';
+          var precioValido = (sec && typeof sec.precio === 'number' && !isNaN(sec.precio)) ? Number(sec.precio) : null;
+          if (!nombre || precioValido === null) return;
+          tabla[nombre] = precioValido;
+        });
+        return tabla;
+      }
+
+      function obtenerSector(){
+        return (
+          (pedido && pedido.sector) ||
+          (pedido && pedido.cliente && pedido.cliente.sector) ||
+          baseCtx.sector ||
+          (baseCtx.cliente && baseCtx.cliente.sector) ||
+          ''
+        ).toString().trim();
+      }
+
+      function calcularUnitPrice(cantidad){
+        var fuentes = [
+          ctx && ctx.precioBase,
+          pedido && pedido.precioUnitario
+        ];
+
+        for (var i = 0; i < fuentes.length; i++){
+          var cand = fuentes[i];
+          if (typeof cand === 'number' && !isNaN(cand) && cand > 0){
+            return Number(cand);
+          }
+        }
+
+        var sectorMapa = buildSectorPrices();
+        var sectorNombre = obtenerSector().toLowerCase();
+        if (sectorNombre && Object.prototype.hasOwnProperty.call(sectorMapa, sectorNombre)){
+          return sectorMapa[sectorNombre];
+        }
+
+        var totalPedido = parseMoney(pedido.total || baseCtx.total);
+        if (totalPedido > 0 && cantidad > 0){
+          if (totalPedido >= cantidad){
+            return totalPedido / cantidad;
+          }
+          return totalPedido;
+        }
+
+        return 0;
+      }
+
+      function render(){
+        applyScaleFix();
+        sizeHeaderImage();
+
+        var pedidoIdEl     = document.getElementById('pedidoId');
+        var horaEl         = document.getElementById('confirmHora');
+        var sectorEl       = document.getElementById('confirmSector');
+        var nombreEl       = document.getElementById('confirmNombre');
+        var dirEl          = document.getElementById('confirmDireccion');
+        var notaEl         = document.getElementById('confirmNota');
+        var telEl          = document.getElementById('confirmWhatsapp');
+        var precioEl       = document.getElementById('confirmPrecio');
+
+        var c = pedido.cliente || baseCtx.cliente || {};
+        var nombre = pedido.clienteNombre || c.nombre || baseCtx.clienteNombre || 'Cliente';
+        var sector = obtenerSector();
+        var direccion = pedido.direccion || c.direccion || baseCtx.direccion || '';
+        var nota = pedido.nota || c.nota || baseCtx.nota || '';
+        var whatsappRaw = pedido.whatsapp || c.whatsapp || c.telefono || baseCtx.whatsapp || '';
+        var horaRaw = pedido.horaEntrega || pedido.hora || baseCtx.horaSeleccionada || '';
+        var hora = formatHoraEntrega(horaRaw);
+        var fechaTexto = (baseCtx.fechaSeleccionada || pedido.fechaEntrega || '').toString();
+
+        var cantidad = parseCantidad(pedido.cantidad || baseCtx.cantidadSeleccionada);
+        var unitPrice = calcularUnitPrice(cantidad);
+        var total = unitPrice && cantidad ? unitPrice * cantidad : parseMoney(pedido.total || baseCtx.total);
+        if (!total && unitPrice && cantidad){
+          total = unitPrice * cantidad;
+        }
+        if (!unitPrice && total && cantidad){
+          unitPrice = total / cantidad;
+        }
+
+        var cantidadTexto = cantidad + ' seco' + (cantidad === 1 ? '' : 's');
+
+        if (pedidoIdEl) pedidoIdEl.textContent = pedido.pedidoId || baseCtx.pedidoId || '';
+        if (horaEl) horaEl.textContent = hora || '—';
+        if (sectorEl) sectorEl.textContent = sector || '—';
+        if (nombreEl) nombreEl.textContent = nombre || '—';
+        if (dirEl) dirEl.textContent = direccion || '—';
+
+        if (notaEl){
+          if (nota){
+            notaEl.textContent = 'Nota: ' + nota;
+            notaEl.style.display = '';
+          } else {
+            notaEl.textContent = '';
+            notaEl.style.display = 'none';
+          }
+        }
+
+        if (telEl){
+          var digits = (whatsappRaw || '').toString().replace(/\D+/g, '');
+          telEl.textContent = digits ? digits : '—';
+        }
+
+        if (precioEl){
+          precioEl.textContent = cantidadTexto + ' x ' + formatMoneyText(unitPrice) + ' = ' + formatMoneyText(total);
+        }
+      }
+
+      if (document.readyState === 'loading'){
+        document.addEventListener('DOMContentLoaded', render);
+      } else {
+        render();
+      }
+
+      window.addEventListener('resize', function(){
+        applyScaleFix();
+        sizeHeaderImage();
+      });
+    })();
+  </script>

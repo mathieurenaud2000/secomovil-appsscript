@@ -492,12 +492,37 @@
       return tabla;
     }
 
-    function getPrecioBaseDesdeCtx(){
+    function getPrecioBaseDesdeCtx(cantidadActual){
+      var ctx = (typeof window !== 'undefined' && window.SECO_CTX) ? window.SECO_CTX : {};
+      var pedido = (ctx && ctx.pedidoEnEdicion) || (ctx && ctx.pedido) || {};
+      var cantidadCtx = cantidadActual;
+      if ((!cantidadCtx || !isFinite(cantidadCtx)) && typeof pedido.cantidad === 'number') {
+        cantidadCtx = pedido.cantidad;
+      }
+
+      var fuentesPrecio = [
+        ctx && ctx.precioBase,
+        pedido && pedido.precioUnitario,
+        pedido && pedido.precioUnit
+      ];
+
+      for (var i = 0; i < fuentesPrecio.length; i++) {
+        var candidato = fuentesPrecio[i];
+        if (typeof candidato === 'number' && !isNaN(candidato) && candidato > 0) {
+          return Number(candidato);
+        }
+      }
+
       var sectorTexto = (obtenerSectorDesdePagina() || '').toString().trim().toLowerCase();
       var sectorPrices = construirSectorPrices();
 
       if (sectorTexto && Object.prototype.hasOwnProperty.call(sectorPrices, sectorTexto)) {
         return sectorPrices[sectorTexto];
+      }
+
+      var totalPedido = (pedido && typeof pedido.total === 'number') ? Number(pedido.total) : 0;
+      if (totalPedido > 0 && cantidadCtx && cantidadCtx > 0) {
+        return totalPedido / cantidadCtx;
       }
 
       return 0;
@@ -516,13 +541,14 @@
     }
 
     function actualizarPrecio(){
-      var precioBase = getPrecioBaseDesdeCtx();
       var cantidad = obtenerCantidadSeleccionada();
+      var precioBase = getPrecioBaseDesdeCtx(cantidad);
       var total = precioBase * cantidad;
 
       var precioEl = document.getElementById('precioValor');
       if (precioEl){
-        var txt = total.toFixed(2).replace('.', ',') + ' $';
+        var precioMostrar = (cantidad > 0 && precioBase > 0) ? total : 0;
+        var txt = precioMostrar.toFixed(2).replace('.', ',') + ' $';
         precioEl.textContent = txt;
       }
     }
