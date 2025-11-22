@@ -449,7 +449,7 @@
           captureNormalHeight();
         }
     
-        function cargarProximoPedido(){
+        function refreshProximaEntregaCard(){
           card.classList.remove('is-deleted','is-delivered');
           setCardLoading(true);
           google.script.run
@@ -473,12 +473,16 @@
           setConfirmButtonLoading(true);
           setActionProcessing(processingBtn, true);
           google.script.run
-            .withSuccessHandler(function(){
+            .withSuccessHandler(function(resp){
               setActionProcessing(processingBtn, false);
               setButtonLoading(btnConfirm, false);
               setConfirmButtonLoading(false);
               setNormal();
-              cargarProximoPedido();
+              if (resp && resp.ok){
+                refreshProximaEntregaCard();
+              } else {
+                setCardLoading(false);
+              }
             })
             .withFailureHandler(function(){
               setActionProcessing(processingBtn, false);
@@ -501,11 +505,12 @@
               setActionProcessing(processingBtn, false);
               setButtonLoading(btnConfirm, false);
               setConfirmButtonLoading(false);
-              if (resp && resp.ok && resp.data && resp.data.pedido){
-                renderPedido(resp.data.pedido);
-              }
               setNormal();
-              setCardLoading(false);
+              if (resp && resp.ok){
+                refreshProximaEntregaCard();
+              } else {
+                setCardLoading(false);
+              }
             })
             .withFailureHandler(function(){
               setActionProcessing(processingBtn, false);
@@ -706,14 +711,14 @@
             applyScaleFix();
             captureNormalHeight();
             setCardLoading(true);
-            cargarProximoPedido();
+            refreshProximaEntregaCard();
           });
         } else {
           currentHour = heureText.textContent.trim();
           applyScaleFix();
           captureNormalHeight();
           setCardLoading(true);
-          cargarProximoPedido();
+          refreshProximaEntregaCard();
         }
     
         window.addEventListener('resize', ()=>{
@@ -1739,6 +1744,78 @@
       }
     }
 
+    function formatISODate(d){
+      if (!(d instanceof Date) || isNaN(d.getTime())) return '';
+      var yyyy = d.getFullYear();
+      var mm   = String(d.getMonth() + 1).padStart(2, '0');
+      var dd   = String(d.getDate()).padStart(2, '0');
+      return yyyy + '-' + mm + '-' + dd;
+    }
+
+    function buscarFechaPorEtiqueta(etiqueta){
+      var texto = (etiqueta || '').toString().trim();
+      if (!texto) return '';
+
+      var isoMatch = texto.match(/^\d{4}-\d{2}-\d{2}$/);
+      if (isoMatch) return texto;
+
+      var parsed = new Date(texto);
+      if (!isNaN(parsed.getTime())){
+        return formatISODate(parsed);
+      }
+
+      var hoy = new Date();
+      hoy.setHours(0,0,0,0);
+      for (var i = 0; i < 400; i++){
+        var d = new Date(hoy);
+        d.setDate(hoy.getDate() + i);
+        if (formatFechaEtiqueta(d) === texto){
+          return formatISODate(d);
+        }
+      }
+
+      return '';
+    }
+
+    function obtenerValorDropdown(nombre){
+      var dd = document.querySelector('.dropdown[data-name="' + nombre + '"]');
+      if (!dd) return '';
+      var val = dd.dataset.value || '';
+      if (!val){
+        var label = dd.querySelector('.dd-label');
+        if (label && label.textContent) val = label.textContent.trim();
+      }
+      return val;
+    }
+
+    function obtenerCantidadSeleccionada(){
+      var raw = obtenerValorDropdown('cantidad');
+      var m = raw.match(/^(\d+)/);
+      if (m){
+        var n = parseInt(m[1], 10);
+        if (isFinite(n) && n > 0) return n;
+      }
+      return 1;
+    }
+
+    function construirPayloadEdicion(){
+      var fechaSeleccion = buscarFechaPorEtiqueta(obtenerValorDropdown('fecha'))
+        || buscarFechaPorEtiqueta((pedido && (pedido.fechaEntrega || pedido.fecha)) || '');
+
+      var horaSeleccion = normalizarHora(obtenerValorDropdown('hora')) || normalizarHora(pedido && pedido.horaEntrega);
+      var cantidadSel   = obtenerCantidadSeleccionada();
+      var notasSel      = (pedido && (pedido.notas || pedido.nota)) || '';
+      var idPedidoSel   = (pedido && (pedido.idPedido || pedido.pedidoId)) || (ctx && ctx.pedidoId) || '';
+
+      return {
+        idPedido: idPedidoSel,
+        fechaEntrega: fechaSeleccion,
+        horaEntrega: horaSeleccion,
+        cantidad: cantidadSel,
+        notas: notasSel
+      };
+    }
+
     var overlayRef, overlayListEl;
 
     function openOverlayFor(dropdown){
@@ -2027,6 +2104,36 @@
             contactEditLoading = false;
             contactEditBtn.classList.remove('is-loading');
           });
+        });
+      }
+
+      if (btnRegistrar){
+        btnRegistrar.addEventListener('click', function(){
+          if (btnRegistrar.disabled) return;
+
+          window.secoSetBlackButtonLoading(btnRegistrar, true);
+          var payload = construirPayloadEdicion();
+
+          google.script.run
+            .withSuccessHandler(function(resp){
+              if (resp && resp.ok){
+                var pedidoResp = resp.data && resp.data.pedido ? resp.data.pedido : null;
+                if (pedidoResp){
+                  window.SECO_CTX = { pedido: pedidoResp };
+                }
+                loadPage('pedidoActualizado');
+              } else {
+                window.secoSetBlackButtonLoading(btnRegistrar, false);
+                var msg = (resp && resp.error) ? resp.error : 'Error al actualizar el pedido.';
+                alert(msg);
+              }
+            })
+            .withFailureHandler(function(err){
+              window.secoSetBlackButtonLoading(btnRegistrar, false);
+              var msg = (err && err.message) ? err.message : 'Error al actualizar el pedido.';
+              alert(msg);
+            })
+            .editarPedidoPorId(payload);
         });
       }
     }
