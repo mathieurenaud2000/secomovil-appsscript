@@ -24,7 +24,7 @@
       animation: btnNoirSpin 0.9s linear infinite;
       pointer-events:none;
     }
-    /* Spinner uniforme pour les boutons VOLVER AL INICIO */
+    /* Spinner uniforme pour les boutons VOLVER AL INICIO (fond blanc) */
     button[data-role="volver-inicio"]{ position:relative; }
     button[data-role="volver-inicio"][data-spinner="1"]{
       color:transparent !important;
@@ -39,8 +39,8 @@
       width:calc(28px * var(--fix));
       height:calc(28px * var(--fix));
       border-radius:50%;
-      border:calc(12px * var(--fix)) solid rgba(255,255,255,0.35);
-      border-top-color:#fff;
+      border:calc(12px * var(--fix)) solid rgba(0,0,0,0.35);
+      border-top-color:#000;
       animation: btnNoirSpin 0.9s linear infinite;
       pointer-events:none;
     }
@@ -72,23 +72,52 @@
       }
     };
 
-    const volverInicioHooks = {};
+    let currentPageName = null;
+    let volverInicioHooks = new Map();
+
+    function resetVolverInicioHooks(pageName){
+      currentPageName = pageName || null;
+      volverInicioHooks.clear();
+    }
+
+    function getVolverInicioHook(btn){
+      if (!currentPageName || !btn) return null;
+      const hooksForPage = volverInicioHooks.get(currentPageName);
+      if (!hooksForPage) return null;
+      return hooksForPage.get(btn) || (btn.id ? hooksForPage.get(btn.id) : null) || null;
+    }
+
+    function setVolverInicioLoading(btn, isLoading){
+      if (!btn) return;
+      if (isLoading){
+        if (btn.dataset.spinner === '1') return;
+        btn.disabled = true;
+        btn.dataset.spinner = '1';
+      } else {
+        btn.disabled = false;
+        btn.removeAttribute('data-spinner');
+      }
+    }
 
     function handleVolverInicioClick(btn){
       if (!btn || btn.disabled) return;
-      if (window.secoSetBlackButtonLoading){
-        window.secoSetBlackButtonLoading(btn, true);
-      }
-      var hook = volverInicioHooks[btn.id];
+
+      setVolverInicioLoading(btn, true);
+
+      var hook = getVolverInicioHook(btn);
       if (typeof hook === 'function'){
         hook(btn);
       }
+
       loadPage('inicio');
     }
 
     function registerVolverInicioHook(btn, beforeNavigate){
-      if (!btn || !btn.id || typeof beforeNavigate !== 'function') return;
-      volverInicioHooks[btn.id] = beforeNavigate;
+      if (!btn || typeof beforeNavigate !== 'function' || !currentPageName) return;
+      const hooksForPage = volverInicioHooks.get(currentPageName) || new Map();
+      hooksForPage.set(btn, beforeNavigate);
+      if (btn.id) hooksForPage.set(btn.id, beforeNavigate);
+      volverInicioHooks.set(currentPageName, hooksForPage);
     }
 
     function bindVolverInicioButtons(){
@@ -3075,7 +3104,8 @@ ventaDirecta: function() {
   }
 
   function seedCantidadDropdown(){
-    var dataEl = document.querySelector('.dropdown[data-name="cantidad"] .dd-data');
+    var dropdown = document.querySelector('.dropdown[data-name="cantidad"]');
+    var dataEl = dropdown ? dropdown.querySelector('.dd-data') : null;
     if (!dataEl) return;
 
     var opciones = [];
@@ -3086,6 +3116,16 @@ ventaDirecta: function() {
     var json = JSON.stringify(opciones);
     dataEl.textContent = json;
     dataEl.setAttribute('data-options', json);
+
+    var lbl = dropdown.querySelector('.dd-label');
+    var btn = dropdown.querySelector('.dd-button');
+    if (lbl && opciones.length){
+      lbl.textContent = opciones[0];
+    }
+    if (btn){
+      btn.removeAttribute('data-placeholder');
+    }
+    dropdown.dataset.value = opciones[0] || '';
   }
 
   function getDropdownOptions(dd){
@@ -3102,71 +3142,100 @@ ventaDirecta: function() {
   function initDropdowns(){
     var overlay = document.getElementById('ddOverlay');
     var overlayList = document.getElementById('ddOverlayList');
+    var currentDropdown = null;
 
     function closeOverlay(){
       if (!overlay) return;
       overlay.setAttribute('data-open','false');
+      overlay.setAttribute('aria-hidden','true');
       document.body.style.overflow = '';
+      currentDropdown = null;
+    }
+
+    function selectOption(dd, labelEl, btnEl, value){
+      if (labelEl){
+        labelEl.textContent = value;
+      }
+      if (btnEl){
+        btnEl.removeAttribute('data-placeholder');
+      }
+      if (dd){
+        dd.dataset.value = value;
+      }
+      closeOverlay();
+      updateTotalAndButton();
     }
 
     function openOverlay(dd){
       if (!overlay || !overlayList || !dd) return;
 
+      currentDropdown = dd;
       overlayList.innerHTML = '';
 
       var label = dd.querySelector('.dd-label');
       var btn = dd.querySelector('.dd-button');
       var options = getDropdownOptions(dd);
-
-      if (label){
-        var liPh = document.createElement('li');
-        liPh.className = 'dd-overlay-option placeholder';
-        liPh.textContent = (label.textContent || '').trim() || 'Seleccionar';
-        liPh.onclick = function(){ closeOverlay(); };
-        overlayList.appendChild(liPh);
-      }
+      var currentValue = (dd.dataset.value || (label && label.textContent) || '').trim();
 
       options.forEach(function(opt){
         var li = document.createElement('li');
         li.className = 'dd-overlay-option';
+        li.setAttribute('role','option');
+        li.setAttribute('aria-selected', currentValue === opt ? 'true' : 'false');
         li.textContent = opt;
-        li.onclick = function(){
-          if (label){
-            label.textContent = opt;
-          }
-          if (btn){
-            btn.removeAttribute('data-placeholder');
-          }
-          closeOverlay();
-          updateTotalAndButton();
-        };
+        li.onclick = function(){ selectOption(dd, label, btn, opt); };
         overlayList.appendChild(li);
       });
 
       overlay.setAttribute('data-open','true');
+      overlay.setAttribute('aria-hidden','false');
       document.body.style.overflow = 'hidden';
     }
 
     document.querySelectorAll('.dropdown').forEach(function(dd){
       var btn = dd.querySelector('.dd-button');
-      if (btn){
-        btn.onclick = function(){ openOverlay(dd); };
+      if (!btn) return;
+
+      if (!dd.dataset.value){
+        var lbl = dd.querySelector('.dd-label');
+        var baseVal = (lbl && lbl.textContent) ? lbl.textContent.trim() : '';
+        if (baseVal){
+          dd.dataset.value = baseVal;
+        }
       }
+
+      btn.addEventListener('click', function(){ openOverlay(dd); });
+      btn.addEventListener('keydown', function(e){
+        if (e.key === 'Enter' || e.key === ' '){
+          e.preventDefault();
+          openOverlay(dd);
+        }
+      });
     });
 
     if (overlay){
-      overlay.onclick = function(e){
+      overlay.addEventListener('click', function(e){
         if (e.target === overlay){
           closeOverlay();
         }
-      };
+      });
     }
+
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape' && overlay && overlay.getAttribute('data-open') === 'true'){
+        closeOverlay();
+      }
+    });
   }
 
   function getCantidad(){
-    var dd = document.querySelector('.dropdown[data-name="cantidad"] .dd-label');
+    var dd = document.querySelector('.dropdown[data-name="cantidad"]');
     if (!dd) return 0;
-    var txt = dd.textContent || '';
+    var txt = dd.dataset.value || '';
+    if (!txt){
+      var lbl = dd.querySelector('.dd-label');
+      txt = (lbl && lbl.textContent) ? lbl.textContent : '';
+    }
     var m = txt.trim().match(/^(\d+)/);
     if (!m) return 0;
     var n = parseInt(m[1], 10);
@@ -3256,13 +3325,6 @@ ventaDirecta: function() {
         }, 1500);
       });
     }
-
-    // Recalculer après sélection d'une option du dropdown (1 à 10 secos)
-    document.addEventListener('click', function(e){
-      if (e.target && e.target.closest('.dd-overlay-option')){
-        setTimeout(updateTotalAndButton, 0);
-      }
-    });
 
     if (btnRegistrar){
       btnRegistrar.addEventListener('click', function(){
@@ -3746,6 +3808,7 @@ ventaRegistrada: function() {
         .withSuccessHandler(function(html){
           const app = document.getElementById('app');
           if (app) {
+            resetVolverInicioHooks(pageName);
             app.innerHTML = html;
             window.scrollTo({ top: 0, behavior: 'instant' });
             bindVolverInicioButtons();
