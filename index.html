@@ -1615,11 +1615,6 @@
       }
     }
 
-    function obtenerSectorDesdePagina(){
-      var el = obtenerElementoSector();
-      return el && el.textContent ? el.textContent.trim() : '';
-    }
-
     function obtenerElementoSector(){
       var labels = document.querySelectorAll('.contact-card .label');
       for (var i = 0; i < labels.length; i++) {
@@ -1629,8 +1624,11 @@
         var contenedor = lbl.parentElement;
         if (contenedor) {
           var txtBody = contenedor.querySelector('.txt-body');
-          if (txtBody && txtBody.textContent) return txtBody;
+          if (txtBody && txtBody.textContent) {
+            return txtBody;
+          }
         }
+
         var siguiente = lbl.nextElementSibling;
         if (siguiente && siguiente.classList.contains('txt-body') && siguiente.textContent) {
           return siguiente;
@@ -1639,15 +1637,25 @@
       return null;
     }
 
+    function obtenerSectorDesdePagina(){
+      var el = obtenerElementoSector();
+      return el && el.textContent ? el.textContent.trim() : '';
+    }
+
     function construirSectorPrices(){
       var sectores = Array.isArray(sectoresCtx) ? sectoresCtx : [];
       var tabla = {};
+
       sectores.forEach(function(sec){
         var nombre = (sec && sec.nombre) ? sec.nombre.toString().trim() : '';
-        var precioValido = (sec && typeof sec.precio === 'number' && !isNaN(sec.precio)) ? Number(sec.precio) : null;
+        var precioValido = (sec && typeof sec.precio === 'number' && !isNaN(sec.precio))
+          ? Number(sec.precio)
+          : null;
+
         if (!nombre || precioValido === null) return;
         tabla[nombre.toLowerCase()] = precioValido;
       });
+
       return tabla;
     }
 
@@ -1655,11 +1663,14 @@
       if (ctx && typeof ctx.precioBase === 'number' && !isNaN(ctx.precioBase)){
         return Number(ctx.precioBase);
       }
+
       var sectorTexto = (obtenerSectorDesdePagina() || '').toString().trim().toLowerCase();
       var sectorPrices = construirSectorPrices();
+
       if (sectorTexto && Object.prototype.hasOwnProperty.call(sectorPrices, sectorTexto)) {
         return sectorPrices[sectorTexto];
       }
+
       return 0;
     }
 
@@ -1859,7 +1870,7 @@
         var n = parseInt(m[1], 10);
         if (!isNaN(n) && n > 0) return n;
       }
-      return 0;
+      return 0;  // ← très important : 0 et pas 1 ici
     }
 
     function construirPayloadEdicion(){
