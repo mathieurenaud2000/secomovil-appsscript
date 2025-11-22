@@ -3241,25 +3241,12 @@ ventaDirecta: function() {
     }
 
     // VOLVER AL INICIO local : spinner noir sur bouton blanc, pas de retour du texte
-    if (btnVolver){
-      btnVolver.addEventListener('click', function(){
-        // Empêche les clics multiples
-        if (btnVolver.disabled) return;
+    var btnVolverInicioVenta = document.getElementById('btnVolverInicioVenta');
 
-        // Active le spinner spécifique aux boutons blancs
-        btnVolver.disabled = true;
-        btnVolver.setAttribute('data-spinner', '1');
-
-        // Optionnel: masquer le texte immédiatement (double sécurité)
-        // btnVolver.style.color = 'transparent';
-
-        // On laisse une mini-frame pour que le spinner s'affiche,
-        // puis on navigue vers inicio
-        setTimeout(function(){
-          loadPage('inicio');
-          // On NE remet pas data-spinner ni disabled :
-          // le bouton disparaît avec la page.
-        }, 100);
+    if (btnVolverInicioVenta) {
+      btnVolverInicioVenta.addEventListener('click', function() {
+        window.secoSetBlackButtonLoading(btnVolverInicioVenta, true);
+        loadPage('inicio'); // le spinner s'arrête automatiquement quand la nouvelle page charge
       });
     }
 
