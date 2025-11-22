@@ -656,7 +656,7 @@
           }
         });
 
-        function prepararCtx(){
+        function prepararCtxEditarPedido(){
           if (!pedidoActual) return null;
           var ctx = {
             origen: 'inicio',
@@ -674,12 +674,12 @@
             if (!pedidoActual || editCell.dataset.editing === '1') return;
             editCell.dataset.editing = '1';
             setEditLoading(true);
-            prepararCtx();
+            prepararCtxEditarPedido();
             if (pedidoActual) {
               window.SECO_CTX = window.SECO_CTX || {};
               window.SECO_CTX.pedidoEnEdicion = pedidoActual;
             }
-            loadPage('', function(){
+            loadPage('editarPedido', function(){
               setEditLoading(false);
               editCell.dataset.editing = '0';
             });
@@ -1864,13 +1864,14 @@
     function obtenerCantidadSeleccionada(){
       var ddCantidad = document.querySelector('.dropdown[data-name="cantidad"]');
       if (!ddCantidad) return 0;
+
       var raw = ddCantidad.dataset.value || '';
       var m = raw.match(/^(\d+)/);
       if (m){
         var n = parseInt(m[1], 10);
         if (!isNaN(n) && n > 0) return n;
       }
-      return 0;  // ← très important : 0 et pas 1 ici
+      return 0;
     }
 
     function construirPayloadEdicion(){
