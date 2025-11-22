@@ -2997,6 +2997,303 @@
 
 
 
+      
+
+// =====================
+//  VENTA DIRECTA (SPA)
+// =====================
+ventaDirecta: function() {
+  function applyScaleFix(){
+    var cssW = window.innerWidth || document.documentElement.clientWidth;
+    var screenW = Math.min(window.screen.width || 375, window.screen.height || 812);
+    if (cssW >= 960 && cssW <= 1024) {
+      var fix = (980 / screenW) * 1.50;
+      document.documentElement.style.setProperty('--fix', fix.toFixed(3));
+    } else {
+      document.documentElement.style.setProperty('--fix', '1');
+    }
+  }
+
+  function sizeHeaderImage(){
+    var img = document.getElementById('headerImg');
+    var wrap = document.querySelector('.wrapper');
+    if (!img || !wrap) return;
+    var w = Math.floor(wrap.clientWidth);
+    if (w > 0){
+      img.style.width = w + 'px';
+      img.style.maxWidth = '100%';
+      img.removeAttribute('height');
+    }
+  }
+
+  function parseMoney(raw){
+    if (typeof raw === 'number' && isFinite(raw)) return raw;
+    if (!raw) return 0;
+    var s = String(raw).trim();
+    s = s.replace(/[^0-9.,-]/g, '');
+    s = s.replace(',', '.');
+    var n = Number(s);
+    return isNaN(n) ? 0 : n;
+  }
+
+  function formatMoney(n){
+    n = parseMoney(n);
+    return n.toFixed(2).replace('.', ',') + ' $';
+  }
+
+  function getCantidad(){
+    var dd = document.querySelector('.dropdown[data-name="cantidad"] .dd-label');
+    if (!dd) return 0;
+    var txt = dd.textContent || '';
+    var m = txt.trim().match(/^(\d+)/);
+    if (!m) return 0;
+    var n = parseInt(m[1], 10);
+    return isNaN(n) ? 0 : n;
+  }
+
+  function getPrecio(){
+    var input = document.getElementById('precio');
+    if (!input) return 0;
+    return parseMoney(input.value);
+  }
+
+  function updateTotalAndButton(){
+    var totalRow = document.getElementById('ventaTotalRow');
+    var btnRegistrar = document.getElementById('btnRegistrarVenta');
+
+    var cantidad = getCantidad();
+    var precio = getPrecio();
+    var valido = cantidad > 0 && precio > 0;
+    var total = valido ? cantidad * precio : 0;
+
+    if (totalRow){
+      totalRow.innerHTML = 'Total a cancelar = <strong>' + formatMoney(total) + '</strong>';
+    }
+
+    if (btnRegistrar){
+      if (valido){
+        btnRegistrar.disabled = false;
+        btnRegistrar.classList.remove('btn-desactive');
+      } else {
+        btnRegistrar.disabled = true;
+        if (!btnRegistrar.classList.contains('btn-desactive')){
+          btnRegistrar.classList.add('btn-desactive');
+        }
+      }
+    }
+  }
+
+  function initVentaId(){
+    var headerEl = document.getElementById('ventaIdHeader');
+    if (!google || !google.script || !google.script.run) return;
+
+    google.script.run
+      .withSuccessHandler(function(resp){
+        if (!headerEl) return;
+        if (resp && resp.ok && resp.data && resp.data.idVenta){
+          headerEl.textContent = resp.data.idVenta;
+        } else {
+          headerEl.textContent = '';
+        }
+      })
+      .withFailureHandler(function(){
+        if (headerEl){
+          headerEl.textContent = '';
+        }
+      })
+      .initVentaDirecta();
+  }
+
+  function init(){
+    applyScaleFix();
+    sizeHeaderImage();
+    if (typeof initDropdowns === 'function'){
+      initDropdowns();
+    }
+
+    initVentaId();
+    updateTotalAndButton();
+
+    var inputPrecio = document.getElementById('precio');
+    var btnRegistrar = document.getElementById('btnRegistrarVenta');
+    var btnVolver = document.getElementById('btnVolverInicioVenta');
+
+    if (inputPrecio){
+      inputPrecio.addEventListener('input', function(){
+        updateTotalAndButton();
+      });
+    }
+
+    // Recalculer après sélection dans n’importe quel overlay (harmless ailleurs)
+    document.addEventListener('click', function(e){
+      if (e.target && e.target.closest('.dd-overlay-option')){
+        setTimeout(updateTotalAndButton, 0);
+      }
+    });
+
+    if (btnRegistrar){
+      btnRegistrar.addEventListener('click', function(){
+        if (btnRegistrar.disabled) return;
+
+        if (window.secoSetBlackButtonLoading){
+          window.secoSetBlackButtonLoading(btnRegistrar, true);
+        }
+
+        var payload = {
+          fecha: null,                 // hoy por defecto (según contrato)
+          cantidad: getCantidad(),
+          precio: getPrecio(),
+          notas: ''
+        };
+
+        google.script.run
+          .withSuccessHandler(function(resp){
+            if (window.secoSetBlackButtonLoading){
+              window.secoSetBlackButtonLoading(btnRegistrar, false);
+            }
+
+            if (resp && resp.ok && resp.data && resp.data.venta){
+              // Contexte pour ventaRegistrada
+              window.SECO_CTX = { venta: resp.data.venta };
+              loadPage('ventaRegistrada');
+            } else if (window.alert){
+              var msg = (resp && resp.error) ? resp.error : 'Error al registrar la venta.';
+              alert(msg);
+            }
+          })
+          .withFailureHandler(function(){
+            if (window.secoSetBlackButtonLoading){
+              window.secoSetBlackButtonLoading(btnRegistrar, false);
+            }
+            if (window.alert){
+              alert('Error al registrar la venta.');
+            }
+          })
+          .registrarVentaDirecta(payload);
+      });
+    }
+
+    if (btnVolver){
+      btnVolver.addEventListener('click', function(){
+        loadPage('inicio');
+      });
+    }
+  }
+
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  window.addEventListener('resize', function(){
+    applyScaleFix();
+    sizeHeaderImage();
+  });
+},
+
+
+      
+
+// =========================
+//  VENTA REGISTRADA (SPA)
+// =========================
+ventaRegistrada: function() {
+  var baseCtx = window.SECO_CTX || {};
+  var venta = baseCtx.venta || baseCtx || {};
+
+  function applyScaleFix(){
+    var cssW = window.innerWidth || document.documentElement.clientWidth;
+    var screenW = Math.min(window.screen.width || 375, window.screen.height || 812);
+    if (cssW >= 960 && cssW <= 1024) {
+      var fix = (980 / screenW) * 1.50;
+      document.documentElement.style.setProperty('--fix', fix.toFixed(3));
+    } else {
+      document.documentElement.style.setProperty('--fix', '1');
+    }
+  }
+
+  function sizeHeaderImage(){
+    var img = document.getElementById('headerImg');
+    var wrap = document.querySelector('.wrapper');
+    if (!img || !wrap) return;
+    var w = Math.floor(wrap.clientWidth);
+    if (w > 0){
+      img.style.width = w + 'px';
+      img.style.maxWidth = '100%';
+      img.removeAttribute('height');
+    }
+  }
+
+  function parseMoney(raw){
+    if (typeof raw === 'number' && isFinite(raw)) return raw;
+    if (!raw) return 0;
+    var s = String(raw).trim();
+    s = s.replace(/[^0-9.,-]/g, '');
+    s = s.replace(',', '.');
+    var n = Number(s);
+    return isNaN(n) ? 0 : n;
+  }
+
+  function formatMoney(n){
+    n = parseMoney(n);
+    return n.toFixed(2).replace('.', ',') + ' $';
+  }
+
+  function buildResumen(){
+    var cantidad = Number(venta.cantidad || 0);
+    if (!isFinite(cantidad) || cantidad < 0) cantidad = 0;
+
+    var label = cantidad + ' seco' + (cantidad === 1 ? '' : 's');
+    var unitTxt = formatMoney(venta.precioUnitario || 0);
+    var totalTxt = formatMoney(venta.total || 0);
+
+    return label + ' x ' + unitTxt + ' = <strong>' + totalTxt + '</strong>';
+  }
+
+  function renderCard(){
+    var idEl = document.getElementById('ventaId');
+    var resumenEl = document.getElementById('confirmResumen');
+
+    if (idEl){
+      idEl.textContent = venta.idVenta || '';
+    }
+    if (resumenEl){
+      resumenEl.innerHTML = buildResumen();
+    }
+  }
+
+  function init(){
+    applyScaleFix();
+    sizeHeaderImage();
+    renderCard();
+
+    var btnOk = document.getElementById('btnOk');
+    if (btnOk){
+      btnOk.addEventListener('click', function(){
+        if (window.secoSetBlackButtonLoading){
+          window.secoSetBlackButtonLoading(btnOk, true);
+        }
+        loadPage('inicio', function(){
+          if (window.secoSetBlackButtonLoading){
+            window.secoSetBlackButtonLoading(btnOk, false);
+          }
+        });
+      });
+    }
+  }
+
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  window.addEventListener('resize', function(){
+    applyScaleFix();
+    sizeHeaderImage();
+  });
+},
 
 
 
