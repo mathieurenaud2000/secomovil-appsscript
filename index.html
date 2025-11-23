@@ -760,8 +760,458 @@
             lockToNormalHeight();
           }
         });
-    
+
       })();
+  },
+
+  pedidosDelDia: function(){
+    var tabs = document.querySelectorAll('.tab');
+    var tabTodo = tabs && tabs.length ? tabs[0] : null;
+    var tabPendiente = tabs && tabs.length > 1 ? tabs[1] : null;
+    var cardsContainer = document.getElementById('cardsContainer');
+    var pedidosCache = [];
+    var activeTab = 'todo';
+
+    var ICONS = {
+      trash:   "https://lh3.googleusercontent.com/d/1NEwXtWZqpIJlto9dPs49xKhq3oOqwpXH",
+      checkBlk:"https://lh3.googleusercontent.com/d/1CiREwW0rHzmdha8SqKtDEqr9iPNW21eG",
+      checkW:  "https://lh3.googleusercontent.com/d/1kIWQWxgpGWgRbdiBcm_X1BpwFZkUwX5l",
+      edit:    "https://lh3.googleusercontent.com/d/1IJOPYYBICvweVK9rn2mQqckhfyQOHvrJ",
+      refresh: "https://www.gstatic.com/images/icons/material/system/24/autorenew_black_24dp.png"
+    };
+
+    function applyScaleFix(){
+      var cssW = window.innerWidth || document.documentElement.clientWidth;
+      var screenW = Math.min(window.screen.width || 375, window.screen.height || 812);
+      if (cssW >= 960 && cssW <= 1024) {
+        var fix = (980 / screenW) * 1.50;
+        document.documentElement.style.setProperty('--fix', fix.toFixed(3));
+      } else {
+        document.documentElement.style.setProperty('--fix', '1');
+      }
+    }
+
+    function sizeHeaderImage(){
+      var img = document.getElementById('headerImg');
+      var wrapper = document.querySelector('.wrapper');
+      if (!img || !wrapper) return;
+      var w = Math.floor(wrapper.clientWidth);
+      if (w > 0){
+        img.style.width = w + 'px';
+        img.style.maxWidth = '100%';
+        img.removeAttribute('height');
+      }
+    }
+
+    function formatMoney(n){
+      var num = Number(n);
+      if (!isFinite(num)) num = 0;
+      return num.toFixed(2).replace('.', ',') + ' $';
+    }
+
+    function formatCantidad(n){
+      var c = Number(n);
+      if (!isFinite(c) || c < 0) c = 0;
+      var base = c + ' seco';
+      return base + (c === 1 ? '' : 's');
+    }
+
+    function formatHora(raw){
+      if (raw instanceof Date && !isNaN(raw.getTime())){
+        var h = raw.getHours();
+        var m = String(raw.getMinutes()).padStart(2, '0');
+        return h + ':' + m;
+      }
+      var str = (raw === null || raw === undefined) ? '' : String(raw).trim();
+      if (!str) return '';
+      var match = str.match(/(\d{1,2})\s*[:hH]\s*(\d{2})/);
+      if (match){
+        var hh = parseInt(match[1], 10);
+        var mm = match[2];
+        if (!isNaN(hh)) return hh + ':' + mm;
+      }
+      var numVal = Number(str);
+      if (isFinite(numVal)){
+        var baseDate = new Date(1899, 11, 30);
+        var millis = Math.round(numVal * 24 * 60 * 60 * 1000);
+        var fromSerial = new Date(baseDate.getTime() + millis);
+        if (!isNaN(fromSerial.getTime())){
+          return fromSerial.getHours() + ':' + String(fromSerial.getMinutes()).padStart(2, '0');
+        }
+      }
+      var parsed = new Date(str);
+      if (!isNaN(parsed.getTime())){
+        return parsed.getHours() + ':' + String(parsed.getMinutes()).padStart(2, '0');
+      }
+      return str;
+    }
+
+    function setTabs(tabName){
+      activeTab = tabName;
+      if (tabTodo){
+        tabTodo.setAttribute('aria-selected', tabName === 'todo' ? 'true' : 'false');
+      }
+      if (tabPendiente){
+        tabPendiente.setAttribute('aria-selected', tabName === 'pendiente' ? 'true' : 'false');
+      }
+      renderCards();
+    }
+
+    function setContainerMessage(msg){
+      if (!cardsContainer) return;
+      var div = document.createElement('div');
+      div.className = 'txt-body';
+      div.textContent = msg;
+      cardsContainer.innerHTML = '';
+      cardsContainer.appendChild(div);
+    }
+
+    function stateFromPedido(pedido){
+      var estado = (pedido && pedido.estado ? pedido.estado : '').toString().toLowerCase();
+      return {
+        isDeleted: estado === 'eliminado' || estado === 'cancelado',
+        isDelivered: estado === 'entregado'
+      };
+    }
+
+    function setActionLoading(btn, isLoading){
+      if (!btn) return;
+      if (isLoading){
+        btn.disabled = true;
+        btn.dataset.loading = '1';
+      } else {
+        btn.disabled = false;
+        btn.removeAttribute('data-loading');
+      }
+    }
+
+    function actualizarPedidoEnCache(pedido){
+      if (!pedido) return;
+      var id = (pedido.idPedido || '').toString();
+      var idx = pedidosCache.findIndex(function(p){ return (p.idPedido || '').toString() === id; });
+      if (idx >= 0){
+        pedidosCache[idx] = pedido;
+      } else {
+        pedidosCache.push(pedido);
+      }
+    }
+
+    function runServerAction(card, btn, methodName, payload, onFinally){
+      if (typeof google === 'undefined' || !google.script || !google.script.run) return;
+      setActionLoading(btn, true);
+      if (card && methodName === 'reactivarPedido'){
+        card.classList.add('is-reactivating');
+      }
+
+      function finalize(){
+        setActionLoading(btn, false);
+        if (card && methodName === 'reactivarPedido'){
+          setTimeout(function(){ card.classList.remove('is-reactivating'); }, 400);
+        }
+        if (typeof onFinally === 'function') onFinally();
+      }
+
+      google.script.run
+        .withSuccessHandler(function(resp){
+          if (resp && resp.ok && resp.data && resp.data.pedido){
+            actualizarPedidoEnCache(resp.data.pedido);
+            renderCards();
+          } else if (resp && resp.error){
+            alert(resp.error);
+          }
+          finalize();
+        })
+        .withFailureHandler(function(err){
+          if (err && err.message){
+            alert(err.message);
+          }
+          finalize();
+        })[methodName](payload);
+    }
+
+    function irAEditarPedido(pedido){
+      if (!pedido) return;
+      window.SECO_CTX = {
+        origen: 'pedidosDelDia',
+        pedidoId: pedido.idPedido || '',
+        pedido: pedido,
+        pedidoEnEdicion: pedido,
+        cliente: pedido.cliente || null,
+        idContacto: pedido.cliente && pedido.cliente.idCliente ? pedido.cliente.idCliente : ''
+      };
+      loadPage('editarPedido');
+    }
+
+    function crearStatusIcon(clase, src, alt){
+      var cont = document.createElement('div');
+      cont.className = 'pedido-status-icon ' + clase;
+      var img = document.createElement('img');
+      img.src = src;
+      img.alt = alt;
+      cont.appendChild(img);
+      return cont;
+    }
+
+    function buildCard(pedido){
+      var card = document.createElement('article');
+      card.className = 'pedido-card';
+
+      var estadoInfo = stateFromPedido(pedido);
+      if (estadoInfo.isDeleted) card.classList.add('is-deleted');
+      if (estadoInfo.isDelivered) card.classList.add('is-delivered');
+
+      var inner = document.createElement('div');
+      inner.className = 'pedido-inner';
+      card.appendChild(inner);
+
+      var main = document.createElement('div');
+      main.className = 'pedido-main';
+      main.style.position = 'relative';
+      inner.appendChild(main);
+
+      var row1 = document.createElement('div');
+      row1.className = 'pedido-row1';
+      var toplineWrap = document.createElement('div');
+      toplineWrap.className = 'pedido-left';
+      var topline = document.createElement('div');
+      topline.className = 'pedido-topline';
+      var hora = formatHora(pedido.horaEntrega || '');
+      var sector = pedido.cliente && pedido.cliente.sector ? pedido.cliente.sector : '';
+      var parts = [];
+      if (hora) parts.push(hora);
+      if (sector) parts.push(sector);
+      topline.textContent = parts.join(' · ');
+      toplineWrap.appendChild(topline);
+      row1.appendChild(toplineWrap);
+
+      var toggle = document.createElement('button');
+      toggle.className = 'pedido-toggle';
+      toggle.type = 'button';
+      toggle.setAttribute('aria-expanded', 'false');
+      var chev = document.createElement('span');
+      chev.className = 'chevron';
+      toggle.appendChild(chev);
+      row1.appendChild(toggle);
+
+      main.appendChild(row1);
+
+      if (estadoInfo.isDeleted){
+        main.appendChild(crearStatusIcon('pedido-status--deleted', ICONS.trash, 'Eliminado'));
+      }
+      if (estadoInfo.isDelivered){
+        main.appendChild(crearStatusIcon('pedido-status--delivered', ICONS.checkBlk, 'Entregado'));
+      }
+
+      var row2 = document.createElement('div');
+      row2.className = 'pedido-row2';
+      var left2 = document.createElement('div');
+      left2.className = 'pedido-left';
+      var nom = document.createElement('div');
+      nom.className = 'pedido-nom';
+      nom.textContent = pedido.cliente && pedido.cliente.nombre ? pedido.cliente.nombre.toUpperCase() : '—';
+      left2.appendChild(nom);
+
+      var direccion = pedido.cliente && pedido.cliente.direccion ? pedido.cliente.direccion : '';
+      if (direccion){
+        var dirEl = document.createElement('div');
+        dirEl.className = 'pedido-ligne';
+        dirEl.textContent = direccion;
+        left2.appendChild(dirEl);
+      }
+
+      var notas = (pedido.notas || '').toString().trim();
+      if (notas){
+        var notaEl = document.createElement('div');
+        notaEl.className = 'pedido-note';
+        notaEl.textContent = 'Nota : ' + notas;
+        left2.appendChild(notaEl);
+      }
+
+      row2.appendChild(left2);
+      main.appendChild(row2);
+
+      var row3 = document.createElement('div');
+      row3.className = 'pedido-row3';
+      var left3 = document.createElement('div');
+      left3.className = 'pedido-left';
+      var total = document.createElement('div');
+      total.className = 'pedido-total';
+      var cantidadTxt = formatCantidad(pedido.cantidad);
+      var totalTxt = (pedido.total || pedido.total === 0) ? formatMoney(pedido.total) : '';
+      total.innerHTML = '<b>' + cantidadTxt + '</b>' + (totalTxt ? ' / ' + totalTxt : '');
+      left3.appendChild(total);
+      row3.appendChild(left3);
+
+      var statusCell = document.createElement('div');
+      statusCell.className = 'pedido-statuscell';
+      var estadoLabel = document.createElement('div');
+      estadoLabel.className = 'pedido-note';
+      var estadoTxt = (pedido.estado || 'Pendiente').toString();
+      estadoLabel.textContent = estadoTxt;
+      statusCell.appendChild(estadoLabel);
+
+      var refresh = document.createElement('div');
+      refresh.className = 'pedido-refresh';
+      var rImg = document.createElement('img');
+      rImg.src = ICONS.refresh;
+      rImg.alt = 'Reactivar';
+      refresh.appendChild(rImg);
+      refresh.addEventListener('click', function(e){
+        e.stopPropagation();
+        if (!pedido.idPedido) return;
+        runServerAction(card, refresh, 'reactivarPedido', { idPedido: pedido.idPedido });
+      });
+      statusCell.appendChild(refresh);
+
+      row3.appendChild(statusCell);
+      main.appendChild(row3);
+
+      var actions = document.createElement('div');
+      actions.className = 'pedido-actions';
+
+      var btnEdit = document.createElement('button');
+      btnEdit.type = 'button';
+      var imgEdit = document.createElement('img');
+      imgEdit.src = ICONS.edit;
+      imgEdit.alt = 'Editar';
+      btnEdit.appendChild(imgEdit);
+      btnEdit.addEventListener('click', function(e){
+        e.stopPropagation();
+        irAEditarPedido(pedido);
+      });
+      actions.appendChild(btnEdit);
+
+      var btnDeliver = document.createElement('button');
+      btnDeliver.type = 'button';
+      btnDeliver.className = 'btn-deliver';
+      var imgDeliver = document.createElement('img');
+      imgDeliver.src = ICONS.checkW;
+      imgDeliver.alt = 'Entregar';
+      btnDeliver.appendChild(imgDeliver);
+      btnDeliver.addEventListener('click', function(e){
+        e.stopPropagation();
+        if (!pedido.idPedido) return;
+        runServerAction(card, btnDeliver, 'marcarPedidoEntregado', { idPedido: pedido.idPedido });
+      });
+      actions.appendChild(btnDeliver);
+
+      var btnCancel = document.createElement('button');
+      btnCancel.type = 'button';
+      var imgCancel = document.createElement('img');
+      imgCancel.src = ICONS.trash;
+      imgCancel.alt = 'Eliminar';
+      btnCancel.appendChild(imgCancel);
+      btnCancel.addEventListener('click', function(e){
+        e.stopPropagation();
+        if (!pedido.idPedido) return;
+        runServerAction(card, btnCancel, 'eliminarPedido', { idPedido: pedido.idPedido });
+      });
+      actions.appendChild(btnCancel);
+
+      inner.appendChild(actions);
+
+      var reactivated = document.createElement('div');
+      reactivated.className = 'pedido-reactivated';
+      var reactImg = document.createElement('img');
+      reactImg.src = ICONS.checkBlk;
+      reactImg.alt = 'Reactivado';
+      var reactTxt = document.createElement('div');
+      reactTxt.className = 'txt-body';
+      reactTxt.textContent = 'Reactivado';
+      reactivated.appendChild(reactImg);
+      reactivated.appendChild(reactTxt);
+      inner.appendChild(reactivated);
+
+      function toggleOpen(){
+        if (estadoInfo.isDeleted || estadoInfo.isDelivered) return;
+        var isOpen = card.classList.contains('is-open');
+        card.classList.toggle('is-open', !isOpen);
+        toggle.setAttribute('aria-expanded', (!isOpen).toString());
+      }
+
+      toggle.addEventListener('click', function(e){
+        e.stopPropagation();
+        toggleOpen();
+      });
+
+      card.addEventListener('click', function(){
+        if (estadoInfo.isDeleted || estadoInfo.isDelivered){
+          runServerAction(card, refresh, 'reactivarPedido', { idPedido: pedido.idPedido });
+        }
+      });
+
+      return card;
+    }
+
+    function createCardSeparator(){
+      var sep = document.createElement('div');
+      sep.className = 'sep-gray pedido-card-separator';
+      sep.setAttribute('aria-hidden', 'true');
+      return sep;
+    }
+
+    function renderCards(){
+      if (!cardsContainer) return;
+      cardsContainer.innerHTML = '';
+      var lista = activeTab === 'pendiente'
+        ? pedidosCache.filter(function(p){
+            return (p.estado || '').toString().toLowerCase() === 'pendiente';
+          })
+        : pedidosCache.slice();
+
+      if (!lista.length){
+        setContainerMessage('Sin pedidos');
+        return;
+      }
+
+      lista.forEach(function(p, idx){
+        cardsContainer.appendChild(buildCard(p));
+        if (idx < lista.length - 1){
+          cardsContainer.appendChild(createCardSeparator());
+        }
+      });
+    }
+
+    function fetchPedidos(){
+      setContainerMessage('Cargando pedidos...');
+      google.script.run
+        .withSuccessHandler(function(resp){
+          if (resp && resp.ok && resp.data && Array.isArray(resp.data.pedidos)){
+            pedidosCache = resp.data.pedidos;
+          } else {
+            pedidosCache = [];
+          }
+          renderCards();
+        })
+        .withFailureHandler(function(){
+          pedidosCache = [];
+          setContainerMessage('No se pudieron cargar los pedidos.');
+        })
+        .getPedidosDelDia();
+    }
+
+    function init(){
+      applyScaleFix();
+      sizeHeaderImage();
+      if (tabTodo){
+        tabTodo.addEventListener('click', function(){ setTabs('todo'); });
+      }
+      if (tabPendiente){
+        tabPendiente.addEventListener('click', function(){ setTabs('pendiente'); });
+      }
+      fetchPedidos();
+    }
+
+    if (document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+
+    window.addEventListener('resize', function(){
+      applyScaleFix();
+      sizeHeaderImage();
+    });
   },
 
   nuevoPedido: function(){
