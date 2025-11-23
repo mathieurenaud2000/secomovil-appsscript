@@ -493,6 +493,21 @@
             .actualizarEstadoPedido({ idPedido: pedidoActual.idPedido, estado: estado });
         }
 
+        function construirPayloadHoraActualizada(nuevaHora){
+          var notasActuales = '';
+          if (pedidoActual && (pedidoActual.notas || pedidoActual.nota)) {
+            notasActuales = pedidoActual.notas || pedidoActual.nota || '';
+          }
+
+          return {
+            idPedido: pedidoActual.idPedido,
+            fechaEntrega: pedidoActual.fechaEntrega || pedidoActual.fecha || '',
+            horaEntrega: nuevaHora,
+            cantidad: pedidoActual.cantidad,
+            notas: notasActuales
+          };
+        }
+
         function actualizarHora(nuevaHora){
           if (!pedidoActual || !pedidoActual.idPedido || !nuevaHora) return;
           const processingBtn = actionOrigin || btnConfirm;
@@ -500,6 +515,9 @@
           setButtonLoading(btnConfirm, true);
           setConfirmButtonLoading(true);
           setActionProcessing(processingBtn, true);
+
+          var payloadHora = construirPayloadHoraActualizada(nuevaHora);
+
           google.script.run
             .withSuccessHandler(function(resp){
               setActionProcessing(processingBtn, false);
@@ -507,6 +525,11 @@
               setConfirmButtonLoading(false);
               setNormal();
               if (resp && resp.ok){
+                var pedidoResp = resp.data && resp.data.pedido ? resp.data.pedido : null;
+                if (pedidoResp){
+                  pedidoActual = pedidoResp;
+                  window.SECO_CTX = { pedido: pedidoResp };
+                }
                 refreshProximaEntregaCard();
               } else {
                 setCardLoading(false);
@@ -519,7 +542,7 @@
               setNormal();
               setCardLoading(false);
             })
-            .cambiarHoraPedido({ idPedido: pedidoActual.idPedido, nuevaHora: nuevaHora });
+            .editarPedidoPorId(payloadHora);
         }
     
         btnDel.addEventListener('click', function(e){
@@ -1937,6 +1960,11 @@
       var notasSel      = (pedido && (pedido.notas || pedido.nota)) || '';
       var idPedidoSel   = (pedido && (pedido.idPedido || pedido.pedidoId)) || (ctx && ctx.pedidoId) || '';
 
+      var notasInput = document.querySelector('[data-role="nota-input"], #notasInput, textarea[name="notas"]');
+      if (notasInput && typeof notasInput.value === 'string') {
+        notasSel = notasInput.value;
+      }
+
       return {
         idPedido: idPedidoSel,
         fechaEntrega: fechaSeleccion,
@@ -2310,7 +2338,11 @@
               if (resp && resp.ok){
                 var pedidoResp = resp.data && resp.data.pedido ? resp.data.pedido : null;
                 if (pedidoResp){
-                  window.SECO_CTX = { pedido: pedidoResp, precioBase: pedidoResp.precioUnitario };
+                  window.SECO_CTX = {
+                    pedido: pedidoResp,
+                    pedidoEnEdicion: pedidoResp,
+                    precioBase: pedidoResp.precioUnitario
+                  };
                 }
                 loadPage('pedidoActualizado');
               } else {
