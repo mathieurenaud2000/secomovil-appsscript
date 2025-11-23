@@ -1157,8 +1157,14 @@
         return;
       }
 
-      lista.forEach(function(p){
+      lista.forEach(function(p, idx){
         cardsContainer.appendChild(buildCard(p));
+        if (idx < lista.length - 1){
+          var sep = document.createElement('div');
+          sep.className = 'pedido-separator';
+          sep.setAttribute('aria-hidden', 'true');
+          cardsContainer.appendChild(sep);
+        }
       });
     }
 

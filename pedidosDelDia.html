@@ -109,7 +109,13 @@
 
     .stack{
       display:flex; flex-direction:column;
-      gap: calc(var(--gap) * var(--fix));
+      gap:0;
+    }
+
+    .pedido-separator{
+      height:0;
+      border-top: 2px solid var(--gray20);
+      margin: calc((var(--gap) * var(--fix)) / 2) 0;
     }
 
     .txt-mini{
