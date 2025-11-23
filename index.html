@@ -966,7 +966,7 @@
       var delay = opts && typeof opts.delay === 'number' ? opts.delay : PEDIDO_TRANSITION_VISIBLE_MS;
       card.classList.add(activeClass);
 
-      return function hideTransition(){
+      return function hideTransition(onHidden){
         var fadeStart = delay - PEDIDO_TRANSITION_FADE_MS;
         if (fadeStart < 0) fadeStart = 0;
 
