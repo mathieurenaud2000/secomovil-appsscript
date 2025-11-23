@@ -45,6 +45,27 @@
       pointer-events:none;
     }
 
+    /* Spinner pour le bouton PEDIDOS DEL DIA (fond blanc) */
+    #btnPedidosDelDia[data-spinner="1"]{
+      position:relative;
+      color:transparent !important;
+      text-shadow:none !important;
+    }
+    #btnPedidosDelDia[data-spinner="1"] > *{ visibility:hidden; }
+    #btnPedidosDelDia[data-spinner="1"]::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      margin:auto;
+      width:calc(28px * var(--fix));
+      height:calc(28px * var(--fix));
+      border-radius:50%;
+      border:calc(12px * var(--fix)) solid rgba(0,0,0,0.35);
+      border-top-color:#000;
+      animation: btnNoirSpin 0.9s linear infinite;
+      pointer-events:none;
+    }
+
 
 
     @keyframes btnNoirSpin{
@@ -316,6 +337,18 @@
           if (!btn) return;
           btn.classList.toggle('is-waiting', !!isWaiting);
           btn.disabled = !!isWaiting;
+        }
+
+        function setPedidosDelDiaLoading(btn, isLoading){
+          if (!btn) return;
+          if (isLoading){
+            if (btn.dataset.spinner === '1') return;
+            btn.disabled = true;
+            btn.dataset.spinner = '1';
+          } else {
+            btn.disabled = false;
+            btn.removeAttribute('data-spinner');
+          }
         }
 
         function setActionProcessing(btn, isProcessing, lockButton){
@@ -726,7 +759,7 @@
     
         bindTopHalfAction(btnNuevoPedido, 'nuevoPedido');
         bindTopHalfAction(btnVentaDirecta, 'ventaDirecta');
-        bindNavigationButton(btnPedidosDelDia, 'pedidosDelDia', (btn) => setButtonWaiting(btn, true), (btn) => setButtonWaiting(btn, false));
+        bindNavigationButton(btnPedidosDelDia, 'pedidosDelDia', (btn) => setPedidosDelDiaLoading(btn, true), (btn) => setPedidosDelDiaLoading(btn, false));
         bindNavigationButton(btnRegistrarGasto, 'registrarGasto', (btn) => setButtonWaiting(btn, true), (btn) => setButtonWaiting(btn, false));
         bindNavigationButton(btnCerrarElDia, 'cerrarElDia', (btn) => setButtonWaiting(btn, true), (btn) => setButtonWaiting(btn, false));
         bindNavigationButton(btnConfiguracion, 'configuracionDelSistema', (btn) => setButtonWaiting(btn, true), (btn) => setButtonWaiting(btn, false));
