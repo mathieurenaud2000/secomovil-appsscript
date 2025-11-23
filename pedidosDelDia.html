@@ -67,7 +67,7 @@
     .tabs{
       display:grid;
       grid-template-columns: 40% 60%;
-      margin: calc(var(--gap) * var(--fix)) 0 calc(var(--gap) * var(--fix));
+      margin: calc(var(--gap) * var(--fix)) 0 calc(var(--gap) * var(--fix) + 25px);
     }
     .tab{
       display:flex;
@@ -394,7 +394,7 @@
     }
 
     /* Carte REACTIVÉE (temporaire, overlay) */
-    .pedido-reactivated{
+    .pedido-transition{
       position:absolute;
       inset:0;
       display:none;
@@ -409,38 +409,62 @@
       height:100%;
       z-index:3;
     }
-    .pedido-reactivated img{
+    .pedido-transition.pedido-transition-overlay{
+      opacity:1;
+      transition: opacity var(--pedido-transition-fade-ms, 100ms) ease;
+    }
+    .pedido-transition-overlay.is-fading-out{
+      opacity:0;
+      transition: opacity var(--pedido-transition-fade-ms, 100ms) ease;
+    }
+    .pedido-transition img{
       display:block;
       width: calc(56px * var(--fix));          /* plus petit qu’avant selon ta demande précédente */
       height:auto;
       object-fit:contain;
       margin-bottom: calc(4px * var(--fix));   /* espace réduit */
     }
-    .pedido-reactivated .txt-body{
+    .pedido-transition .txt-body{
       font-weight:500;
       font-size: calc((var(--font-body) - 2px) * var(--fix));
     }
 
     /* État de réactivation : bordure noire, shadow, texte + flèche blancs */
-    .pedido-card.is-reactivating{
+    .pedido-card.is-reactivating,
+    .pedido-card.is-canceling{
       background:#fff;
       border-color:#fff;
       box-shadow:none;
     }
     .pedido-card.is-reactivating .pedido-left,
     .pedido-card.is-reactivating .pedido-left *,
-    .pedido-card.is-reactivating .pedido-topline{
+    .pedido-card.is-reactivating .pedido-topline,
+    .pedido-card.is-canceling .pedido-left,
+    .pedido-card.is-canceling .pedido-left *,
+    .pedido-card.is-canceling .pedido-topline{
       color:#000 !important;
     }
-    .pedido-card.is-reactivating .chevron{
+    .pedido-card.is-reactivating .chevron,
+    .pedido-card.is-canceling .chevron{
       border-top-color:#000;
     }
-    .pedido-card.is-reactivating .pedido-reactivated{
+    .pedido-card.is-reactivating .pedido-transition{
       display:flex;
       background:#fff;
       color:#000;
       border:1px solid #fff;
       border-radius:1px;
+    }
+    .pedido-card.is-canceling .pedido-transition{
+      display:flex;
+      background:#fff;
+      color:#000;
+      border:10px solid #fff;
+      border-radius:1px;
+    }
+
+    #btnVolverInicio{
+      margin-top: 25px;
     }
 
     .footer-spacer{
