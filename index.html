@@ -1580,6 +1580,7 @@
     var ctx = (typeof window !== 'undefined' && window.SECO_CTX) ? window.SECO_CTX : {};
     var pedido = ctx && ctx.pedidoEnEdicion ? ctx.pedidoEnEdicion : null;
     var sectoresCtx = Array.isArray(ctx.sectores) ? ctx.sectores : [];
+    var precioUnitarioCache = null;
 
     var overlay      = document.getElementById('ddOverlay');
     var overlayList  = document.getElementById('ddOverlayList');
@@ -1660,18 +1661,47 @@
     }
 
     function getPrecioBaseDesdeCtx(){
+      if (precioUnitarioCache !== null) return precioUnitarioCache;
+
       if (ctx && typeof ctx.precioBase === 'number' && !isNaN(ctx.precioBase)){
-        return Number(ctx.precioBase);
+        precioUnitarioCache = Number(ctx.precioBase);
+        return precioUnitarioCache;
+      }
+
+      if (pedido && typeof pedido.precioUnitario === 'number' && !isNaN(pedido.precioUnitario)){
+        precioUnitarioCache = Number(pedido.precioUnitario);
+        ctx.precioBase = precioUnitarioCache;
+        return precioUnitarioCache;
       }
 
       var sectorTexto = (obtenerSectorDesdePagina() || '').toString().trim().toLowerCase();
       var sectorPrices = construirSectorPrices();
 
       if (sectorTexto && Object.prototype.hasOwnProperty.call(sectorPrices, sectorTexto)) {
-        return sectorPrices[sectorTexto];
+        precioUnitarioCache = sectorPrices[sectorTexto];
+        ctx.precioBase = precioUnitarioCache;
+        return precioUnitarioCache;
       }
 
       return 0;
+    }
+
+    function cargarPrecioUnitarioDesdeBackend(){
+      var sectorTexto = obtenerSectorDesdePagina();
+      if (!sectorTexto || (precioUnitarioCache !== null && precioUnitarioCache > 0)) return;
+
+      google.script.run
+        .withSuccessHandler(function(resp){
+          if (resp && resp.ok && resp.data && typeof resp.data.precio === 'number' && !isNaN(resp.data.precio)){
+            precioUnitarioCache = Number(resp.data.precio);
+            ctx.precioBase = precioUnitarioCache;
+          }
+          updatePrecioYBoton();
+        })
+        .withFailureHandler(function(){
+          updatePrecioYBoton();
+        })
+        .obtenerPrecioUnitarioSector(sectorTexto);
     }
 
     function buildTimes(){
@@ -2195,7 +2225,7 @@
               if (resp && resp.ok){
                 var pedidoResp = resp.data && resp.data.pedido ? resp.data.pedido : null;
                 if (pedidoResp){
-                  window.SECO_CTX = { pedido: pedidoResp };
+                  window.SECO_CTX = { pedido: pedidoResp, precioBase: pedidoResp.precioUnitario };
                 }
                 loadPage('pedidoActualizado');
               } else {
@@ -2221,6 +2251,7 @@
       initDropdowns();
       buildDatesAndCantidad();
       setDefaultHoraOuDesdePedido();
+      cargarPrecioUnitarioDesdeBackend();
       observarCambiosSector();
       bindActions();
     }
