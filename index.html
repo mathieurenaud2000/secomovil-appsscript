@@ -2193,23 +2193,83 @@
     }
 
     function bindActions(){
+      function construirCtxEditarContacto(){
+        var cliente = (pedido && pedido.cliente) || (ctx && ctx.cliente) || {};
+
+        return {
+          origen: 'editarPedido',
+          pedidoId: (pedido && (pedido.idPedido || pedido.pedidoId)) || (ctx && ctx.pedidoId) || '',
+          idContacto: cliente.idCliente || (ctx && ctx.idContacto) || '',
+          cliente: cliente || {},
+          pedido: pedido || (ctx && ctx.pedido),
+          sectores: Array.isArray(sectoresCtx) ? sectoresCtx : []
+        };
+      }
+
+      function asegurarCtxContactoCompleto(callback){
+        var ctxContacto = construirCtxEditarContacto();
+        var necesitaSectores = !Array.isArray(ctxContacto.sectores) || ctxContacto.sectores.length === 0;
+        var tieneCliente = ctxContacto.cliente && Object.keys(ctxContacto.cliente).length > 0;
+        var idContacto = ctxContacto.idContacto;
+
+        if (!necesitaSectores && tieneCliente){
+          window.SECO_CTX = ctxContacto;
+          callback();
+          return;
+        }
+
+        function finalizar(){
+          window.SECO_CTX = ctxContacto;
+          callback();
+        }
+
+        if (idContacto){
+          google.script.run
+            .withSuccessHandler(function(resp){
+              if (resp && resp.ok){
+                if (resp.data && resp.data.cliente){
+                  ctxContacto.cliente = resp.data.cliente;
+                }
+                if (Array.isArray(resp.data && resp.data.sectores)){
+                  ctxContacto.sectores = resp.data.sectores;
+                  sectoresCtx = ctxContacto.sectores;
+                }
+              }
+              finalizar();
+            })
+            .withFailureHandler(finalizar)
+            .obtenerClientePorId({ idContacto: idContacto });
+          return;
+        }
+
+        if (necesitaSectores){
+          google.script.run
+            .withSuccessHandler(function(resp){
+              if (resp && resp.ok && Array.isArray(resp.sectores)){
+                ctxContacto.sectores = resp.sectores;
+                sectoresCtx = ctxContacto.sectores;
+              }
+              finalizar();
+            })
+            .withFailureHandler(finalizar)
+            .listarSectores();
+          return;
+        }
+
+        finalizar();
+      }
+
       if (contactEditBtn){
         contactEditBtn.addEventListener('click', function(){
           if (contactEditLoading) return;
           contactEditLoading = true;
           contactEditBtn.classList.add('is-loading');
-          var cliente = (pedido && pedido.cliente) || (ctx && ctx.cliente) || {};
-          window.SECO_CTX = {
-            origen: 'editarPedido',
-            pedidoId: (pedido && (pedido.idPedido || pedido.pedidoId)) || (ctx && ctx.pedidoId) || '',
-            idContacto: cliente.idCliente || (ctx && ctx.idContacto) || '',
-            cliente: cliente,
-            pedido: pedido || (ctx && ctx.pedido),
-            sectores: sectoresCtx
-          };
-          loadPage('editarContacto', function(){
-            contactEditLoading = false;
-            contactEditBtn.classList.remove('is-loading');
+
+          asegurarCtxContactoCompleto(function(){
+            loadPage('editarContacto', function(){
+              contactEditLoading = false;
+              contactEditBtn.classList.remove('is-loading');
+            });
           });
         });
       }
