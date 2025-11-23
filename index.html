@@ -422,12 +422,15 @@
           const nombre = pedido.cliente && pedido.cliente.nombre ? pedido.cliente.nombre.toUpperCase() : '—';
           const direccion = pedido.cliente && pedido.cliente.direccion ? pedido.cliente.direccion : '—';
           const notas = pedido.notas ? `Nota : ${pedido.notas}` : '';
-    
+
           const cantidadValida = typeof pedido.cantidad === 'number' && isFinite(pedido.cantidad) && pedido.cantidad > 0;
           const totalValido = typeof pedido.total === 'number' && isFinite(pedido.total);
+          const precioSectorValido = typeof pedido.precioUnitarioSector === 'number' && isFinite(pedido.precioUnitarioSector);
           let resumenExtra = '';
           if (cantidadValida && totalValido){
-            const unitPrice = pedido.total / pedido.cantidad;
+            const unitPrice = precioSectorValido
+              ? pedido.precioUnitarioSector
+              : (pedido.total / pedido.cantidad);
             const cantidadTxt = `${pedido.cantidad} seco${pedido.cantidad === 1 ? '' : 's'}`;
             const unitTxt = formatMoney(unitPrice);
             const totalTxt = formatMoney(pedido.total);

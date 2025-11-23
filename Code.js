@@ -3061,6 +3061,10 @@ function getPedidosDelDia(fecha) {
 
       // Récupérer info client (id + sector)
       var cli = encontrarCliente(clienteNom, telefono);
+      var infoPrecioSector = obtenerPrecioYColumnaSector_(cli.sector || '');
+      var precioUnitarioSector = typeof infoPrecioSector.precio === 'number' && isFinite(infoPrecioSector.precio)
+        ? infoPrecioSector.precio
+        : null;
 
       var pedidoFront = {
         idPedido: idPedidoStr,
@@ -3068,6 +3072,7 @@ function getPedidosDelDia(fecha) {
         horaEntrega: normalizarHoraEntrega(horaEntrega),
         cantidad: Number(cantidad || 0),
         total: totalNum,
+        precioUnitarioSector: precioUnitarioSector,
         estado: estadoStr,
         notas: (notas || '').toString(),
         cliente: {
