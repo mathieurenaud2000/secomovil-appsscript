@@ -1390,6 +1390,46 @@ function leerSectores_() {
 }
 
 /**
+ * Obtiene el precio unitario de un sector leyendo la hoja SECTORES.
+ *
+ * - La fila 2 contiene los precios unitarios.
+ * - La fila 3 en adelante contiene los sectores.
+ *
+ * @param {string} sectorNombre
+ * @returns {number|null}
+ */
+function obtenerPrecioUnitarioSector_(sectorNombre) {
+  var sector = (sectorNombre || '').toString().trim();
+  if (!sector) return null;
+
+  var sheet = getSheet_('SECTORES');
+  var lastRow = sheet.getLastRow();
+  var lastColumn = sheet.getLastColumn();
+
+  if (lastRow < 3 || lastColumn < 1) return null;
+
+  var sectores = sheet.getRange(3, 1, lastRow - 2, lastColumn).getValues();
+  var objetivo = sector.toLowerCase();
+  var colEncontrada = -1;
+
+  for (var col = 0; col < lastColumn && colEncontrada === -1; col++) {
+    for (var row = 0; row < sectores.length; row++) {
+      var nombre = (sectores[row][col] || '').toString().trim();
+      if (nombre && nombre.toLowerCase() === objetivo) {
+        colEncontrada = col + 1; // 1-based
+        break;
+      }
+    }
+  }
+
+  if (colEncontrada === -1) return null;
+
+  var precioBruto = sheet.getRange(2, colEncontrada).getValue();
+  var precio = Number(precioBruto);
+  return isNaN(precio) ? null : precio;
+}
+
+/**
  * Busca el precio y la columna de un sector dado (insensible a mayúsculas/minúsculas).
  * @param {string} sectorNombre
  * @returns {{precio:number|null, columna:string|null}}
@@ -1411,6 +1451,28 @@ function obtenerPrecioYColumnaSector_(sectorNombre) {
   }
 
   return { precio: null, columna: null };
+}
+
+/**
+ * Devuelve el precio unitario para un sector específico.
+ * @param {string} sectorNombre
+ * @returns {{ok:boolean, error:string|null, data:{precio:number|null}}}
+ */
+function obtenerPrecioUnitarioSector(sectorNombre) {
+  try {
+    var precio = obtenerPrecioUnitarioSector_(sectorNombre);
+    return {
+      ok: true,
+      error: null,
+      data: { precio: precio }
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e && e.message ? e.message : 'Error al obtener el precio unitario del sector.',
+      data: { precio: null }
+    };
+  }
 }
 
 /**
@@ -3297,6 +3359,7 @@ function editarPedidoPorId(data) {
     }
 
     var cli = encontrarCliente(clienteNom, telefono);
+    var precioUnitario = obtenerPrecioUnitarioSector_(cli.sector || '');
 
     var pedidoFront = {
       idPedido: idPedidoStr,
@@ -3304,6 +3367,7 @@ function editarPedidoPorId(data) {
       horaEntrega: (horaEntrega || '').toString(),
       cantidad: Number(cantidad || 0),
       total: totalNum,
+      precioUnitario: typeof precioUnitario === 'number' ? precioUnitario : null,
       estado: estadoStr,
       notas: (notas || '').toString(),
       cliente: {
