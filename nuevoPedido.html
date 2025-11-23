@@ -89,40 +89,6 @@
       40%{ opacity:0.8; transform: translateY(-1px); }
     }
 
-    .contacto-dropdown-container{
-      display:flex;
-      flex-direction:column;
-      gap: calc(6px * var(--fix));
-      position:relative;
-    }
-
-    .contacto-dropdown-container .dropdown{
-      visibility:hidden;
-      pointer-events:none;
-    }
-
-    .contacto-dropdown-container[data-ready="true"] .dropdown{
-      visibility:visible;
-      pointer-events:auto;
-    }
-
-    .contacto-loader{
-      justify-content:flex-start;
-    }
-
-    .contacto-loader-overlay{
-      position:absolute;
-      inset:0;
-      display:flex;
-      align-items:center;
-      justify-content:flex-start;
-      pointer-events:none;
-    }
-
-    .contacto-dropdown-container[data-ready="true"] .contacto-loader-overlay{
-      display:none;
-    }
-
     /* STACK */
     .stack{
       display:flex;
@@ -257,20 +223,11 @@
       <div class="sep-black"></div>
 
       <!-- MENU DÉROULANT SANS BORDURE (VARIANTE PLAIN) -->
-      <div class="contacto-dropdown-container" id="contactoDropdownContainer" data-ready="false">
-        <div class="dropdown" data-variant="plain" id="contactoDropdown">
-          <button type="button" class="dd-button" id="contactBtn" data-placeholder="true">
-            <span class="dd-label">Elegir un contacto</span><span class="dd-caret"></span>
-          </button>
-          <script type="application/json" class="dd-data">[]</script>
-        </div>
-        <div class="contacto-loader-overlay" aria-label="Cargando contactos" role="status" id="contactoDropdownLoader">
-          <span class="pedido-id-loader contacto-loader" aria-hidden="true">
-            <span class="dot"></span>
-            <span class="dot"></span>
-            <span class="dot"></span>
-          </span>
-        </div>
+      <div class="dropdown" data-variant="plain">
+        <button type="button" class="dd-button" id="contactBtn" data-placeholder="true">
+          <span class="dd-label">Elegir un contacto</span><span class="dd-caret"></span>
+        </button>
+        <script type="application/json" class="dd-data">[]</script>
       </div>
 
       <!-- SÉPARATEUR GRIS DIRECTEMENT APRÈS -->
@@ -294,4 +251,3 @@
 
   <script>
   </script>
-
