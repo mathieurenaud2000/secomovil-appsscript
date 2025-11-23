@@ -3244,17 +3244,17 @@ function editarPedidoPorId(data) {
 
     // Actualizar columnas modificables:
     // A Fecha, E Cantidad, H Hora, I Notas
-    if (data.fechaEntrega) {
-      sheetPedidos.getRange(filaEncontrada, 1).setValue(data.fechaEntrega); // A
+    if (Object.prototype.hasOwnProperty.call(data, 'fechaEntrega')) {
+      sheetPedidos.getRange(filaEncontrada, 1).setValue(data.fechaEntrega || ''); // A
     }
-    if (data.cantidad !== undefined && data.cantidad !== null) {
+    if (Object.prototype.hasOwnProperty.call(data, 'cantidad')) {
       sheetPedidos.getRange(filaEncontrada, 5).setValue(Number(data.cantidad) || 1); // E
     }
-    if (data.horaEntrega) {
-      sheetPedidos.getRange(filaEncontrada, 8).setValue(data.horaEntrega); // H
+    if (Object.prototype.hasOwnProperty.call(data, 'horaEntrega')) {
+      sheetPedidos.getRange(filaEncontrada, 8).setValue(data.horaEntrega || ''); // H
     }
-    if (data.notas !== undefined) {
-      sheetPedidos.getRange(filaEncontrada, 9).setValue(data.notas); // I
+    if (Object.prototype.hasOwnProperty.call(data, 'notas')) {
+      sheetPedidos.getRange(filaEncontrada, 9).setValue(data.notas || ''); // I
     }
 
     sortPedidosDiarios_();
