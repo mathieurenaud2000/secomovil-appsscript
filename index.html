@@ -769,6 +769,7 @@
     var tabTodo = tabs && tabs.length ? tabs[0] : null;
     var tabPendiente = tabs && tabs.length > 1 ? tabs[1] : null;
     var cardsContainer = document.getElementById('cardsContainer');
+    var finalSeparator = document.getElementById('finalSeparator');
     var pedidosCache = [];
     var activeTab = 'todo';
 
@@ -864,6 +865,9 @@
       div.textContent = msg;
       cardsContainer.innerHTML = '';
       cardsContainer.appendChild(div);
+      if (finalSeparator){
+        finalSeparator.style.display = 'none';
+      }
     }
 
     function stateFromPedido(pedido){
@@ -879,9 +883,15 @@
       if (isLoading){
         btn.disabled = true;
         btn.dataset.loading = '1';
+        if (btn.classList.contains('btn-deliver')){
+          btn.dataset.spinner = '1';
+        }
       } else {
         btn.disabled = false;
         btn.removeAttribute('data-loading');
+        if (btn.classList.contains('btn-deliver')){
+          btn.removeAttribute('data-spinner');
+        }
       }
     }
 
@@ -1155,6 +1165,10 @@
       if (!lista.length){
         setContainerMessage('Sin pedidos');
         return;
+      }
+
+      if (finalSeparator){
+        finalSeparator.style.display = '';
       }
 
       lista.forEach(function(p, idx){

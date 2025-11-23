@@ -42,6 +42,7 @@
     }
 
     .sep-black{ height:0; border-top: 5px solid var(--black); }
+    .sep-black--padded{ padding:12px 0; }
     .sep-gray { height:0; border-top: 2px solid var(--gray20); margin-top: calc(5px * var(--fix)); }
 
     .header-grid{
@@ -115,7 +116,7 @@
     .pedido-separator{
       height:0;
       border-top: 2px solid var(--gray20);
-      margin: calc((var(--gap) * var(--fix)) / 2) 0;
+      margin: calc((var(--gap) * var(--fix)) / 2 + 10px) 0 calc((var(--gap) * var(--fix)) / 2) 0;
       padding: 12px 0;
     }
 
@@ -247,7 +248,7 @@
     }
 
     .pedido-card.is-deleted .pedido-status--deleted img{
-      opacity:0.3;
+      opacity:0.25;
     }
 
     .pedido-refresh{
@@ -264,6 +265,12 @@
     .pedido-card.is-deleted .pedido-refresh img,
     .pedido-card.is-delivered .pedido-refresh img{
       content: url('https://lh3.googleusercontent.com/d/1rTlZ9aSk3_ay4lGH8EO3LOoHXk7f89Tq');
+    }
+
+    .pedido-card.is-reactivating .pedido-status-icon,
+    .pedido-card.is-reactivating .pedido-refresh{
+      visibility:hidden;
+      pointer-events:none;
     }
 
     .pedido-card.is-deleted .pedido-status--deleted,
@@ -307,9 +314,27 @@
     }
     .pedido-actions .btn-deliver{
       background:#000;
+      position:relative;
     }
     .pedido-actions .btn-deliver img{
       width: calc(15px * var(--fix));
+    }
+    .pedido-actions .btn-deliver[data-spinner="1"]{
+      color:transparent!important;
+    }
+    .pedido-actions .btn-deliver[data-spinner="1"] > *{ visibility:hidden; }
+    .pedido-actions .btn-deliver[data-spinner="1"]::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      margin:auto;
+      width: calc(15px * var(--fix));
+      height: calc(15px * var(--fix));
+      border-radius:50%;
+      border: calc(6px * var(--fix)) solid rgba(255,255,255,0.35);
+      border-top-color:#fff;
+      animation: btnNoirSpin 0.9s linear infinite;
+      pointer-events:none;
     }
 
     /* États supprimé / livré : fond blanc, texte gris pâle, icônes couleur originale */
@@ -349,7 +374,7 @@
       border-radius:0;
       width:100%;
       height:100%;
-      z-index:2;
+      z-index:3;
     }
     .pedido-reactivated img{
       display:block;
@@ -379,6 +404,8 @@
     }
     .pedido-card.is-reactivating .pedido-reactivated{
       display:flex;
+      background: rgba(0,0,0,0.65);
+      color:#fff;
     }
 
     .footer-spacer{
@@ -415,7 +442,7 @@
     <!-- LISTE DES CARTES -->
     <div class="stack" id="cardsContainer"></div>
 
-    <div class="sep-gray"></div>
+    <div class="sep-black sep-black--padded" id="finalSeparator" aria-hidden="true"></div>
 
     <button class="btn btn-blanc" id="btnVolverInicio" data-role="volver-inicio">VOLVER AL INICIO</button>
     <div class="footer-spacer"></div>
