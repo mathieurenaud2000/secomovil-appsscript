@@ -986,6 +986,7 @@
       setActionLoading(btn, true);
 
       var transitionHide = null;
+      var transitionScheduled = false;
       var transitionOpts = null;
       var pedidoId = payload && payload.idPedido ? payload.idPedido.toString() : '';
       if (methodName === 'reactivarPedido'){
@@ -1004,10 +1005,18 @@
         };
       }
 
+      if (transitionOpts && card){
+        transitionHide = showPedidoTransition(card, transitionOpts);
+        transitionScheduled = true;
+        if (typeof transitionHide === 'function') transitionHide();
+      }
+
       function finalize(afterHide){
         setActionLoading(btn, false);
-        if (typeof transitionHide === 'function') transitionHide(afterHide);
-        else if (typeof afterHide === 'function') afterHide();
+        if (!transitionScheduled && typeof transitionHide === 'function'){
+          transitionScheduled = true;
+          transitionHide(afterHide);
+        } else if (typeof afterHide === 'function') afterHide();
         if (typeof onFinally === 'function') onFinally();
       }
 
@@ -1016,12 +1025,6 @@
           if (resp && resp.ok && resp.data && resp.data.pedido){
             actualizarPedidoEnCache(resp.data.pedido);
             renderCards();
-            var updatedCard = pedidoId && cardsContainer
-              ? cardsContainer.querySelector('.pedido-card[data-pedido-id="' + pedidoId + '"]')
-              : null;
-            if (updatedCard && transitionOpts){
-              transitionHide = showPedidoTransition(updatedCard, transitionOpts);
-            }
           } else if (resp && resp.error){
             alert(resp.error);
           }
@@ -1217,6 +1220,9 @@
         if (card.classList.contains('is-open')){
           toggleOpen();
         }
+        card.classList.add('is-deleted');
+        card.classList.add('is-cancelado');
+        card.classList.remove('is-delivered');
         runServerAction(card, btnCancel, 'eliminarPedido', { idPedido: pedido.idPedido });
       });
       actions.appendChild(btnCancel);
@@ -1249,6 +1255,9 @@
 
       card.addEventListener('click', function(){
         if (estadoInfo.isDeleted || estadoInfo.isDelivered){
+          card.classList.remove('is-deleted');
+          card.classList.remove('is-cancelado');
+          card.classList.remove('is-delivered');
           runServerAction(card, refresh, 'reactivarPedido', { idPedido: pedido.idPedido });
         }
       });
