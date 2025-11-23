@@ -4017,8 +4017,8 @@ function eliminarPedido(data) {
       };
     }
 
-    // J Estado = 'Eliminado'
-    sheetPedidos.getRange(filaEncontrada, 10).setValue('Eliminado');
+    // J Estado = 'Cancelado'
+    sheetPedidos.getRange(filaEncontrada, 10).setValue('Cancelado');
 
     var rowValues = sheetPedidos.getRange(filaEncontrada, 1, 1, 11).getValues()[0];
 
