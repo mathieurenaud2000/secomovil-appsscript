@@ -36,9 +36,21 @@
   }
   .btn--white{ border-color:#000; }
   .btn--gray{ border-color: rgba(0,0,0,0.20); }
-  .btn.is-waiting{ filter:brightness(0.95); }
-  .btn--white.is-waiting,
-  .btn--gray.is-waiting{ color: rgba(0,0,0,0.5); }
+  .btn .btn-label{ display:inline-block; }
+  .btn .btn-spinner{
+    display:none;
+    margin-left: calc(10px * var(--fix));
+    width: calc(28px * var(--fix));
+    height: calc(28px * var(--fix));
+    border-radius:50%;
+    border: calc(12px * var(--fix)) solid rgba(0,0,0,0.35);
+    border-top-color:#000;
+    animation: btnSpin 0.9s linear infinite;
+  }
+  @keyframes btnSpin{
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
 
   /* Double bouton noir */
   .double-actions{
@@ -458,13 +470,22 @@
   <div class="sep-black"></div>
 
   <div class="stack">
-    <button class="btn btn--gray" id="btnRegistrarGasto">REGISTRAR GASTO</button>
-    <button class="btn btn--gray" id="btnCerrarElDia">CERRAR EL DIA</button>
+    <button class="btn btn--gray" id="btnRegistrarGasto">
+      <span class="btn-label">REGISTRAR GASTO</span>
+      <span class="btn-spinner" aria-label="Cargando"></span>
+    </button>
+    <button class="btn btn--gray" id="btnCerrarElDia">
+      <span class="btn-label">CERRAR EL DÍA</span>
+      <span class="btn-spinner" aria-label="Cargando"></span>
+    </button>
   </div>
 
   <div class="sep-black"></div>
   <div class="stack">
-    <button class="btn btn--gray" id="btnConfiguracion">CONFIGURATION</button>
+    <button class="btn btn--gray" id="btnConfiguracion">
+      <span class="btn-label">CONFIGURACIÓN</span>
+      <span class="btn-spinner" aria-label="Cargando"></span>
+    </button>
   </div>
 
   <div style="height: var(--side)"></div>

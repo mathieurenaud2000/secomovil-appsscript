@@ -335,8 +335,28 @@
 
         function setButtonWaiting(btn, isWaiting){
           if (!btn) return;
-          btn.classList.toggle('is-waiting', !!isWaiting);
-          btn.disabled = !!isWaiting;
+          var label = btn.querySelector('.btn-label');
+          var spinner = btn.querySelector('.btn-spinner');
+
+          if (isWaiting){
+            btn.disabled = true;
+            if (label){
+              label.style.visibility = 'hidden';
+            }
+            if (spinner){
+              spinner.style.display = 'inline-block';
+              spinner.dataset.spinner = '1';
+            }
+          } else {
+            btn.disabled = false;
+            if (label){
+              label.style.visibility = '';
+            }
+            if (spinner){
+              spinner.style.display = 'none';
+              delete spinner.dataset.spinner;
+            }
+          }
         }
 
         function setPedidosDelDiaLoading(btn, isLoading){
