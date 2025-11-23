@@ -2204,7 +2204,8 @@
             pedidoId: (pedido && (pedido.idPedido || pedido.pedidoId)) || (ctx && ctx.pedidoId) || '',
             idContacto: cliente.idCliente || (ctx && ctx.idContacto) || '',
             cliente: cliente,
-            pedido: pedido || (ctx && ctx.pedido)
+            pedido: pedido || (ctx && ctx.pedido),
+            sectores: sectoresCtx
           };
           loadPage('editarContacto', function(){
             contactEditLoading = false;
