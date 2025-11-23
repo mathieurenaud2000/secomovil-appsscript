@@ -804,6 +804,7 @@
 
           var txt = cont.querySelector('#pedidoIdTexto');
           var loader = cont.querySelector('.pedido-id-loader');
+          var contactoDrop = document.getElementById('contactBtn');
 
           var valor = (idPedido || '').toString().trim();
           var tieneValor = !!valor;
@@ -815,6 +816,11 @@
 
           if (loader){
             loader.style.display = tieneValor ? 'none' : '';
+          }
+
+          if (contactoDrop){
+            contactoDrop.style.visibility = tieneValor ? 'visible' : 'hidden';
+            contactoDrop.style.pointerEvents = tieneValor ? 'auto' : 'none';
           }
         }
     
@@ -975,6 +981,7 @@
         function init(){
           applyScaleFix();
           sizeHeaderImage();
+          setPedidoIdHeaderDesdeValor('');
 
           if (window.google && google.script && google.script.run){
             google.script.run
