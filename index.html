@@ -1544,6 +1544,30 @@
                 alert(msg);
                 return;
               }
+              var ctxResp = resp.data.ctx || {};
+              var origen = (ctxActual && ctxActual.origen) || ctxResp.origen || '';
+              var clienteActualizado = resp.data.cliente || ctxResp.cliente || null;
+
+              if (origen === 'editarPedido'){
+                var nuevoCtx = Object.assign({}, ctxActual || {}, ctxResp || {});
+                if (clienteActualizado){
+                  nuevoCtx.cliente = clienteActualizado;
+                }
+
+                var pedidoEnEdicion = nuevoCtx.pedidoEnEdicion || nuevoCtx.pedido || null;
+                if (pedidoEnEdicion && clienteActualizado){
+                  pedidoEnEdicion.cliente = clienteActualizado;
+                  nuevoCtx.pedidoEnEdicion = pedidoEnEdicion;
+                  if (!nuevoCtx.pedido) {
+                    nuevoCtx.pedido = pedidoEnEdicion;
+                  }
+                }
+
+                window.SECO_CTX = nuevoCtx;
+                loadPage('editarPedido');
+                return;
+              }
+
               loadPage('registrarPedido');
             })
             .withFailureHandler(function(err){

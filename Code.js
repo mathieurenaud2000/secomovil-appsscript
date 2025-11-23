@@ -2324,11 +2324,14 @@ function actualizarContactoDesdeEditar(data, payload) {
     var cliente = resp.data.cliente;
 
     var ctx = {
-      origen: 'editarContacto',
+      origen: payload && payload.origen ? payload.origen : 'editarContacto',
       pedidoId: pedidoId,
       idContacto: cliente.idCliente,
       clienteNombre: cliente.nombre,
-      cliente: cliente
+      cliente: cliente,
+      pedido: payload && payload.pedido ? payload.pedido : null,
+      pedidoEnEdicion: payload && payload.pedidoEnEdicion ? payload.pedidoEnEdicion : null,
+      sectores: payload && Array.isArray(payload.sectores) ? payload.sectores : []
     };
 
     return {
