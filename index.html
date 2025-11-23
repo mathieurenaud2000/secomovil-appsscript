@@ -963,22 +963,18 @@
       }
 
       var activeClass = opts && opts.activeClass ? opts.activeClass : 'is-transitioning';
-      var delay = opts && typeof opts.delay === 'number' ? opts.delay : PEDIDO_TRANSITION_VISIBLE_MS;
       card.classList.add(activeClass);
 
       return function hideTransition(onHidden){
-        var fadeStart = delay - PEDIDO_TRANSITION_FADE_MS;
-        if (fadeStart < 0) fadeStart = 0;
-
         setTimeout(function(){
           overlay.classList.add('is-fading-out');
-        }, fadeStart);
+        }, 0);
 
         setTimeout(function(){
           overlay.classList.remove('is-fading-out');
           card.classList.remove(activeClass);
           if (typeof onHidden === 'function') onHidden();
-        }, delay);
+        }, PEDIDO_TRANSITION_FADE_MS);
       };
     }
 
