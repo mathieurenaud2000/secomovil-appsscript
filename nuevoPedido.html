@@ -89,6 +89,16 @@
       40%{ opacity:0.8; transform: translateY(-1px); }
     }
 
+    .contacto-dropdown-container{
+      display:flex;
+      flex-direction:column;
+      gap: calc(6px * var(--fix));
+    }
+
+    .contacto-loader{
+      justify-content:flex-start;
+    }
+
     /* STACK */
     .stack{
       display:flex;
@@ -223,11 +233,18 @@
       <div class="sep-black"></div>
 
       <!-- MENU DÉROULANT SANS BORDURE (VARIANTE PLAIN) -->
-      <div class="dropdown" data-variant="plain">
-        <button type="button" class="dd-button" id="contactBtn" data-placeholder="true">
-          <span class="dd-label">Elegir un contacto</span><span class="dd-caret"></span>
-        </button>
-        <script type="application/json" class="dd-data">[]</script>
+      <div class="contacto-dropdown-container" id="contactoDropdownContainer">
+        <div class="pedido-id-loader contacto-loader" id="contactoDropdownLoader" aria-label="Cargando contactos" role="status">
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+        </div>
+        <div class="dropdown" data-variant="plain" id="contactoDropdown" style="display:none;">
+          <button type="button" class="dd-button" id="contactBtn" data-placeholder="true">
+            <span class="dd-label">Elegir un contacto</span><span class="dd-caret"></span>
+          </button>
+          <script type="application/json" class="dd-data">[]</script>
+        </div>
       </div>
 
       <!-- SÉPARATEUR GRIS DIRECTEMENT APRÈS -->
