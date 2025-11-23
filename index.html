@@ -977,6 +977,7 @@
         setTimeout(function(){
           overlay.classList.remove('is-fading-out');
           card.classList.remove(activeClass);
+          if (typeof onHidden === 'function') onHidden();
         }, delay);
       };
     }
@@ -1013,21 +1014,23 @@
         });
       }
 
-      function finalize(){
+      function finalize(afterHide){
         setActionLoading(btn, false);
-        if (typeof transitionHide === 'function') transitionHide();
+        if (typeof transitionHide === 'function') transitionHide(afterHide);
+        else if (typeof afterHide === 'function') afterHide();
         if (typeof onFinally === 'function') onFinally();
       }
 
       google.script.run
         .withSuccessHandler(function(resp){
+          var afterHide = null;
           if (resp && resp.ok && resp.data && resp.data.pedido){
             actualizarPedidoEnCache(resp.data.pedido);
-            renderCards();
+            afterHide = renderCards;
           } else if (resp && resp.error){
             alert(resp.error);
           }
-          finalize();
+          finalize(afterHide);
         })
         .withFailureHandler(function(err){
           if (err && err.message){
