@@ -793,6 +793,7 @@
         var contactBtn  = document.getElementById('contactBtn');
         var contactDropdown = document.getElementById('contactoDropdown');
         var contactoLoader  = document.getElementById('contactoDropdownLoader');
+        var contactoContainer = document.getElementById('contactoDropdownContainer');
         var btnOK       = document.getElementById('btnOK');
         var btnVolver   = document.getElementById('btnVolverInicio');
 
@@ -909,11 +910,8 @@
         function mostrarDropdownContactosSiListo(){
           var hayOpciones = Array.isArray(contactosOpciones) && contactosOpciones.length > 0;
           if (!hayOpciones) return;
-          if (contactoLoader){
-            contactoLoader.style.display = 'none';
-          }
-          if (contactDropdown){
-            contactDropdown.style.display = '';
+          if (contactoContainer){
+            contactoContainer.dataset.ready = 'true';
           }
         }
     
