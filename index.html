@@ -928,8 +928,6 @@
       }
     }
 
-    const PEDIDO_TRANSITION_VISIBLE_MS = 400;
-
     function showPedidoTransition(card, opts){
       if (!card) return function(){};
       var inner = card.querySelector('.pedido-inner');
@@ -938,15 +936,13 @@
       var overlay = inner.querySelector('.pedido-transition');
       if (!overlay){
         overlay = document.createElement('div');
-        overlay.className = 'pedido-transition pedido-transition-overlay';
+        overlay.className = 'pedido-transition';
         var imgEl = document.createElement('img');
         var txtEl = document.createElement('div');
         txtEl.className = 'txt-body';
         overlay.appendChild(imgEl);
         overlay.appendChild(txtEl);
         inner.appendChild(overlay);
-      } else {
-        overlay.classList.add('pedido-transition-overlay');
       }
 
       var img = overlay.querySelector('img');
@@ -960,13 +956,13 @@
       }
 
       var activeClass = opts && opts.activeClass ? opts.activeClass : 'is-transitioning';
+      var delay = opts && typeof opts.delay === 'number' ? opts.delay : 400;
       card.classList.add(activeClass);
 
-      return function hideTransition(onHidden){
+      return function hideTransition(){
         setTimeout(function(){
           card.classList.remove(activeClass);
-          if (typeof onHidden === 'function') onHidden();
-        }, PEDIDO_TRANSITION_VISIBLE_MS);
+        }, delay);
       };
     }
 
@@ -986,37 +982,25 @@
       setActionLoading(btn, true);
 
       var transitionHide = null;
-      var transitionScheduled = false;
-      var transitionOpts = null;
-      var pedidoId = payload && payload.idPedido ? payload.idPedido.toString() : '';
-      if (methodName === 'reactivarPedido'){
-        transitionOpts = {
+      if (card && methodName === 'reactivarPedido'){
+        transitionHide = showPedidoTransition(card, {
           icon: ICONS.checkBlk,
           text: 'Reactivado',
           alt: 'Reactivado',
           activeClass: 'is-reactivating'
-        };
-      } else if (methodName === 'eliminarPedido'){
-        transitionOpts = {
+        });
+      } else if (card && methodName === 'eliminarPedido'){
+        transitionHide = showPedidoTransition(card, {
           icon: ICONS.trash,
           text: 'Cancelado',
           alt: 'Cancelado',
           activeClass: 'is-canceling'
-        };
+        });
       }
 
-      if (transitionOpts && card){
-        transitionHide = showPedidoTransition(card, transitionOpts);
-        transitionScheduled = true;
-        if (typeof transitionHide === 'function') transitionHide();
-      }
-
-      function finalize(afterHide){
+      function finalize(){
         setActionLoading(btn, false);
-        if (!transitionScheduled && typeof transitionHide === 'function'){
-          transitionScheduled = true;
-          transitionHide(afterHide);
-        } else if (typeof afterHide === 'function') afterHide();
+        if (typeof transitionHide === 'function') transitionHide();
         if (typeof onFinally === 'function') onFinally();
       }
 
@@ -1064,7 +1048,6 @@
     function buildCard(pedido){
       var card = document.createElement('article');
       card.className = 'pedido-card';
-      card.dataset.pedidoId = pedido && pedido.idPedido ? pedido.idPedido : '';
 
       var estadoLower = (pedido && pedido.estado ? pedido.estado : '').toString().toLowerCase();
       var estadoInfo = stateFromPedido(pedido);
@@ -1217,12 +1200,6 @@
       btnCancel.addEventListener('click', function(e){
         e.stopPropagation();
         if (!pedido.idPedido) return;
-        if (card.classList.contains('is-open')){
-          toggleOpen();
-        }
-        card.classList.add('is-deleted');
-        card.classList.add('is-cancelado');
-        card.classList.remove('is-delivered');
         runServerAction(card, btnCancel, 'eliminarPedido', { idPedido: pedido.idPedido });
       });
       actions.appendChild(btnCancel);
@@ -1255,9 +1232,6 @@
 
       card.addEventListener('click', function(){
         if (estadoInfo.isDeleted || estadoInfo.isDelivered){
-          card.classList.remove('is-deleted');
-          card.classList.remove('is-cancelado');
-          card.classList.remove('is-delivered');
           runServerAction(card, refresh, 'reactivarPedido', { idPedido: pedido.idPedido });
         }
       });
