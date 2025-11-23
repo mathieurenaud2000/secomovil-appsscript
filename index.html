@@ -928,6 +928,44 @@
       }
     }
 
+    function showPedidoTransition(card, opts){
+      if (!card) return function(){};
+      var inner = card.querySelector('.pedido-inner');
+      if (!inner) return function(){};
+
+      var overlay = inner.querySelector('.pedido-transition');
+      if (!overlay){
+        overlay = document.createElement('div');
+        overlay.className = 'pedido-transition';
+        var imgEl = document.createElement('img');
+        var txtEl = document.createElement('div');
+        txtEl.className = 'txt-body';
+        overlay.appendChild(imgEl);
+        overlay.appendChild(txtEl);
+        inner.appendChild(overlay);
+      }
+
+      var img = overlay.querySelector('img');
+      var txt = overlay.querySelector('.txt-body');
+      if (img){
+        if (opts && opts.icon) img.src = opts.icon;
+        img.alt = opts && opts.alt ? opts.alt : (opts && opts.text ? opts.text : '');
+      }
+      if (txt && opts && typeof opts.text === 'string'){
+        txt.textContent = opts.text;
+      }
+
+      var activeClass = opts && opts.activeClass ? opts.activeClass : 'is-transitioning';
+      var delay = opts && typeof opts.delay === 'number' ? opts.delay : 400;
+      card.classList.add(activeClass);
+
+      return function hideTransition(){
+        setTimeout(function(){
+          card.classList.remove(activeClass);
+        }, delay);
+      };
+    }
+
     function actualizarPedidoEnCache(pedido){
       if (!pedido) return;
       var id = (pedido.idPedido || '').toString();
@@ -942,15 +980,27 @@
     function runServerAction(card, btn, methodName, payload, onFinally){
       if (typeof google === 'undefined' || !google.script || !google.script.run) return;
       setActionLoading(btn, true);
+
+      var transitionHide = null;
       if (card && methodName === 'reactivarPedido'){
-        card.classList.add('is-reactivating');
+        transitionHide = showPedidoTransition(card, {
+          icon: ICONS.checkBlk,
+          text: 'Reactivado',
+          alt: 'Reactivado',
+          activeClass: 'is-reactivating'
+        });
+      } else if (card && methodName === 'eliminarPedido'){
+        transitionHide = showPedidoTransition(card, {
+          icon: ICONS.trash,
+          text: 'Cancelado',
+          alt: 'Cancelado',
+          activeClass: 'is-canceling'
+        });
       }
 
       function finalize(){
         setActionLoading(btn, false);
-        if (card && methodName === 'reactivarPedido'){
-          setTimeout(function(){ card.classList.remove('is-reactivating'); }, 400);
-        }
+        if (typeof transitionHide === 'function') transitionHide();
         if (typeof onFinally === 'function') onFinally();
       }
 
@@ -1157,7 +1207,7 @@
       inner.appendChild(actions);
 
       var reactivated = document.createElement('div');
-      reactivated.className = 'pedido-reactivated';
+      reactivated.className = 'pedido-transition';
       var reactImg = document.createElement('img');
       reactImg.src = ICONS.checkBlk;
       reactImg.alt = 'Reactivado';
