@@ -791,6 +791,8 @@
         var overlay     = document.getElementById('ddOverlay');
         var overlayList = document.getElementById('ddOverlayList');
         var contactBtn  = document.getElementById('contactBtn');
+        var contactDropdown = document.getElementById('contactoDropdown');
+        var contactoLoader  = document.getElementById('contactoDropdownLoader');
         var btnOK       = document.getElementById('btnOK');
         var btnVolver   = document.getElementById('btnVolverInicio');
 
@@ -903,6 +905,17 @@
           btnOK.classList.toggle('btn-noir', habilitado);
           btnOK.classList.toggle('btn-desactive', !habilitado);
         }
+
+        function mostrarDropdownContactosSiListo(){
+          var hayOpciones = Array.isArray(contactosOpciones) && contactosOpciones.length > 0;
+          if (!hayOpciones) return;
+          if (contactoLoader){
+            contactoLoader.style.display = 'none';
+          }
+          if (contactDropdown){
+            contactDropdown.style.display = '';
+          }
+        }
     
         contactBtn.addEventListener('click', function(){
           cuandoCtxListo(function(){
@@ -987,6 +1000,7 @@
 
                   construirOpcionesContactos();
                   actualizarEstadoBtnOK();
+                  mostrarDropdownContactosSiListo();
                 } else {
                   setPedidoIdHeaderDesdeValor('');
                 }
