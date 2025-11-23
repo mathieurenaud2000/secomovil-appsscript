@@ -883,13 +883,13 @@
       if (isLoading){
         btn.disabled = true;
         btn.dataset.loading = '1';
-        if (btn.classList.contains('btn-deliver')){
+        if (btn.classList.contains('btn-deliver') || btn.classList.contains('btn-cancel')){
           btn.dataset.spinner = '1';
         }
       } else {
         btn.disabled = false;
         btn.removeAttribute('data-loading');
-        if (btn.classList.contains('btn-deliver')){
+        if (btn.classList.contains('btn-deliver') || btn.classList.contains('btn-cancel')){
           btn.removeAttribute('data-spinner');
         }
       }
@@ -966,9 +966,11 @@
       var card = document.createElement('article');
       card.className = 'pedido-card';
 
+      var estadoLower = (pedido && pedido.estado ? pedido.estado : '').toString().toLowerCase();
       var estadoInfo = stateFromPedido(pedido);
       if (estadoInfo.isDeleted) card.classList.add('is-deleted');
       if (estadoInfo.isDelivered) card.classList.add('is-delivered');
+      if (estadoLower === 'cancelado') card.classList.add('is-cancelado');
 
       var inner = document.createElement('div');
       inner.className = 'pedido-inner';
@@ -1107,6 +1109,7 @@
 
       var btnCancel = document.createElement('button');
       btnCancel.type = 'button';
+      btnCancel.className = 'btn-cancel';
       var imgCancel = document.createElement('img');
       imgCancel.src = ICONS.trash;
       imgCancel.alt = 'Eliminar';
