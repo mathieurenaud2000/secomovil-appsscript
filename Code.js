@@ -3261,6 +3261,7 @@ function editarPedidoPorId(data) {
 
     // Volver a ubicar la fila tras el ordenamiento
     var rowValues = null;
+    var filaOrdenada = null;
     var lastRowOrdenado = sheetPedidos.getLastRow();
     if (lastRowOrdenado > 1) {
       var dataPedidosOrdenados = sheetPedidos.getRange(2, 1, lastRowOrdenado - 1, 11).getValues();
@@ -3268,6 +3269,7 @@ function editarPedidoPorId(data) {
         var idFila = (dataPedidosOrdenados[idx][10] || '').toString().trim();
         if (idFila === idObjetivo) {
           rowValues = dataPedidosOrdenados[idx];
+          filaOrdenada = idx + 2; // fila real en la hoja (comienza en 2)
           break;
         }
       }
@@ -3362,7 +3364,17 @@ function editarPedidoPorId(data) {
     }
 
     var cli = encontrarCliente(clienteNom, telefono);
-    var precioUnitario = obtenerPrecioUnitarioSector_(cli.sector || '');
+    var infoPrecioSector = obtenerPrecioYColumnaSector_(cli.sector || '');
+    var precioUnitario = typeof infoPrecioSector.precio === 'number' ? infoPrecioSector.precio : null;
+
+    var totalCalculado = null;
+    if (typeof precioUnitario === 'number') {
+      totalCalculado = (Number(cantidad) || 0) * precioUnitario;
+      if (filaOrdenada !== null) {
+        sheetPedidos.getRange(filaOrdenada, 6).setValue(totalCalculado); // F
+      }
+      totalNum = totalCalculado;
+    }
 
     var pedidoFront = {
       idPedido: idPedidoStr,
