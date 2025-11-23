@@ -45,14 +45,23 @@
       pointer-events:none;
     }
 
-    /* Spinner pour le bouton PEDIDOS DEL DIA (fond blanc) */
-    #btnPedidosDelDia[data-spinner="1"]{
+    /* Spinner pour les boutons de navigation (fond blanc) */
+    #btnPedidosDelDia[data-spinner="1"],
+    #btnRegistrarGasto[data-spinner="1"],
+    #btnCerrarElDia[data-spinner="1"],
+    #btnConfiguracion[data-spinner="1"]{
       position:relative;
       color:transparent !important;
       text-shadow:none !important;
     }
-    #btnPedidosDelDia[data-spinner="1"] > *{ visibility:hidden; }
-    #btnPedidosDelDia[data-spinner="1"]::before{
+    #btnPedidosDelDia[data-spinner="1"] > *,
+    #btnRegistrarGasto[data-spinner="1"] > *,
+    #btnCerrarElDia[data-spinner="1"] > *,
+    #btnConfiguracion[data-spinner="1"] > *{ visibility:hidden; }
+    #btnPedidosDelDia[data-spinner="1"]::before,
+    #btnRegistrarGasto[data-spinner="1"]::before,
+    #btnCerrarElDia[data-spinner="1"]::before,
+    #btnConfiguracion[data-spinner="1"]::before{
       content:"";
       position:absolute;
       inset:0;
@@ -330,32 +339,6 @@
           } else {
             btnConfirm.classList.remove('is-loading-confirm');
             btnConfirm.disabled = false;
-          }
-        }
-
-        function setButtonWaiting(btn, isWaiting){
-          if (!btn) return;
-          var label = btn.querySelector('.btn-label');
-          var spinner = btn.querySelector('.btn-spinner');
-
-          if (isWaiting){
-            btn.disabled = true;
-            if (label){
-              label.style.visibility = 'hidden';
-            }
-            if (spinner){
-              spinner.style.display = 'inline-block';
-              spinner.dataset.spinner = '1';
-            }
-          } else {
-            btn.disabled = false;
-            if (label){
-              label.style.visibility = '';
-            }
-            if (spinner){
-              spinner.style.display = 'none';
-              delete spinner.dataset.spinner;
-            }
           }
         }
 
@@ -780,9 +763,9 @@
         bindTopHalfAction(btnNuevoPedido, 'nuevoPedido');
         bindTopHalfAction(btnVentaDirecta, 'ventaDirecta');
         bindNavigationButton(btnPedidosDelDia, 'pedidosDelDia', (btn) => setPedidosDelDiaLoading(btn, true), (btn) => setPedidosDelDiaLoading(btn, false));
-        bindNavigationButton(btnRegistrarGasto, 'registrarGasto', (btn) => setButtonWaiting(btn, true), (btn) => setButtonWaiting(btn, false));
-        bindNavigationButton(btnCerrarElDia, 'cerrarElDia', (btn) => setButtonWaiting(btn, true), (btn) => setButtonWaiting(btn, false));
-        bindNavigationButton(btnConfiguracion, 'configuracionDelSistema', (btn) => setButtonWaiting(btn, true), (btn) => setButtonWaiting(btn, false));
+        bindNavigationButton(btnRegistrarGasto, 'registrarGasto', (btn) => setPedidosDelDiaLoading(btn, true), (btn) => setPedidosDelDiaLoading(btn, false));
+        bindNavigationButton(btnCerrarElDia, 'cerrarElDia', (btn) => setPedidosDelDiaLoading(btn, true), (btn) => setPedidosDelDiaLoading(btn, false));
+        bindNavigationButton(btnConfiguracion, 'configuracionDelSistema', (btn) => setPedidosDelDiaLoading(btn, true), (btn) => setPedidosDelDiaLoading(btn, false));
     
         if (document.readyState === 'loading'){
           document.addEventListener('DOMContentLoaded', ()=>{
