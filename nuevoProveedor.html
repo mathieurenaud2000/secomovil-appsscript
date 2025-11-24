@@ -28,7 +28,11 @@
     *, *::before, *::after{ box-sizing:inherit; }
     *:focus{ outline:none!important; box-shadow:none!important; }
 
-    .wrapper{ padding: 0 50px; }
+    .wrapper{
+      padding: 0 50px;
+      margin: 0 auto;
+      max-width: 640px;
+    }
 
     .header{ display:block; margin: calc(var(--gap) * var(--fix)) 0; }
     .header-logo{ display:block; width:100%; line-height:0; margin:0; }
@@ -47,6 +51,7 @@
       align-items:end;
       gap: calc(8px * var(--fix));
       padding: calc(12px * var(--fix)) 0;
+      text-align:center;
     }
     .header-title{
       text-transform: uppercase; font-weight: 900;
@@ -64,7 +69,10 @@
     .label{
       font-size: calc(var(--font-label) * var(--fix));
       color:#111;
+      font-weight:500;
     }
+
+    .form-section{ display:flex; flex-direction:column; gap: calc(6px * var(--fix)); }
 
     .label + .field{
       margin-top: calc((-1 * var(--gap) / 2) * var(--fix));
@@ -104,6 +112,7 @@
     .btn-blanc:active{
       color: rgba(0,0,0,0.5);
     }
+    .btn[disabled]{ opacity:0.6; box-shadow:none; cursor:not-allowed; }
 
     .error-text{
       color: #b00020;
@@ -137,10 +146,12 @@
     <!-- CONTENIDO -->
     <div class="stack">
 
-      <div class="label">Proveedor</div>
-      <input class="field" type="text" id="nombreProveedor" placeholder="">
+      <div class="form-section">
+        <div class="label">Proveedor</div>
+        <input class="field" type="text" id="nombreProveedor" placeholder="">
 
-      <div class="error-text" id="nuevoProveedorError" aria-live="polite"></div>
+        <div class="error-text" id="nuevoProveedorError" aria-live="polite"></div>
+      </div>
 
       <div class="sep-gray"></div>
 
