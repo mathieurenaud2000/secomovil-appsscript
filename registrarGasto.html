@@ -29,7 +29,11 @@
     *, *::before, *::after{ box-sizing:inherit; }
     *:focus{ outline:none!important; box-shadow:none!important; }
 
-    .wrapper{ padding: 0 50px; }
+    .wrapper{
+      padding: 0 50px;
+      margin: 0 auto;
+      max-width: 640px;
+    }
 
     /* ===== ENTÊTE ===== */
     .header{ display:block; margin: calc(var(--gap) * var(--fix)) 0; }
@@ -49,6 +53,7 @@
       align-items:end;
       gap: calc(8px * var(--fix));
       padding: calc(12px * var(--fix)) 0;
+      text-align:center;
     }
     .header-title{
       text-transform: uppercase; font-weight: 900;
@@ -80,11 +85,10 @@
     .btn-blanc:active{
       color: rgba(0,0,0,0.5);
     }
-    .btn-desactive{
-      background: var(--gray10); color:#fff;
-      border:0;
+    .btn[disabled]{
+      opacity:0.6;
       box-shadow:none;
-      cursor:default;
+      cursor:not-allowed;
     }
 
     .stack{
@@ -102,15 +106,14 @@
     }
 
     /* ===== LABELS ===== */
-    .label-line{
+    .label{
       font-size: calc(var(--font-small) * var(--fix));
-    }
-    .label-line .main{
       color:#000;
+      font-weight:500;
     }
-    .label-line .opt{
-      color: var(--gray25);
-    }
+    .label .opt{ color: var(--gray25); }
+
+    .form-section{ display:flex; flex-direction:column; gap: calc(6px * var(--fix)); }
 
     /* ===== CHAMP TEXTE MULTI-LIGNES ===== */
     .field-multi{
@@ -272,43 +275,50 @@
     <div class="stack">
 
       <!-- Date -->
-      <div class="txt-mini" id="expenseDate">5/11/2025</div>
+      <div class="form-section">
+        <div class="label">Fecha</div>
+        <div class="txt-mini" id="expenseDate">5/11/2025</div>
+      </div>
 
       <!-- Catégorie -->
-      <div class="dropdown" data-variant="boxed">
-        <button type="button" class="dd-button" data-placeholder="false">
-          <span class="dd-label">Alimento</span><span class="dd-caret" aria-hidden="true"></span>
-        </button>
-        <script type="application/json" class="dd-data">
-          ["Alimento","Gasolina","Transporte","Insumos","Otros"]
-        </script>
+      <div class="form-section">
+        <div class="label">Categoría</div>
+        <div class="dropdown" data-variant="boxed">
+          <button type="button" class="dd-button" data-placeholder="false">
+            <span class="dd-label">Alimento</span><span class="dd-caret" aria-hidden="true"></span>
+          </button>
+          <script type="application/json" class="dd-data">
+            ["Alimento","Gasolina","Transporte","Insumos","Otros"]
+          </script>
+        </div>
       </div>
 
       <!-- Produit -->
-      <div class="dropdown" data-variant="boxed">
-        <button type="button" class="dd-button" data-placeholder="false">
-          <span class="dd-label">Pollo</span><span class="dd-caret" aria-hidden="true"></span>
-        </button>
-        <script type="application/json" class="dd-data">
-          ["Pollo","Arroz","Aceite","Verduras surtidas","Hielo"]
-        </script>
+      <div class="form-section">
+        <div class="label">Producto</div>
+        <div class="dropdown" data-variant="boxed">
+          <button type="button" class="dd-button" data-placeholder="false">
+            <span class="dd-label">Pollo</span><span class="dd-caret" aria-hidden="true"></span>
+          </button>
+          <script type="application/json" class="dd-data">
+            ["Pollo","Arroz","Aceite","Verduras surtidas","Hielo"]
+          </script>
+        </div>
       </div>
 
       <div class="sep-gray"></div>
 
-      <!-- Label Proveedor -->
-      <div class="label-line">
-        <span class="main">Proveedor</span>
-      </div>
-
       <!-- Fournisseur -->
-      <div class="dropdown" data-variant="boxed">
-        <button type="button" class="dd-button" data-placeholder="false">
-          <span class="dd-label">Tienda Juanita</span><span class="dd-caret" aria-hidden="true"></span>
-        </button>
-        <script type="application/json" class="dd-data">
-          ["Tienda Juanita","Mercado Central","Proveedor Diego","Supermercado La 14"]
-        </script>
+      <div class="form-section">
+        <div class="label">Proveedor</div>
+        <div class="dropdown" data-variant="boxed">
+          <button type="button" class="dd-button" data-placeholder="false">
+            <span class="dd-label">Tienda Juanita</span><span class="dd-caret" aria-hidden="true"></span>
+          </button>
+          <script type="application/json" class="dd-data">
+            ["Tienda Juanita","Mercado Central","Proveedor Diego","Supermercado La 14"]
+          </script>
+        </div>
       </div>
 
       <!-- CARTE DÉPENSE -->
@@ -342,15 +352,15 @@
       <div class="sep-gray"></div>
 
       <!-- Observations -->
-      <div class="label-line">
-        <span class="main">Observaciones</span><span class="opt"> (Opcional)</span>
+      <div class="form-section">
+        <div class="label">Observaciones <span class="opt">(Opcional)</span></div>
+        <textarea class="field-multi" id="obsField"></textarea>
       </div>
-      <textarea class="field-multi" id="obsField"></textarea>
 
       <div class="sep-gray"></div>
 
       <!-- Boutons -->
-      <button class="btn btn-desactive" id="btnRegistrar" disabled>REGISTRAR</button>
+      <button class="btn btn-noir" id="btnRegistrar" disabled>REGISTRAR</button>
       <button class="btn btn-blanc" data-role="volver-inicio">VOLVER AL INICIO</button>
 
       <div style="height: calc(24px * var(--fix));"></div>
