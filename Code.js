@@ -5028,6 +5028,63 @@ function getProductosPorCategoria(categoria) {
 }
 
 /**
+ * Devuelve los proveedores registrados para una categoría y producto.
+ *
+ * @param {string} categoria
+ * @param {string} producto
+ * @returns {string[]} nombres de proveedores (sin duplicados, ordenados A→Z)
+ */
+function getProveedoresPorProducto(categoria, producto) {
+  var categoriaFiltro = (categoria || '').toString().trim();
+  var productoFiltro = (producto || '').toString().trim();
+
+  if (!categoriaFiltro || !productoFiltro) {
+    return [];
+  }
+
+  var sheet = getSheet_('PRODUCTO');
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) {
+    return [];
+  }
+
+  var categoriaObjetivo = categoriaFiltro.toLowerCase();
+  var productoObjetivo = productoFiltro.toLowerCase();
+  var filas = sheet.getRange(2, 2, lastRow - 1, 3).getValues(); // B:D
+  var proveedoresMap = {};
+
+  filas.forEach(function (row) {
+    var categoriaRow = (row[0] || '').toString().trim();
+    var productoRow = (row[1] || '').toString().trim();
+    var proveedor = (row[2] || '').toString().trim();
+
+    if (!categoriaRow || !productoRow || !proveedor) return;
+
+    if (categoriaRow.toLowerCase() === categoriaObjetivo && productoRow.toLowerCase() === productoObjetivo) {
+      var key = proveedor.toLowerCase();
+      if (!proveedoresMap[key]) {
+        proveedoresMap[key] = proveedor;
+      }
+    }
+  });
+
+  var proveedores = Object.keys(proveedoresMap).map(function (key) {
+    return proveedoresMap[key];
+  });
+
+  proveedores.sort(function (a, b) {
+    var aLower = a.toLowerCase();
+    var bLower = b.toLowerCase();
+
+    if (aLower < bLower) return -1;
+    if (aLower > bLower) return 1;
+    return 0;
+  });
+
+  return proveedores;
+}
+
+/**
  * Crea un producto simple en la hoja PRODUCTO.
  * Inserta ID, categoría y nombre normalizados.
  *
@@ -5136,6 +5193,34 @@ function crearProveedor(data) {
       data: null
     };
   }
+}
+
+// Mantener la función legacy accesible para compatibilidad.
+var crearProveedorLegacy = crearProveedor;
+
+/**
+ * Crea un nuevo proveedor en LISTAS!F siguiendo la nueva arquitectura.
+ * No modifica la función legacy crearProveedor(data).
+ *
+ * @param {string} nombre
+ * @returns {{success: boolean, error?: string}}
+ */
+function crearProveedor(nombre) {
+  // Si viene con la estructura antigua, delegar al legado.
+  if (nombre && typeof nombre === 'object' && nombre.proveedor !== undefined) {
+    return crearProveedorLegacy(nombre);
+  }
+
+  var nombreRaw = (nombre || '').toString().trim();
+  if (!nombreRaw) {
+    return { success: false, error: 'Nombre vacío' };
+  }
+
+  var nombreNormalizado = nombreRaw.charAt(0).toUpperCase() + nombreRaw.slice(1).toLowerCase();
+
+  addToList_('LISTAS', 'F', nombreNormalizado);
+
+  return { success: true };
 }
 
 /**
