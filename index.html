@@ -1044,7 +1044,19 @@
 
           setOptionsToDropdown(unidadDropdown, []);
           unidadDropdown.dataset.ph = 'Unidad';
-          setDropdownPlaceholder(unidadDropdown);
+          if (!gastoState.unidad){
+            setDropdownPlaceholder(unidadDropdown);
+          } else {
+            var label = unidadDropdown.querySelector('.dd-label');
+            var btn = unidadDropdown.querySelector('.dd-button');
+            if (label){
+              label.textContent = gastoState.unidad;
+            }
+            if (btn){
+              btn.removeAttribute('data-placeholder');
+            }
+            unidadDropdown.dataset.value = gastoState.unidad;
+          }
 
           google.script.run
             .withSuccessHandler(function(unidades){
@@ -1337,7 +1349,17 @@
         }
         if (unidadDropdown){
           unidadDropdown.dataset.ph = 'Unidad';
-          if (!gastoState.unidad){
+          if (gastoState.unidad){
+            var unidadLabel = unidadDropdown.querySelector('.dd-label');
+            var unidadBtn = unidadDropdown.querySelector('.dd-button');
+            if (unidadLabel){
+              unidadLabel.textContent = gastoState.unidad;
+            }
+            if (unidadBtn){
+              unidadBtn.removeAttribute('data-placeholder');
+            }
+            unidadDropdown.dataset.value = gastoState.unidad;
+          } else {
             setDropdownPlaceholder(unidadDropdown);
           }
         }
@@ -1471,6 +1493,124 @@
           setRegistrarLoading(false);
           setVolverInicioEnabled(true);
           showError('No se pudo crear el proveedor.');
+        }
+      });
+    }
+  },
+
+  nuevaUnidad: function(){
+    var unidadInput = document.getElementById('nombreUnidad')
+      || document.getElementById('unidadNombre')
+      || document.querySelector('input[name="unidadNombre"]')
+      || document.querySelector('input[type="text"]');
+    var errorContainer = document.getElementById('nuevaUnidadError')
+      || document.querySelector('[data-role="error"]');
+    var btnRegistrar = document.getElementById('btnRegistrarUnidad') || document.getElementById('btnRegistrar');
+    var btnVolverInicio = document.querySelector('button[data-role="volver-inicio"]') || document.getElementById('btnVolverInicio');
+
+    function clearError(){
+      if (errorContainer){
+        errorContainer.textContent = '';
+        errorContainer.style.display = 'none';
+      }
+    }
+
+    function showError(msg){
+      if (errorContainer){
+        errorContainer.textContent = msg;
+        errorContainer.style.display = '';
+      } else {
+        alert(msg);
+      }
+    }
+
+    function setRegistrarLoading(isLoading){
+      if (!btnRegistrar) return;
+      if (btnRegistrar.classList && btnRegistrar.classList.contains('btn-noir')){
+        window.secoSetBlackButtonLoading(btnRegistrar, isLoading);
+        return;
+      }
+      if (isLoading){
+        if (btnRegistrar.dataset.spinner === '1') return;
+        btnRegistrar.disabled = true;
+        btnRegistrar.dataset.spinner = '1';
+      } else {
+        btnRegistrar.disabled = false;
+        btnRegistrar.removeAttribute('data-spinner');
+      }
+    }
+
+    function setVolverInicioEnabled(enable){
+      if (btnVolverInicio){
+        btnVolverInicio.disabled = !enable;
+      }
+    }
+
+    if (unidadInput){
+      unidadInput.value = '';
+    }
+    clearError();
+    setRegistrarLoading(false);
+
+    if (btnVolverInicio){
+      if (typeof registerVolverInicioHook === 'function'){
+        registerVolverInicioHook(btnVolverInicio, function(){
+          resetGastoState();
+        });
+      } else {
+        btnVolverInicio.addEventListener('click', function(){
+          if (btnVolverInicio.disabled) return;
+          resetGastoState();
+          loadPage('inicio');
+        });
+      }
+    }
+
+    if (btnRegistrar){
+      btnRegistrar.addEventListener('click', function(){
+        if (btnRegistrar.disabled) return;
+
+        var nombre = (unidadInput ? unidadInput.value : '').toString().trim();
+        if (!nombre){
+          showError('Ingrese la unidad.');
+          if (unidadInput) unidadInput.focus();
+          return;
+        }
+
+        var nombreNormalizado = nombre.toLowerCase();
+
+        clearError();
+        setRegistrarLoading(true);
+        setVolverInicioEnabled(false);
+
+        if (typeof google !== 'undefined' && google.script && google.script.run){
+          google.script.run
+            .withSuccessHandler(function(resp){
+              setRegistrarLoading(false);
+              setVolverInicioEnabled(true);
+
+              var ok = (resp && (resp.ok || resp.success)) || resp === undefined || resp === null || resp === true;
+              if (!ok){
+                var msg = (resp && resp.error) ? resp.error : 'Error al crear la unidad.';
+                showError(msg);
+                return;
+              }
+
+              updateGastoState('unidad', nombreNormalizado);
+              updateGastoState('origen', null);
+              loadPage('registrarGasto');
+            })
+            .withFailureHandler(function(err){
+              setRegistrarLoading(false);
+              setVolverInicioEnabled(true);
+              var msg = (err && err.message) ? err.message : 'Error al crear la unidad.';
+              showError(msg);
+            })
+            .crearUnidad(nombreNormalizado);
+        } else {
+          setRegistrarLoading(false);
+          setVolverInicioEnabled(true);
+          showError('No se pudo crear la unidad.');
         }
       });
     }
