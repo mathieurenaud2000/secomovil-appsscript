@@ -5421,6 +5421,115 @@ function crearProductoDetallado(data) {
   }
 }
 
+/**
+ * Registra o actualiza el costo de un producto en la hoja PRODUCTO.
+ *
+ * @param {string} idProducto
+ * @param {string} categoria
+ * @param {string} producto
+ * @param {string} proveedor
+ * @param {string} unidad
+ * @param {number} precioUnitario
+ * @returns {{success: boolean, error?: string}}
+ */
+function registrarCosto(idProducto, categoria, producto, proveedor, unidad, precioUnitario) {
+  try {
+    var sheet = getSheet_('PRODUCTO');
+    var lastRow = sheet.getLastRow();
+
+    var idProductoStr = (idProducto || '').toString().trim();
+    var categoriaStr = (categoria || '').toString().trim();
+    var productoStr = (producto || '').toString().trim();
+    var proveedorStr = (proveedor || '').toString().trim();
+    var unidadStr = (unidad || '').toString().trim().toLowerCase();
+    var precioNum = Number(precioUnitario);
+
+    var filaObjetivo = -1;
+
+    if (lastRow >= 2 && idProductoStr) {
+      var ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+      for (var i = 0; i < ids.length; i++) {
+        var idFila = (ids[i][0] || '').toString().trim();
+        if (idFila === idProductoStr) {
+          filaObjetivo = i + 2;
+          break;
+        }
+      }
+    }
+
+    if (filaObjetivo === -1) {
+      filaObjetivo = getFirstEmptyRowInColumn_(sheet, 1);
+      sheet.getRange(filaObjetivo, 1).setValue(idProductoStr);
+    }
+
+    sheet.getRange(filaObjetivo, 2).setValue(categoriaStr);
+    sheet.getRange(filaObjetivo, 3).setValue(productoStr);
+    sheet.getRange(filaObjetivo, 4).setValue(proveedorStr);
+    sheet.getRange(filaObjetivo, 5).setValue(unidadStr);
+    sheet.getRange(filaObjetivo, 6).setValue(precioNum);
+
+    return { success: true };
+
+  } catch (e) {
+    return {
+      success: false,
+      error: e && e.message ? e.message : 'Error al registrar el costo.'
+    };
+  }
+}
+
+/**
+ * Edita el costo de un producto existente en la hoja PRODUCTO.
+ *
+ * @param {string} idProducto
+ * @param {string} proveedor
+ * @param {string} unidad
+ * @param {number} precioUnitario
+ * @returns {{success: boolean, error?: string}}
+ */
+function editarCosto(idProducto, proveedor, unidad, precioUnitario) {
+  try {
+    var sheet = getSheet_('PRODUCTO');
+    var lastRow = sheet.getLastRow();
+
+    var idProductoStr = (idProducto || '').toString().trim();
+    var proveedorStr = (proveedor || '').toString().trim();
+    var unidadStr = (unidad || '').toString().trim().toLowerCase();
+    var precioNum = Number(precioUnitario);
+
+    if (lastRow < 2 || !idProductoStr) {
+      return { success: false, error: 'ID_PRODUCTO no encontrado' };
+    }
+
+    var ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+    var filaObjetivo = -1;
+
+    for (var i = 0; i < ids.length; i++) {
+      var idFila = (ids[i][0] || '').toString().trim();
+      if (idFila === idProductoStr) {
+        filaObjetivo = i + 2;
+        break;
+      }
+    }
+
+    if (filaObjetivo === -1) {
+      return { success: false, error: 'ID_PRODUCTO no encontrado' };
+    }
+
+    sheet.getRange(filaObjetivo, 4).setValue(proveedorStr);
+    sheet.getRange(filaObjetivo, 5).setValue(unidadStr);
+    sheet.getRange(filaObjetivo, 6).setValue(precioNum);
+
+    return { success: true };
+
+  } catch (e) {
+    return {
+      success: false,
+      error: e && e.message ? e.message : 'Error al editar el costo.'
+    };
+  }
+}
+
 
 
 
