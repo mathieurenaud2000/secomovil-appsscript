@@ -866,6 +866,149 @@
 
         var registrarCostoContainer = document.getElementById('registrarCostoContainer');
         var precioUnitarioContainer = document.getElementById('precioUnitarioContainer');
+        var expenseCard = document.getElementById('expenseCard');
+        var qtyInput = document.getElementById('qtyInput');
+        var unitLabel = document.getElementById('unitLabel');
+        var unitPriceText = document.getElementById('unitPriceText');
+        var expenseTotal = document.getElementById('expenseTotal');
+        var obsField = document.getElementById('obsField');
+        var btnRegistrarGasto = document.getElementById('btnRegistrar');
+
+        function formatMoney(val){
+          var num = typeof val === 'number' ? val : parseFloat(val);
+          if (!isFinite(num)) num = 0;
+          return num.toFixed(2).replace('.', ',') + ' $';
+        }
+
+        function getMesFromFecha(fecha){
+          if (!fecha) return '';
+          var parts = fecha.split('/');
+          return parts.length >= 2 ? parts[1] : '';
+        }
+
+        function showError(msg){
+          alert(msg || 'Ocurrió un error al registrar el gasto.');
+        }
+
+        function setRegistrarEnabled(enabled){
+          if (!btnRegistrarGasto) return;
+          btnRegistrarGasto.disabled = !enabled;
+          if (enabled){
+            btnRegistrarGasto.classList.remove('btn-desactive');
+            if (!btnRegistrarGasto.classList.contains('btn-noir')){
+              btnRegistrarGasto.classList.add('btn-noir');
+            }
+          } else {
+            if (!btnRegistrarGasto.classList.contains('btn-desactive')){
+              btnRegistrarGasto.classList.add('btn-desactive');
+            }
+            btnRegistrarGasto.classList.remove('btn-noir');
+          }
+        }
+
+        function sanitizeCantidadInput(){
+          if (!qtyInput) return '';
+          var val = (qtyInput.value || '').toString();
+          var sanitized = val.replace(/\./g, ',').replace(/[^0-9,]/g, '');
+          var commaIndex = sanitized.indexOf(',');
+          if (commaIndex !== -1){
+            sanitized = sanitized.slice(0, commaIndex + 1) + sanitized.slice(commaIndex + 1).replace(/,/g, '');
+          }
+          if (sanitized !== val){
+            qtyInput.value = sanitized;
+          }
+          return sanitized;
+        }
+
+        function handleQtyKeydown(e){
+          var allowed = ['Backspace','Tab','Enter','ArrowLeft','ArrowRight','Delete',',','.'];
+          if (allowed.indexOf(e.key) !== -1) return;
+          if (/^\d$/.test(e.key)) return;
+          e.preventDefault();
+        }
+
+        function updateMontoDesdeCantidad(){
+          var sanitized = sanitizeCantidadInput();
+          var cantidadNumber = parseFloat(sanitized.replace(',', '.'));
+
+          if (!isFinite(cantidadNumber)){
+            updateGastoState('cantidad', null);
+            updateGastoState('gasto', null);
+            if (expenseTotal){
+              expenseTotal.textContent = '0,00 $';
+            }
+            setRegistrarEnabled(false);
+            return;
+          }
+
+          updateGastoState('cantidad', cantidadNumber);
+          var precioNumero = parseFloat(gastoState.precioUnitario);
+          var tienePrecio = isFinite(precioNumero);
+          var monto = tienePrecio ? cantidadNumber * precioNumero : 0;
+          updateGastoState('gasto', monto);
+
+          if (expenseTotal){
+            expenseTotal.textContent = formatMoney(monto);
+          }
+
+          setRegistrarEnabled(cantidadNumber > 0 && tienePrecio);
+        }
+
+        function refreshExpenseCard(){
+          var hasData = gastoState.categoria && gastoState.producto && gastoState.proveedor && gastoState.unidad;
+          var precioNumber = parseFloat(gastoState.precioUnitario);
+          var canShowCard = hasData && isFinite(precioNumber);
+
+          if (expenseCard){
+            if (canShowCard){
+              expenseCard.style.display = '';
+              expenseCard.classList.remove('hidden');
+            } else {
+              expenseCard.style.display = 'none';
+              expenseCard.classList.add('hidden');
+            }
+          }
+
+          if (!canShowCard){
+            if (expenseTotal){
+              expenseTotal.textContent = '0,00 $';
+            }
+            if (qtyInput){
+              qtyInput.value = '';
+            }
+            setRegistrarEnabled(false);
+            return;
+          }
+
+          if (unitLabel){
+            unitLabel.textContent = (gastoState.unidad || '').toString().toLowerCase();
+          }
+          if (unitPriceText){
+            var unitTxt = (gastoState.unidad || '').toString().toLowerCase();
+            unitPriceText.textContent = precioNumber.toFixed(2).replace('.', ',') + ' $ / ' + unitTxt;
+          }
+
+          if (typeof gastoState.cantidad === 'number' && isFinite(gastoState.cantidad) && gastoState.cantidad > 0){
+            var qtyStr = gastoState.cantidad.toString().replace('.', ',');
+            if (qtyInput && qtyInput.value !== qtyStr){
+              qtyInput.value = qtyStr;
+            }
+            var monto = gastoState.cantidad * precioNumber;
+            updateGastoState('gasto', monto);
+            if (expenseTotal){
+              expenseTotal.textContent = formatMoney(monto);
+            }
+            setRegistrarEnabled(true);
+          } else {
+            if (expenseTotal){
+              expenseTotal.textContent = '0,00 $';
+            }
+            if (qtyInput && !qtyInput.value){
+              qtyInput.value = '';
+            }
+            setRegistrarEnabled(false);
+          }
+        }
 
         function setDropdownPlaceholder(dropdown){
           if (!dropdown) return;
@@ -898,25 +1041,23 @@
           setDropdownPlaceholder(productoDropdown);
           setDropdownPlaceholder(proveedorDropdown);
 
-          var qtyInput = document.getElementById('qtyInput');
           if (qtyInput){
             qtyInput.value = '';
           }
 
-          var unitLabel = document.getElementById('unitLabel');
           if (unitLabel){
             unitLabel.textContent = '';
           }
 
-          var unitPriceText = document.getElementById('unitPriceText');
           if (unitPriceText){
             unitPriceText.textContent = '';
           }
 
-          var expenseTotal = document.getElementById('expenseTotal');
           if (expenseTotal){
             expenseTotal.textContent = '0,00 $';
           }
+
+          refreshExpenseCard();
         }
 
         function resetCamposDesdeProducto(){
@@ -929,25 +1070,23 @@
           setDropdownPlaceholder(proveedorDropdown);
           setOptionsToDropdown(proveedorDropdown, []);
 
-          var qtyInput = document.getElementById('qtyInput');
           if (qtyInput){
             qtyInput.value = '';
           }
 
-          var unitLabel = document.getElementById('unitLabel');
           if (unitLabel){
             unitLabel.textContent = '';
           }
 
-          var unitPriceText = document.getElementById('unitPriceText');
           if (unitPriceText){
             unitPriceText.textContent = '';
           }
 
-          var expenseTotal = document.getElementById('expenseTotal');
           if (expenseTotal){
             expenseTotal.textContent = '0,00 $';
           }
+
+          refreshExpenseCard();
         }
 
         function ocultarSeccionesCosto(){
@@ -960,6 +1099,8 @@
             precioUnitarioContainer.style.display = 'none';
             precioUnitarioContainer.classList.add('hidden');
           }
+
+          refreshExpenseCard();
         }
 
         function mostrarRegistrarCosto(){
@@ -972,6 +1113,8 @@
             precioUnitarioContainer.style.display = 'none';
             precioUnitarioContainer.classList.add('hidden');
           }
+
+          refreshExpenseCard();
         }
 
         function mostrarPrecioUnitario(){
@@ -984,6 +1127,8 @@
             registrarCostoContainer.style.display = 'none';
             registrarCostoContainer.classList.add('hidden');
           }
+
+          refreshExpenseCard();
         }
 
         function showProductoContainer(){
@@ -1086,6 +1231,8 @@
                 updateGastoState('precioUnitario', null);
                 mostrarRegistrarCosto();
               }
+
+              refreshExpenseCard();
             })
             .getCosto(gastoState.idProducto, gastoState.proveedor, gastoState.unidad);
         }
@@ -1214,6 +1361,8 @@
             updateGastoState('unidad', value);
             cargarCostoSiListo();
           }
+
+          refreshExpenseCard();
 
           closeOverlay();
         }
@@ -1344,6 +1493,89 @@
             .getProductosPorCategoria(categoria);
         }
 
+        if (qtyInput){
+          if (typeof gastoState.cantidad === 'number' && isFinite(gastoState.cantidad)){
+            qtyInput.value = gastoState.cantidad.toString().replace('.', ',');
+          }
+          qtyInput.addEventListener('input', updateMontoDesdeCantidad);
+          qtyInput.addEventListener('keydown', handleQtyKeydown);
+        }
+
+        if (obsField){
+          obsField.value = gastoState.observaciones || '';
+          obsField.addEventListener('input', function(){
+            updateGastoState('observaciones', obsField.value);
+          });
+          obsField.addEventListener('change', function(){
+            updateGastoState('observaciones', obsField.value);
+          });
+        }
+
+        if (btnRegistrarGasto){
+          btnRegistrarGasto.addEventListener('click', function(){
+            if (btnRegistrarGasto.disabled) return;
+
+            var camposCompletos = (
+              gastoState.fecha &&
+              gastoState.categoria &&
+              gastoState.producto &&
+              gastoState.proveedor &&
+              gastoState.unidad &&
+              isFinite(parseFloat(gastoState.precioUnitario)) &&
+              isFinite(parseFloat(gastoState.cantidad)) &&
+              gastoState.cantidad > 0 &&
+              isFinite(parseFloat(gastoState.gasto)) &&
+              parseFloat(gastoState.gasto) > 0 &&
+              gastoState.idProducto
+            );
+
+            if (!camposCompletos){
+              showError('Complete los datos del gasto antes de registrar.');
+              return;
+            }
+
+            if (typeof google === 'undefined' || !google.script || !google.script.run){
+              showError('No se puede registrar el gasto en este momento.');
+              return;
+            }
+
+            window.secoSetBlackButtonLoading(btnRegistrarGasto, true);
+
+            var data = {
+              fecha: gastoState.fecha,
+              mes: getMesFromFecha(gastoState.fecha),
+              categoria: gastoState.categoria,
+              producto: gastoState.producto,
+              cantidad: gastoState.cantidad,
+              unidad: gastoState.unidad,
+              precioUnitario: gastoState.precioUnitario,
+              monto: gastoState.gasto,
+              proveedor: gastoState.proveedor,
+              observaciones: gastoState.observaciones || '',
+              idProducto: gastoState.idProducto
+            };
+
+            google.script.run
+              .withSuccessHandler(function(resp){
+                var ok = (resp && (resp.success || resp.ok)) || resp === true;
+                if (!ok){
+                  window.secoSetBlackButtonLoading(btnRegistrarGasto, false);
+                  showError('No se pudo registrar el gasto.');
+                  return;
+                }
+
+                resetGastoState();
+                loadPage('gastoRegistrado');
+              })
+              .withFailureHandler(function(err){
+                window.secoSetBlackButtonLoading(btnRegistrarGasto, false);
+                var msg = (err && err.message) ? err.message : 'No se pudo registrar el gasto.';
+                showError(msg);
+              })
+              .registrarGasto(data);
+          });
+        }
+
         if (!gastoState.categoria){
           setDropdownPlaceholder(categoriaDropdown);
         }
@@ -1364,6 +1596,7 @@
           }
         }
         ocultarSeccionesCosto();
+        refreshExpenseCard();
         initDropdowns();
         cargarCategorias();
         if (gastoState.categoria){
