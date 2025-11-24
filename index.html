@@ -913,10 +913,46 @@
           }
         }
 
+        function resetCamposDesdeProducto(){
+          updateGastoState('proveedor', null);
+          updateGastoState('unidad', null);
+          updateGastoState('precioUnitario', null);
+          updateGastoState('cantidad', null);
+          updateGastoState('gasto', null);
+
+          setDropdownPlaceholder(proveedorDropdown);
+
+          var qtyInput = document.getElementById('qtyInput');
+          if (qtyInput){
+            qtyInput.value = '';
+          }
+
+          var unitLabel = document.getElementById('unitLabel');
+          if (unitLabel){
+            unitLabel.textContent = '';
+          }
+
+          var unitPriceText = document.getElementById('unitPriceText');
+          if (unitPriceText){
+            unitPriceText.textContent = '';
+          }
+
+          var expenseTotal = document.getElementById('expenseTotal');
+          if (expenseTotal){
+            expenseTotal.textContent = '0,00 $';
+          }
+        }
+
         function showProductoContainer(){
           if (!productoDropdown) return;
           productoDropdown.style.display = '';
           productoDropdown.classList.remove('hidden');
+        }
+
+        function showProveedorContainer(){
+          if (!proveedorDropdown) return;
+          proveedorDropdown.style.display = '';
+          proveedorDropdown.classList.remove('hidden');
         }
 
         function getOptionsFromDropdown(dropdown){
@@ -963,6 +999,23 @@
             updateGastoState('categoria', value);
             resetCamposDependientes();
             showProductoContainer();
+            cargarProductosPorCategoria(value);
+          }
+
+          if (dropdown === productoDropdown){
+            updateGastoState('producto', value);
+            updateGastoState('idProducto', null);
+            resetCamposDesdeProducto();
+            showProveedorContainer();
+
+            if (typeof google !== 'undefined' && google.script && google.script.run){
+              // TODO: Reemplazar por una función backend dedicada a obtener el ID del producto
+              google.script.run
+                .withSuccessHandler(function(id){
+                  updateGastoState('idProducto', id);
+                })
+                .getIdProducto(gastoState.categoria, gastoState.producto);
+            }
           }
 
           closeOverlay();
@@ -1061,6 +1114,25 @@
               setDropdownPlaceholder(categoriaDropdown);
             })
             .getCategorias();
+        }
+
+        function cargarProductosPorCategoria(categoria){
+          if (!productoDropdown || typeof google === 'undefined' || !google.script || !google.script.run) return;
+
+          productoDropdown.dataset.ph = 'Producto';
+          setOptionsToDropdown(productoDropdown, []);
+          setDropdownPlaceholder(productoDropdown);
+
+          if (!categoria) return;
+
+          google.script.run
+            .withSuccessHandler(function(productos){
+              if (!Array.isArray(productos)) productos = [];
+
+              setOptionsToDropdown(productoDropdown, productos);
+              setDropdownPlaceholder(productoDropdown);
+            })
+            .getProductosPorCategoria(categoria);
         }
 
         setDropdownPlaceholder(categoriaDropdown);
