@@ -1382,6 +1382,187 @@
     })();
   },
 
+  registrarCosto: function(){
+    (function(){
+        var fechaLabel = document.getElementById('costoFecha') || document.querySelector('[data-field="fecha"]');
+        var categoriaLabel = document.getElementById('costoCategoria') || document.querySelector('[data-field="categoria"]');
+        var productoLabel = document.getElementById('costoProducto') || document.querySelector('[data-field="producto"]');
+        var proveedorLabel = document.getElementById('costoProveedor') || document.querySelector('[data-field="proveedor"]');
+        var unidadLabel = document.getElementById('costoUnidad') || document.querySelector('[data-field="unidad"]');
+
+        var precioInput = document.getElementById('precioUnidad')
+          || document.getElementById('precioUnidadInput')
+          || document.querySelector('input[name="precioUnidad"]')
+          || document.querySelector('input[type="text"]');
+
+        var errorContainer = document.getElementById('registrarCostoError') || document.querySelector('[data-role="error"]');
+
+        var btnRegistrar = document.getElementById('btnRegistrarCosto') || document.getElementById('btnRegistrar');
+        var btnVolverInicio = document.querySelector('button[data-role="volver-inicio"]') || document.getElementById('btnVolverInicio');
+
+        function setLabelText(el, val){
+          if (!el) return;
+          el.textContent = (val === null || typeof val === 'undefined') ? '' : String(val);
+        }
+
+        function clearError(){
+          if (errorContainer){
+            errorContainer.textContent = '';
+            errorContainer.style.display = 'none';
+          }
+        }
+
+        function showError(msg){
+          if (errorContainer){
+            errorContainer.textContent = msg;
+            errorContainer.style.display = '';
+          } else {
+            alert(msg);
+          }
+        }
+
+        function setRegistrarLoading(isLoading){
+          if (!btnRegistrar) return;
+          if (btnRegistrar.classList && btnRegistrar.classList.contains('btn-noir')){
+            window.secoSetBlackButtonLoading(btnRegistrar, isLoading);
+            return;
+          }
+          if (isLoading){
+            if (btnRegistrar.dataset.spinner === '1') return;
+            btnRegistrar.disabled = true;
+            btnRegistrar.dataset.spinner = '1';
+          } else {
+            btnRegistrar.disabled = false;
+            btnRegistrar.removeAttribute('data-spinner');
+          }
+        }
+
+        function setVolverInicioLoading(isLoading){
+          if (!btnVolverInicio) return;
+          if (isLoading){
+            if (btnVolverInicio.dataset.spinner === '1') return;
+            btnVolverInicio.disabled = true;
+            btnVolverInicio.dataset.spinner = '1';
+          } else {
+            btnVolverInicio.disabled = false;
+            btnVolverInicio.removeAttribute('data-spinner');
+          }
+        }
+
+        function sanitizePrecio(){
+          if (!precioInput) return;
+          var val = (precioInput.value || '').toString();
+          var sanitized = val.replace(/\./g, ',').replace(/[^0-9,]/g, '');
+          var commaIndex = sanitized.indexOf(',');
+          if (commaIndex !== -1){
+            sanitized = sanitized.slice(0, commaIndex + 1) + sanitized.slice(commaIndex + 1).replace(/,/g, '');
+          }
+          if (sanitized !== val){
+            precioInput.value = sanitized;
+          }
+        }
+
+        function handlePrecioKeydown(e){
+          var allowed = ['Backspace','Tab','Enter','ArrowLeft','ArrowRight','Delete',',','.'];
+          if (allowed.indexOf(e.key) !== -1) return;
+          if (/^\d$/.test(e.key)) return;
+          e.preventDefault();
+        }
+
+        setLabelText(fechaLabel, gastoState.fecha);
+        setLabelText(categoriaLabel, gastoState.categoria);
+        setLabelText(productoLabel, gastoState.producto);
+        setLabelText(proveedorLabel, gastoState.proveedor);
+        setLabelText(unidadLabel, gastoState.unidad);
+
+        if (precioInput){
+          precioInput.value = '';
+          precioInput.removeAttribute('data-spinner');
+          precioInput.addEventListener('input', sanitizePrecio);
+          precioInput.addEventListener('keydown', handlePrecioKeydown);
+        }
+
+        clearError();
+        setRegistrarLoading(false);
+        setVolverInicioLoading(false);
+
+        if (btnVolverInicio){
+          if (typeof registerVolverInicioHook === 'function'){
+            registerVolverInicioHook(btnVolverInicio, function(){
+              resetGastoState();
+            });
+          } else {
+            btnVolverInicio.addEventListener('click', function(){
+              if (btnVolverInicio.disabled) return;
+              resetGastoState();
+              loadPage('inicio');
+            });
+          }
+        }
+
+        if (btnRegistrar){
+          btnRegistrar.addEventListener('click', function(){
+            if (btnRegistrar.disabled) return;
+
+            var precioStr = (precioInput ? precioInput.value : '').toString().trim();
+            if (!precioStr){
+              showError('Ingrese el precio por unidad.');
+              if (precioInput) precioInput.focus();
+              return;
+            }
+
+            var precioNumber = parseFloat(precioStr.replace(',', '.'));
+            if (isNaN(precioNumber)){
+              showError('Precio inválido.');
+              if (precioInput) precioInput.focus();
+              return;
+            }
+
+            if (!gastoState.idProducto || !gastoState.categoria || !gastoState.producto || !gastoState.proveedor || !gastoState.unidad){
+              showError('Faltan datos para registrar el costo.');
+              return;
+            }
+
+            clearError();
+            setRegistrarLoading(true);
+
+            if (typeof google !== 'undefined' && google.script && google.script.run){
+              google.script.run
+                .withSuccessHandler(function(resp){
+                  setRegistrarLoading(false);
+
+                  var ok = resp && (resp.success || resp.ok || resp === true);
+                  if (!ok){
+                    var msg = (resp && resp.error) ? resp.error : 'No se pudo registrar el costo.';
+                    showError(msg);
+                    return;
+                  }
+
+                  updateGastoState('precioUnitario', precioNumber);
+                  loadPage('registrarGasto');
+                })
+                .withFailureHandler(function(err){
+                  setRegistrarLoading(false);
+                  var msg = (err && err.message) ? err.message : 'Error al registrar el costo.';
+                  showError(msg);
+                })
+                .registrarCosto(
+                  gastoState.idProducto,
+                  gastoState.categoria,
+                  gastoState.producto,
+                  gastoState.proveedor,
+                  gastoState.unidad,
+                  precioNumber
+                );
+            } else {
+              setRegistrarLoading(false);
+              showError('No se pudo registrar el costo.');
+            }
+          });
+        }
+    })();
+  },
+
   nuevoProveedor: function(){
     var nombreInput = document.getElementById('nombreProveedor')
       || document.getElementById('proveedorNombre')
