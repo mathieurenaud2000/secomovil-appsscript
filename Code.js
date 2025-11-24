@@ -4857,6 +4857,36 @@ function getCategorias() {
 }
 
 /**
+ * Devuelve la lista de unidades (LISTAS!E) en minúsculas y ordenadas A→Z.
+ */
+function getUnidades() {
+  var sheet = getSheet_('LISTAS');
+  var lastRow = sheet.getLastRow();
+
+  if (lastRow < 2) {
+    return [];
+  }
+
+  var unidades = sheet
+    .getRange('E2:E' + lastRow)
+    .getValues()
+    .map(function (row) {
+      return (row[0] || '').toString().trim().toLowerCase();
+    })
+    .filter(function (value) {
+      return value;
+    });
+
+  unidades.sort(function (a, b) {
+    if (a < b) return -1;
+    if (a > b) return 1;
+    return 0;
+  });
+
+  return unidades;
+}
+
+/**
  * Crea una nueva categoría en LISTAS!D y ordena la columna.
  *
  * @param {string} nombre
@@ -4911,6 +4941,49 @@ function crearCategoria(nombre) {
   var finalLastRow = sheet.getLastRow();
   if (finalLastRow > 1) {
     sheet.getRange(2, 4, finalLastRow - 1, 1).sort({ column: 1, ascending: true });
+  }
+
+  return { success: true };
+}
+
+/**
+ * Crea una nueva unidad en LISTAS!E y ordena la columna.
+ *
+ * @param {string} nombre
+ * @returns {{ success: boolean, error?: string }}
+ */
+function crearUnidad(nombre) {
+  var sheet = getSheet_('LISTAS');
+
+  var nombreNormalizado = (nombre || '').toString().trim().toLowerCase();
+  if (!nombreNormalizado) {
+    return { success: false, error: 'Nombre vacío' };
+  }
+
+  var lastRow = sheet.getLastRow();
+  var valores = [];
+
+  if (lastRow >= 2) {
+    valores = sheet
+      .getRange('E2:E' + lastRow)
+      .getValues()
+      .map(function (row) {
+        return (row[0] || '').toString().trim().toLowerCase();
+      });
+  }
+
+  var existe = valores.some(function (valor) {
+    return valor === nombreNormalizado;
+  });
+
+  if (!existe) {
+    var insertRow = getFirstEmptyRowInColumn_(sheet, 5);
+    sheet.getRange(insertRow, 5).setValue(nombreNormalizado);
+  }
+
+  var finalLastRow = sheet.getLastRow();
+  if (finalLastRow > 1) {
+    sheet.getRange(2, 5, finalLastRow - 1, 1).sort({ column: 1, ascending: true });
   }
 
   return { success: true };
