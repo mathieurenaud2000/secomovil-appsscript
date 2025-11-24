@@ -846,10 +846,12 @@
         const today = new Date();
         const fechaHoy = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
 
-        updateGastoState('fecha', fechaHoy);
+        if (!window.gastoState.fecha){
+          updateGastoState('fecha', fechaHoy);
+        }
 
         if (expenseDate){
-          expenseDate.textContent = window.gastoState.fecha;
+          expenseDate.textContent = window.gastoState.fecha || fechaHoy;
         }
 
         var overlay = document.getElementById('ddOverlay');
@@ -1097,16 +1099,28 @@
           dropdown.dataset.value = value;
 
           if (dropdown === categoriaDropdown){
+            var previousCategoria = gastoState.categoria;
             updateGastoState('categoria', value);
-            resetCamposDependientes();
-            showProductoContainer();
-            cargarProductosPorCategoria(value);
+
+            if (previousCategoria !== value){
+              resetCamposDependientes();
+            }
+
+            if (value){
+              showProductoContainer();
+              cargarProductosPorCategoria(value);
+            }
           }
 
           if (dropdown === productoDropdown){
+            var previousProducto = gastoState.producto;
+            var shouldResetProductoDeps = previousProducto !== value;
+
             updateGastoState('producto', value);
-            updateGastoState('idProducto', null);
-            resetCamposDesdeProducto();
+            if (shouldResetProductoDeps){
+              updateGastoState('idProducto', null);
+              resetCamposDesdeProducto();
+            }
             showProveedorContainer();
 
             if (
@@ -1128,12 +1142,17 @@
 
                   proveedorDropdown.dataset.ph = 'Proveedor';
                   setOptionsToDropdown(proveedorDropdown, opts);
-                  setDropdownPlaceholder(proveedorDropdown);
+
+                  if (gastoState.proveedor && opts.indexOf(gastoState.proveedor) !== -1){
+                    selectOption(proveedorDropdown, gastoState.proveedor);
+                  } else {
+                    setDropdownPlaceholder(proveedorDropdown);
+                  }
                 })
                 .getProveedoresPorProducto(gastoState.categoria, gastoState.producto);
             }
 
-            if (typeof google !== 'undefined' && google.script && google.script.run){
+            if (typeof google !== 'undefined' && google.script && google.script.run && (!gastoState.idProducto || shouldResetProductoDeps)){
               // TODO: Reemplazar por una función backend dedicada a obtener el ID del producto
               google.script.run
                 .withSuccessHandler(function(id){
@@ -1279,7 +1298,12 @@
               if (!Array.isArray(categorias)) categorias = [];
 
               setOptionsToDropdown(categoriaDropdown, categorias);
-              setDropdownPlaceholder(categoriaDropdown);
+
+              if (gastoState.categoria && categorias.indexOf(gastoState.categoria) !== -1){
+                selectOption(categoriaDropdown, gastoState.categoria);
+              } else {
+                setDropdownPlaceholder(categoriaDropdown);
+              }
             })
             .getCategorias();
         }
@@ -1298,19 +1322,35 @@
               if (!Array.isArray(productos)) productos = [];
 
               setOptionsToDropdown(productoDropdown, productos);
-              setDropdownPlaceholder(productoDropdown);
+
+              if (gastoState.producto && productos.indexOf(gastoState.producto) !== -1){
+                selectOption(productoDropdown, gastoState.producto);
+              } else {
+                setDropdownPlaceholder(productoDropdown);
+              }
             })
             .getProductosPorCategoria(categoria);
         }
 
-        setDropdownPlaceholder(categoriaDropdown);
+        if (!gastoState.categoria){
+          setDropdownPlaceholder(categoriaDropdown);
+        }
         if (unidadDropdown){
           unidadDropdown.dataset.ph = 'Unidad';
-          setDropdownPlaceholder(unidadDropdown);
+          if (!gastoState.unidad){
+            setDropdownPlaceholder(unidadDropdown);
+          }
         }
         ocultarSeccionesCosto();
         initDropdowns();
         cargarCategorias();
+        if (gastoState.categoria){
+          showProductoContainer();
+          cargarProductosPorCategoria(gastoState.categoria);
+        }
+        if (gastoState.producto){
+          showProveedorContainer();
+        }
         if (gastoState.proveedor){
           cargarUnidades();
         }
@@ -1318,6 +1358,122 @@
           cargarCostoSiListo();
         }
     })();
+  },
+
+  nuevoProveedor: function(){
+    var nombreInput = document.getElementById('nombreProveedor')
+      || document.getElementById('proveedorNombre')
+      || document.querySelector('input[name="proveedorNombre"]')
+      || document.querySelector('input[type="text"]');
+    var errorContainer = document.getElementById('nuevoProveedorError')
+      || document.querySelector('[data-role="error"]');
+    var btnRegistrar = document.getElementById('btnRegistrarProveedor') || document.getElementById('btnRegistrar');
+    var btnVolverInicio = document.querySelector('button[data-role="volver-inicio"]') || document.getElementById('btnVolverInicio');
+
+    function clearError(){
+      if (errorContainer){
+        errorContainer.textContent = '';
+        errorContainer.style.display = 'none';
+      }
+    }
+
+    function showError(msg){
+      if (errorContainer){
+        errorContainer.textContent = msg;
+        errorContainer.style.display = '';
+      } else {
+        alert(msg);
+      }
+    }
+
+    function setRegistrarLoading(isLoading){
+      if (!btnRegistrar) return;
+      if (btnRegistrar.classList && btnRegistrar.classList.contains('btn-noir')){
+        window.secoSetBlackButtonLoading(btnRegistrar, isLoading);
+        return;
+      }
+      if (isLoading){
+        if (btnRegistrar.dataset.spinner === '1') return;
+        btnRegistrar.disabled = true;
+        btnRegistrar.dataset.spinner = '1';
+      } else {
+        btnRegistrar.disabled = false;
+        btnRegistrar.removeAttribute('data-spinner');
+      }
+    }
+
+    function setVolverInicioEnabled(enable){
+      if (btnVolverInicio){
+        btnVolverInicio.disabled = !enable;
+      }
+    }
+
+    if (nombreInput){
+      nombreInput.value = '';
+    }
+    clearError();
+
+    if (btnVolverInicio){
+      if (typeof registerVolverInicioHook === 'function'){
+        registerVolverInicioHook(btnVolverInicio, function(){
+          resetGastoState();
+        });
+      } else {
+        btnVolverInicio.addEventListener('click', function(){
+          resetGastoState();
+          loadPage('inicio');
+        });
+      }
+    }
+
+    if (btnRegistrar){
+      btnRegistrar.addEventListener('click', function(){
+        if (btnRegistrar.disabled) return;
+
+        var nombre = (nombreInput ? nombreInput.value : '').toString().trim();
+        if (!nombre){
+          showError('Ingrese el nombre del proveedor.');
+          if (nombreInput) nombreInput.focus();
+          return;
+        }
+
+        clearError();
+        setRegistrarLoading(true);
+        setVolverInicioEnabled(false);
+
+        var nomNormalizado = nombre;
+
+        if (typeof google !== 'undefined' && google.script && google.script.run){
+          google.script.run
+            .withSuccessHandler(function(resp){
+              setRegistrarLoading(false);
+              setVolverInicioEnabled(true);
+
+              var ok = (resp && (resp.ok || resp.success)) || resp === undefined || resp === null || resp === true;
+              if (!ok){
+                var msg = (resp && resp.error) ? resp.error : 'Error al crear el proveedor.';
+                showError(msg);
+                return;
+              }
+
+              updateGastoState('proveedor', nomNormalizado);
+              updateGastoState('origen', null);
+              loadPage('registrarGasto');
+            })
+            .withFailureHandler(function(err){
+              setRegistrarLoading(false);
+              setVolverInicioEnabled(true);
+              var msg = (err && err.message) ? err.message : 'Error al crear el proveedor.';
+              showError(msg);
+            })
+            .crearProveedor(nomNormalizado);
+        } else {
+          setRegistrarLoading(false);
+          setVolverInicioEnabled(true);
+          showError('No se pudo crear el proveedor.');
+        }
+      });
+    }
   },
 
   pedidosDelDia: function(){
