@@ -4821,6 +4821,99 @@ function registrarIngresoDesdePedidos_(pedidosDelDia) {
 }
 
 /**
+ * Devuelve la lista de categorías (LISTAS!D) ordenadas A→Z.
+ */
+function getCategorias() {
+  var sheet = getSheet_('LISTAS');
+  var lastRow = sheet.getLastRow();
+
+  if (lastRow < 2) {
+    return [];
+  }
+
+  var categorias = sheet
+    .getRange('D2:D' + lastRow)
+    .getValues()
+    .map(function (row) {
+      return (row[0] || '').toString().trim();
+    })
+    .filter(function (value) {
+      return value;
+    });
+
+  categorias.sort(function (a, b) {
+    var aLower = a.toLowerCase();
+    var bLower = b.toLowerCase();
+
+    if (aLower < bLower) return -1;
+    if (aLower > bLower) return 1;
+    return 0;
+  });
+
+  return categorias;
+}
+
+/**
+ * Crea una nueva categoría en LISTAS!D y ordena la columna.
+ *
+ * @param {string} nombre
+ * @returns {{ success: boolean, error?: string }}
+ */
+function crearCategoria(nombre) {
+  var sheet = getSheet_('LISTAS');
+
+  var nombreFormateado = (nombre || '').toString().trim();
+  if (!nombreFormateado) {
+    return {
+      success: false,
+      error: 'El nombre de la categoría no puede estar vacío.'
+    };
+  }
+
+  nombreFormateado = nombreFormateado.charAt(0).toUpperCase() + nombreFormateado.slice(1).toLowerCase();
+
+  var lastRow = sheet.getLastRow();
+  var valores = [];
+
+  if (lastRow >= 2) {
+    valores = sheet
+      .getRange('D2:D' + lastRow)
+      .getValues()
+      .map(function (row) {
+        return (row[0] || '').toString().trim();
+      });
+  }
+
+  var existe = valores.some(function (valor) {
+    return valor && valor.toLowerCase() === nombreFormateado.toLowerCase();
+  });
+
+  if (!existe) {
+    var insertRow = null;
+
+    for (var i = 0; i < valores.length; i++) {
+      if (!valores[i]) {
+        insertRow = i + 2; // desplazamiento porque empezamos en la fila 2
+        break;
+      }
+    }
+
+    if (!insertRow) {
+      insertRow = lastRow + 1;
+    }
+
+    sheet.getRange(insertRow, 4).setValue(nombreFormateado);
+  }
+
+  var finalLastRow = sheet.getLastRow();
+  if (finalLastRow > 1) {
+    sheet.getRange(2, 4, finalLastRow - 1, 1).sort({ column: 1, ascending: true });
+  }
+
+  return { success: true };
+}
+
+/**
  * Crea una nueva categoría de gasto en LISTAS!D (si no existe ya).
  *
  * Petición:
