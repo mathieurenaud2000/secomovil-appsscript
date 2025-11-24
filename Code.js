@@ -1283,7 +1283,7 @@ function generarIdVentaDirecta_() {
 
 /**
  * Genera un ID simple para los productos detallados.
- * Formato: "prod-00001", "prod-00002", ...
+ * Formato: "PROD-00001", "PROD-00002", ...
  */
 function generarIdProducto_() {
   var sheet = getSheet_('PRODUCTO');
@@ -1291,14 +1291,17 @@ function generarIdProducto_() {
 
   // Si no hay datos (solo encabezado o hoja vacía)
   if (lastRow < 2) {
-    return 'prod-00001';
+    return 'PROD-00001';
   }
 
   var lastId = sheet.getRange(lastRow, 1).getValue(); // Columna A = PRODUCTO ID
   var num = 0;
 
-  if (lastId && typeof lastId === 'string' && lastId.indexOf('prod-') === 0) {
-    num = parseInt(lastId.replace('prod-', ''), 10);
+  if (lastId && typeof lastId === 'string') {
+    var normalizedId = lastId.toLowerCase();
+    if (normalizedId.indexOf('prod-') === 0) {
+      num = parseInt(normalizedId.replace('prod-', ''), 10);
+    }
     if (isNaN(num)) {
       num = 0;
     }
@@ -1306,7 +1309,7 @@ function generarIdProducto_() {
 
   num++;
   // 5 dígitos: 00001, 00002, ...
-  return Utilities.formatString('prod-%05d', num);
+  return Utilities.formatString('PROD-%05d', num);
 }
 
 /**
@@ -4973,62 +4976,105 @@ function crearCategoriaGasto(data) {
 }
 
 /**
- * Crea un nuevo producto (nombre genérico) en LISTAS!H (si no existe ya).
- * Esto sirve para la lista de productos disponibles en los desplegables.
+ * Devuelve los productos registrados en PRODUCTO para una categoría.
  *
- * Petición:
- * {
- *   categoria: string,   // opcional aquí, pero previsto por el contrato
- *   producto: string
- * }
- *
- * Respuesta:
- * {
- *   ok: true|false,
- *   error: string|null,
- *   data: {
- *     productos: string[]
- *   } | null
- * }
+ * @param {string} categoria
+ * @returns {string[]} nombres de productos (sin duplicados, ordenados A→Z)
  */
-function crearProducto(data) {
+function getProductosPorCategoria(categoria) {
+  var categoriaFiltro = (categoria || '').toString().trim();
+  if (!categoriaFiltro) {
+    return [];
+  }
+
+  var sheet = getSheet_('PRODUCTO');
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) {
+    return [];
+  }
+
+  var categoriaObjetivo = categoriaFiltro.toLowerCase();
+  var filas = sheet.getRange(2, 2, lastRow - 1, 2).getValues(); // B:C
+  var productosMap = {};
+
+  filas.forEach(function (row) {
+    var categoriaRow = (row[0] || '').toString().trim();
+    var producto = (row[1] || '').toString().trim();
+
+    if (!categoriaRow || !producto) return;
+
+    if (categoriaRow.toLowerCase() === categoriaObjetivo) {
+      var key = producto.toLowerCase();
+      if (!productosMap[key]) {
+        productosMap[key] = producto;
+      }
+    }
+  });
+
+  var productos = Object.keys(productosMap).map(function (key) {
+    return productosMap[key];
+  });
+
+  productos.sort(function (a, b) {
+    var aLower = a.toLowerCase();
+    var bLower = b.toLowerCase();
+
+    if (aLower < bLower) return -1;
+    if (aLower > bLower) return 1;
+    return 0;
+  });
+
+  return productos;
+}
+
+/**
+ * Crea un producto simple en la hoja PRODUCTO.
+ * Inserta ID, categoría y nombre normalizados.
+ *
+ * @param {string} categoria
+ * @param {string} nombre
+ * @returns {{success: boolean, idProducto?: string, error?: string}}
+ */
+function crearProducto(categoria, nombre) {
   try {
-    if (!data || !data.producto) {
+    var categoriaRaw = (categoria || '').toString().trim();
+    var nombreRaw = (nombre || '').toString().trim();
+
+    if (!categoriaRaw || !nombreRaw) {
       return {
-        ok: false,
-        error: 'No se proporcionó el nombre del producto.',
-        data: null
+        success: false,
+        error: 'Categoría y nombre de producto son obligatorios.'
       };
     }
 
-    var nombreProducto = data.producto.toString().trim();
-    if (!nombreProducto) {
-      return {
-        ok: false,
-        error: 'El nombre del producto no puede estar vacío.',
-        data: null
-      };
-    }
+    var normalizar = function (valor) {
+      var lower = valor.toLowerCase();
+      return lower.charAt(0).toUpperCase() + lower.slice(1);
+    };
 
-    // Añadir a LISTAS!H (lista genérica de productos)
-    addToList_('LISTAS', 'H', nombreProducto);
+    var categoriaFmt = normalizar(categoriaRaw);
+    var nombreFmt = normalizar(nombreRaw);
 
-    // Volver a leer las listas para devolver la lista actualizada
-    var listas = getLists();
+    var sheet = getSheet_('PRODUCTO');
+    var newRow = getFirstEmptyRowInColumn_(sheet, 1);
+    var idProducto = generarIdProducto_();
+
+    sheet.getRange(newRow, 1).setValue(idProducto);
+    sheet.getRange(newRow, 2).setValue(categoriaFmt);
+    sheet.getRange(newRow, 3).setValue(nombreFmt);
+    sheet.getRange(newRow, 4).setValue('');
+    sheet.getRange(newRow, 5).setValue('');
+    sheet.getRange(newRow, 6).setValue('');
 
     return {
-      ok: true,
-      error: null,
-      data: {
-        productos: listas.productos || []
-      }
+      success: true,
+      idProducto: idProducto
     };
 
   } catch (e) {
     return {
-      ok: false,
-      error: e && e.message ? e.message : 'Error desconocido al crear el producto.',
-      data: null
+      success: false,
+      error: e && e.message ? e.message : 'Error al crear el producto.'
     };
   }
 }
@@ -5095,10 +5141,11 @@ function crearProveedor(data) {
 /**
  * Crea un producto detallado en la hoja PRODUCTO.
  *
- * Esta función NO reemplaza a crearProducto(data):
- * - crearProducto(data) mantiene la lista genérica de nombres en LISTAS!H
- * - crearProductoDetallado(data) crea una línea concreta en PRODUCTO
- *   con ID, categoría, proveedor, unidad y precio unidad.
+ * Esta función NO reemplaza a crearProducto(categoria, nombre):
+ * - crearProducto(categoria, nombre) crea una línea simple en PRODUCTO con
+ *   categoría y nombre normalizados.
+ * - crearProductoDetallado(data) crea una línea concreta en PRODUCTO con ID,
+ *   categoría, proveedor, unidad y precio unidad.
  *
  * Petición:
  * {
