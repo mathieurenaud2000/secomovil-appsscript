@@ -5494,10 +5494,14 @@ function crearProductoDetallado(data) {
  */
 function registrarCosto(idProducto, categoria, producto, proveedor, unidad, precioUnitario) {
   try {
+    var idProductoStr = (idProducto || '').toString().trim();
+    if (!idProductoStr) {
+      return { success: false, error: 'ID_PRODUCTO faltante' };
+    }
+
     var sheet = getSheet_('PRODUCTO');
     var lastRow = sheet.getLastRow();
 
-    var idProductoStr = (idProducto || '').toString().trim();
     var categoriaStr = (categoria || '').toString().trim();
     var productoStr = (producto || '').toString().trim();
     var proveedorStr = (proveedor || '').toString().trim();
@@ -5506,7 +5510,7 @@ function registrarCosto(idProducto, categoria, producto, proveedor, unidad, prec
 
     var filaObjetivo = -1;
 
-    if (lastRow >= 2 && idProductoStr) {
+    if (lastRow >= 2) {
       var ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
       for (var i = 0; i < ids.length; i++) {
         var idFila = (ids[i][0] || '').toString().trim();
@@ -5518,8 +5522,7 @@ function registrarCosto(idProducto, categoria, producto, proveedor, unidad, prec
     }
 
     if (filaObjetivo === -1) {
-      filaObjetivo = getFirstEmptyRowInColumn_(sheet, 1);
-      sheet.getRange(filaObjetivo, 1).setValue(idProductoStr);
+      return { success: false, error: 'ID_PRODUCTO no encontrado' };
     }
 
     sheet.getRange(filaObjetivo, 2).setValue(categoriaStr);
