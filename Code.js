@@ -4503,6 +4503,66 @@ function registrarVentaDirectaDesdeUI(payload) {
 
 
 /**
+ * Registra un gasto completo en la hoja GASTOS según el nuevo flujo (GASTO SPA).
+ *
+ * data:
+ * {
+ *   fecha: string,          // "27/11/2025"
+ *   mes: string,            // "Noviembre 2025"
+ *   categoria: string,
+ *   producto: string,
+ *   cantidad: number,
+ *   unidad: string,
+ *   precioUnitario: number,
+ *   monto: number,
+ *   proveedor: string,
+ *   observaciones: string,
+ *   idProducto: string      // "PROD-00001"
+ * }
+ */
+function registrarGasto(data) {
+  try {
+    data = data || {};
+
+    var sheet = getSheet_('GASTOS');
+    var row = getFirstEmptyRowInColumn_(sheet, 1);
+
+    var idGasto = generarIdGasto_();
+
+    // A-L
+    sheet.getRange(row, 1).setValue(data.fecha || '');
+    sheet.getRange(row, 2).setValue(data.mes || '');
+    sheet.getRange(row, 3).setValue(data.categoria || '');
+    sheet.getRange(row, 4).setValue(data.producto || '');
+    sheet.getRange(row, 5).setValue(data.cantidad || 0);
+    sheet.getRange(row, 6).setValue(data.unidad || '');
+    sheet.getRange(row, 7).setValue(data.precioUnitario || 0);
+    sheet.getRange(row, 8).setValue(data.monto || 0);
+    sheet.getRange(row, 9).setValue(data.proveedor || '');
+    sheet.getRange(row, 10).setValue(data.observaciones || '');
+    sheet.getRange(row, 11).setValue(idGasto);
+    sheet.getRange(row, 12).setValue(data.idProducto || '');
+
+    return {
+      success: true,
+      idGasto: idGasto,
+      fecha: data.fecha,
+      categoria: data.categoria,
+      producto: data.producto,
+      proveedor: data.proveedor,
+      unidad: data.unidad,
+      precioUnitario: data.precioUnitario,
+      cantidad: data.cantidad,
+      monto: data.monto,
+      observaciones: data.observaciones,
+      idProducto: data.idProducto
+    };
+  } catch (e) {
+    return { success: false, error: e && e.message ? e.message : 'Error al registrar el gasto.' };
+  }
+}
+
+/**
  * Registra un gasto desde el formulario REGISTRAR GASTO.
  *
  * data:
