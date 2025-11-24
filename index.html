@@ -38,6 +38,38 @@
     function updateGastoState(key, value) {
       window.gastoState[key] = value;
     }
+
+    function normalizeNumericInput(inputEl){
+      if (!inputEl) return '';
+      var val = (inputEl.value || '').toString();
+      var normalized = val.replace(/\./g, ',').replace(/[^0-9,]/g, '');
+      var commaIndex = normalized.indexOf(',');
+      if (commaIndex !== -1){
+        normalized = normalized.slice(0, commaIndex + 1) + normalized.slice(commaIndex + 1).replace(/,/g, '');
+      }
+      if (normalized !== val){
+        inputEl.value = normalized;
+      }
+      return normalized;
+    }
+
+    function parseInputCantidad(inputEl){
+      var sanitized = normalizeNumericInput(inputEl);
+      var numberVal = parseFloat(sanitized.replace(',', '.'));
+      return {
+        sanitized: sanitized,
+        number: isFinite(numberVal) ? numberVal : null
+      };
+    }
+
+    function parseInputPrecio(inputEl){
+      var sanitized = normalizeNumericInput(inputEl);
+      var numberVal = parseFloat(sanitized.replace(',', '.'));
+      return {
+        sanitized: sanitized,
+        number: isFinite(numberVal) ? numberVal : null
+      };
+    }
   </script>
   <style>
     .btn-noir[data-spinner="1"]{
@@ -850,9 +882,13 @@
           updateGastoState('fecha', fechaHoy);
         }
 
+        ensureGastoStateConsistente();
+
         if (expenseDate){
           expenseDate.textContent = window.gastoState.fecha || fechaHoy;
         }
+
+        clearError();
 
         var overlay = document.getElementById('ddOverlay');
         var overlayList = document.getElementById('ddOverlayList');
@@ -872,6 +908,7 @@
         var unitPriceText = document.getElementById('unitPriceText');
         var expenseTotal = document.getElementById('expenseTotal');
         var obsField = document.getElementById('obsField');
+        var errorContainer = document.getElementById('registrarGastoError') || document.querySelector('[data-role="error"]');
         var btnRegistrarGasto = document.getElementById('btnRegistrar');
 
         function formatMoney(val){
@@ -886,8 +923,42 @@
           return parts.length >= 2 ? parts[1] : '';
         }
 
+        function clearError(){
+          if (errorContainer){
+            errorContainer.textContent = '';
+            errorContainer.style.display = 'none';
+          }
+        }
+
         function showError(msg){
-          alert(msg || 'Ocurrió un error al registrar el gasto.');
+          if (errorContainer){
+            errorContainer.textContent = msg || 'Ocurrió un error al registrar el gasto.';
+            errorContainer.style.display = '';
+          } else {
+            alert(msg || 'Ocurrió un error al registrar el gasto.');
+          }
+        }
+
+        function ensureGastoStateConsistente(){
+          var shouldReset = false;
+
+          if (!gastoState.categoria && (gastoState.producto || gastoState.idProducto || gastoState.proveedor || gastoState.unidad || gastoState.precioUnitario)){
+            shouldReset = true;
+          }
+
+          if (gastoState.producto && !gastoState.categoria){
+            shouldReset = true;
+          }
+
+          if (!gastoState.proveedor && gastoState.precioUnitario){
+            updateGastoState('precioUnitario', null);
+            updateGastoState('unidad', null);
+          }
+
+          if (shouldReset){
+            resetGastoState();
+            updateGastoState('fecha', fechaHoy);
+          }
         }
 
         function setRegistrarEnabled(enabled){
@@ -908,16 +979,7 @@
 
         function sanitizeCantidadInput(){
           if (!qtyInput) return '';
-          var val = (qtyInput.value || '').toString();
-          var sanitized = val.replace(/\./g, ',').replace(/[^0-9,]/g, '');
-          var commaIndex = sanitized.indexOf(',');
-          if (commaIndex !== -1){
-            sanitized = sanitized.slice(0, commaIndex + 1) + sanitized.slice(commaIndex + 1).replace(/,/g, '');
-          }
-          if (sanitized !== val){
-            qtyInput.value = sanitized;
-          }
-          return sanitized;
+          return normalizeNumericInput(qtyInput);
         }
 
         function handleQtyKeydown(e){
@@ -927,16 +989,44 @@
           e.preventDefault();
         }
 
-        function updateMontoDesdeCantidad(){
-          var sanitized = sanitizeCantidadInput();
-          var cantidadNumber = parseFloat(sanitized.replace(',', '.'));
+        function isFormularioValido(){
+          var precioNumero = parseFloat(gastoState.precioUnitario);
+          var cantidadParsed = parseInputCantidad(qtyInput).number;
 
-          if (!isFinite(cantidadNumber)){
+          return !!(
+            gastoState.fecha &&
+            gastoState.categoria &&
+            gastoState.producto &&
+            gastoState.proveedor &&
+            gastoState.unidad &&
+            isFinite(precioNumero) &&
+            isFinite(cantidadParsed) &&
+            cantidadParsed > 0 &&
+            gastoState.idProducto
+          );
+        }
+
+        function updateMontoDesdeCantidad(){
+          var parsed = parseInputCantidad(qtyInput);
+          var cantidadNumber = parsed.number;
+
+          if (!parsed.sanitized){
             updateGastoState('cantidad', null);
             updateGastoState('gasto', null);
             if (expenseTotal){
               expenseTotal.textContent = '0,00 $';
             }
+            setRegistrarEnabled(false);
+            return;
+          }
+
+          if (!isFinite(cantidadNumber) || cantidadNumber <= 0){
+            updateGastoState('cantidad', null);
+            updateGastoState('gasto', null);
+            if (expenseTotal){
+              expenseTotal.textContent = '0,00 $';
+            }
+            showError('Cantidad inválida.');
             setRegistrarEnabled(false);
             return;
           }
@@ -951,7 +1041,11 @@
             expenseTotal.textContent = formatMoney(monto);
           }
 
-          setRegistrarEnabled(cantidadNumber > 0 && tienePrecio);
+          if (tienePrecio && monto > 0){
+            clearError();
+          }
+
+          setRegistrarEnabled(isFormularioValido());
         }
 
         function refreshExpenseCard(){
@@ -976,9 +1070,14 @@
             if (qtyInput){
               qtyInput.value = '';
             }
+            if (hasData && !isFinite(precioNumber)){
+              showError('No hay costo disponible para el producto seleccionado.');
+            }
             setRegistrarEnabled(false);
             return;
           }
+
+          clearError();
 
           if (unitLabel){
             unitLabel.textContent = (gastoState.unidad || '').toString().toLowerCase();
@@ -998,7 +1097,7 @@
             if (expenseTotal){
               expenseTotal.textContent = formatMoney(monto);
             }
-            setRegistrarEnabled(true);
+            setRegistrarEnabled(isFormularioValido());
           } else {
             if (expenseTotal){
               expenseTotal.textContent = '0,00 $';
@@ -1209,6 +1308,10 @@
 
               prepararDropdownUnidad(unidades);
             })
+            .withFailureHandler(function(err){
+              var msg = (err && err.message) ? err.message : 'No se pudieron cargar las unidades.';
+              showError(msg);
+            })
             .getUnidades();
         }
 
@@ -1234,6 +1337,13 @@
 
               refreshExpenseCard();
             })
+            .withFailureHandler(function(err){
+              updateGastoState('precioUnitario', null);
+              mostrarRegistrarCosto();
+              refreshExpenseCard();
+              var msg = (err && err.message) ? err.message : 'No se pudo obtener el costo.';
+              showError(msg);
+            })
             .getCosto(gastoState.idProducto, gastoState.proveedor, gastoState.unidad);
         }
 
@@ -1248,6 +1358,8 @@
           if (!dropdown) return;
           var label = dropdown.querySelector('.dd-label');
           var btn = dropdown.querySelector('.dd-button');
+
+          clearError();
 
           if (label){
             label.textContent = value;
@@ -1308,6 +1420,11 @@
                     setDropdownPlaceholder(proveedorDropdown);
                   }
                 })
+                .withFailureHandler(function(err){
+                  setDropdownPlaceholder(proveedorDropdown);
+                  var msg = (err && err.message) ? err.message : 'No se pudieron cargar los proveedores.';
+                  showError(msg);
+                })
                 .getProveedoresPorProducto(gastoState.categoria, gastoState.producto);
             }
 
@@ -1316,6 +1433,11 @@
               google.script.run
                 .withSuccessHandler(function(id){
                   updateGastoState('idProducto', id);
+                })
+                .withFailureHandler(function(err){
+                  updateGastoState('idProducto', null);
+                  var msg = (err && err.message) ? err.message : 'No se pudo obtener el producto seleccionado.';
+                  showError(msg);
                 })
                 .getIdProducto(gastoState.categoria, gastoState.producto);
             }
@@ -1466,6 +1588,11 @@
                 setDropdownPlaceholder(categoriaDropdown);
               }
             })
+            .withFailureHandler(function(err){
+              setDropdownPlaceholder(categoriaDropdown);
+              var msg = (err && err.message) ? err.message : 'No se pudieron cargar las categorías.';
+              showError(msg);
+            })
             .getCategorias();
         }
 
@@ -1489,6 +1616,11 @@
               } else {
                 setDropdownPlaceholder(productoDropdown);
               }
+            })
+            .withFailureHandler(function(err){
+              setDropdownPlaceholder(productoDropdown);
+              var msg = (err && err.message) ? err.message : 'No se pudieron cargar los productos.';
+              showError(msg);
             })
             .getProductosPorCategoria(categoria);
         }
@@ -1515,18 +1647,26 @@
           btnRegistrarGasto.addEventListener('click', function(){
             if (btnRegistrarGasto.disabled) return;
 
+            clearError();
+
+            var cantidadParsed = parseInputCantidad(qtyInput).number;
+            if (!isFinite(cantidadParsed) || cantidadParsed <= 0){
+              showError('Ingrese una cantidad válida.');
+              return;
+            }
+
+            if (!isFinite(parseFloat(gastoState.precioUnitario))){
+              showError('Registre primero el costo para continuar.');
+              return;
+            }
+
             var camposCompletos = (
               gastoState.fecha &&
               gastoState.categoria &&
               gastoState.producto &&
               gastoState.proveedor &&
               gastoState.unidad &&
-              isFinite(parseFloat(gastoState.precioUnitario)) &&
-              isFinite(parseFloat(gastoState.cantidad)) &&
-              gastoState.cantidad > 0 &&
-              isFinite(parseFloat(gastoState.gasto)) &&
-              parseFloat(gastoState.gasto) > 0 &&
-              gastoState.idProducto
+              isFormularioValido()
             );
 
             if (!camposCompletos){
@@ -1569,6 +1709,7 @@
               })
               .withFailureHandler(function(err){
                 window.secoSetBlackButtonLoading(btnRegistrarGasto, false);
+                setRegistrarEnabled(isFormularioValido());
                 var msg = (err && err.message) ? err.message : 'No se pudo registrar el gasto.';
                 showError(msg);
               })
@@ -1683,16 +1824,8 @@
         }
 
         function sanitizePrecio(){
-          if (!precioInput) return;
-          var val = (precioInput.value || '').toString();
-          var sanitized = val.replace(/\./g, ',').replace(/[^0-9,]/g, '');
-          var commaIndex = sanitized.indexOf(',');
-          if (commaIndex !== -1){
-            sanitized = sanitized.slice(0, commaIndex + 1) + sanitized.slice(commaIndex + 1).replace(/,/g, '');
-          }
-          if (sanitized !== val){
-            precioInput.value = sanitized;
-          }
+          if (!precioInput) return '';
+          return normalizeNumericInput(precioInput);
         }
 
         function handlePrecioKeydown(e){
@@ -1700,6 +1833,24 @@
           if (allowed.indexOf(e.key) !== -1) return;
           if (/^\d$/.test(e.key)) return;
           e.preventDefault();
+        }
+
+        function isCostoFormularioValido(){
+          var parsedPrecio = parseInputPrecio(precioInput);
+          return !!(
+            gastoState.idProducto &&
+            gastoState.categoria &&
+            gastoState.producto &&
+            gastoState.proveedor &&
+            gastoState.unidad &&
+            parsedPrecio.number !== null &&
+            parsedPrecio.number > 0
+          );
+        }
+
+        function setRegistrarEnabled(enabled){
+          if (!btnRegistrar || btnRegistrar.dataset.spinner === '1') return;
+          btnRegistrar.disabled = !enabled;
         }
 
         setLabelText(fechaLabel, gastoState.fecha);
@@ -1711,13 +1862,18 @@
         if (precioInput){
           precioInput.value = '';
           precioInput.removeAttribute('data-spinner');
-          precioInput.addEventListener('input', sanitizePrecio);
+          precioInput.addEventListener('input', function(){
+            sanitizePrecio();
+            clearError();
+            setRegistrarEnabled(isCostoFormularioValido());
+          });
           precioInput.addEventListener('keydown', handlePrecioKeydown);
         }
 
         clearError();
         setRegistrarLoading(false);
         setVolverInicioLoading(false);
+        setRegistrarEnabled(isCostoFormularioValido());
 
         if (btnVolverInicio){
           if (typeof registerVolverInicioHook === 'function'){
@@ -1737,45 +1893,52 @@
           btnRegistrar.addEventListener('click', function(){
             if (btnRegistrar.disabled) return;
 
-            var precioStr = (precioInput ? precioInput.value : '').toString().trim();
-            if (!precioStr){
+            clearError();
+            var parsedPrecio = parseInputPrecio(precioInput);
+            if (!parsedPrecio.sanitized){
               showError('Ingrese el precio por unidad.');
               if (precioInput) precioInput.focus();
+              setRegistrarEnabled(false);
               return;
             }
 
-            var precioNumber = parseFloat(precioStr.replace(',', '.'));
-            if (isNaN(precioNumber)){
+            if (parsedPrecio.number === null || parsedPrecio.number <= 0){
               showError('Precio inválido.');
               if (precioInput) precioInput.focus();
+              setRegistrarEnabled(false);
               return;
             }
 
-            if (!gastoState.idProducto || !gastoState.categoria || !gastoState.producto || !gastoState.proveedor || !gastoState.unidad){
+            if (!isCostoFormularioValido()){
               showError('Faltan datos para registrar el costo.');
+              setRegistrarEnabled(false);
               return;
             }
 
-            clearError();
+            setRegistrarEnabled(false);
             setRegistrarLoading(true);
+            setVolverInicioLoading(true);
 
             if (typeof google !== 'undefined' && google.script && google.script.run){
               google.script.run
                 .withSuccessHandler(function(resp){
-                  setRegistrarLoading(false);
-
                   var ok = resp && (resp.success || resp.ok || resp === true);
                   if (!ok){
+                    setRegistrarLoading(false);
+                    setVolverInicioLoading(false);
+                    setRegistrarEnabled(isCostoFormularioValido());
                     var msg = (resp && resp.error) ? resp.error : 'No se pudo registrar el costo.';
                     showError(msg);
                     return;
                   }
 
-                  updateGastoState('precioUnitario', precioNumber);
+                  updateGastoState('precioUnitario', parsedPrecio.number);
                   loadPage('registrarGasto');
                 })
                 .withFailureHandler(function(err){
                   setRegistrarLoading(false);
+                  setVolverInicioLoading(false);
+                  setRegistrarEnabled(isCostoFormularioValido());
                   var msg = (err && err.message) ? err.message : 'Error al registrar el costo.';
                   showError(msg);
                 })
@@ -1785,10 +1948,12 @@
                   gastoState.producto,
                   gastoState.proveedor,
                   gastoState.unidad,
-                  precioNumber
+                  parsedPrecio.number
                 );
             } else {
               setRegistrarLoading(false);
+              setVolverInicioLoading(false);
+              setRegistrarEnabled(isCostoFormularioValido());
               showError('No se pudo registrar el costo.');
             }
           });
@@ -1844,10 +2009,20 @@
       }
     }
 
+    function setRegistrarEnabled(enable){
+      if (!btnRegistrar || btnRegistrar.dataset.spinner === '1') return;
+      btnRegistrar.disabled = !enable;
+    }
+
     if (nombreInput){
       nombreInput.value = '';
+      nombreInput.addEventListener('input', function(){
+        clearError();
+        setRegistrarEnabled(!!nombreInput.value.trim());
+      });
     }
     clearError();
+    setRegistrarEnabled(false);
 
     if (btnVolverInicio){
       if (typeof registerVolverInicioHook === 'function'){
@@ -1856,6 +2031,7 @@
         });
       } else {
         btnVolverInicio.addEventListener('click', function(){
+          if (btnVolverInicio.disabled) return;
           resetGastoState();
           loadPage('inicio');
         });
@@ -1874,6 +2050,7 @@
         }
 
         clearError();
+        setRegistrarEnabled(false);
         setRegistrarLoading(true);
         setVolverInicioEnabled(false);
 
@@ -1882,11 +2059,11 @@
         if (typeof google !== 'undefined' && google.script && google.script.run){
           google.script.run
             .withSuccessHandler(function(resp){
-              setRegistrarLoading(false);
-              setVolverInicioEnabled(true);
-
               var ok = (resp && (resp.ok || resp.success)) || resp === undefined || resp === null || resp === true;
               if (!ok){
+                setRegistrarLoading(false);
+                setVolverInicioEnabled(true);
+                setRegistrarEnabled(true);
                 var msg = (resp && resp.error) ? resp.error : 'Error al crear el proveedor.';
                 showError(msg);
                 return;
@@ -1899,6 +2076,7 @@
             .withFailureHandler(function(err){
               setRegistrarLoading(false);
               setVolverInicioEnabled(true);
+              setRegistrarEnabled(true);
               var msg = (err && err.message) ? err.message : 'Error al crear el proveedor.';
               showError(msg);
             })
@@ -1906,6 +2084,7 @@
         } else {
           setRegistrarLoading(false);
           setVolverInicioEnabled(true);
+          setRegistrarEnabled(true);
           showError('No se pudo crear el proveedor.');
         }
       });
@@ -1960,12 +2139,22 @@
       }
     }
 
+    function setRegistrarEnabled(enable){
+      if (!btnRegistrar || btnRegistrar.dataset.spinner === '1') return;
+      btnRegistrar.disabled = !enable;
+    }
+
     if (unidadInput){
       unidadInput.value = '';
+      unidadInput.addEventListener('input', function(){
+        clearError();
+        setRegistrarEnabled(!!unidadInput.value.trim());
+      });
     }
     clearError();
     setRegistrarLoading(false);
-
+    setRegistrarEnabled(false);
+    
     if (btnVolverInicio){
       if (typeof registerVolverInicioHook === 'function'){
         registerVolverInicioHook(btnVolverInicio, function(){
@@ -1994,17 +2183,18 @@
         var nombreNormalizado = nombre.toLowerCase();
 
         clearError();
+        setRegistrarEnabled(false);
         setRegistrarLoading(true);
         setVolverInicioEnabled(false);
 
         if (typeof google !== 'undefined' && google.script && google.script.run){
           google.script.run
             .withSuccessHandler(function(resp){
-              setRegistrarLoading(false);
-              setVolverInicioEnabled(true);
-
               var ok = (resp && (resp.ok || resp.success)) || resp === undefined || resp === null || resp === true;
               if (!ok){
+                setRegistrarLoading(false);
+                setVolverInicioEnabled(true);
+                setRegistrarEnabled(true);
                 var msg = (resp && resp.error) ? resp.error : 'Error al crear la unidad.';
                 showError(msg);
                 return;
@@ -2017,6 +2207,7 @@
             .withFailureHandler(function(err){
               setRegistrarLoading(false);
               setVolverInicioEnabled(true);
+              setRegistrarEnabled(true);
               var msg = (err && err.message) ? err.message : 'Error al crear la unidad.';
               showError(msg);
             })
@@ -2024,6 +2215,7 @@
         } else {
           setRegistrarLoading(false);
           setVolverInicioEnabled(true);
+          setRegistrarEnabled(true);
           showError('No se pudo crear la unidad.');
         }
       });
