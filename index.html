@@ -921,6 +921,7 @@
           updateGastoState('gasto', null);
 
           setDropdownPlaceholder(proveedorDropdown);
+          setOptionsToDropdown(proveedorDropdown, []);
 
           var qtyInput = document.getElementById('qtyInput');
           if (qtyInput){
@@ -1008,6 +1009,30 @@
             resetCamposDesdeProducto();
             showProveedorContainer();
 
+            if (
+              gastoState.categoria &&
+              gastoState.producto &&
+              typeof google !== 'undefined' &&
+              google.script &&
+              google.script.run
+            ){
+              google.script.run
+                .withSuccessHandler(function(proveedores){
+                  if (!Array.isArray(proveedores)) proveedores = [];
+
+                  var sorted = proveedores.slice().sort(function(a, b){
+                    return String(a || '').localeCompare(String(b || ''));
+                  });
+
+                  var opts = ['Nuevo proveedor'].concat(sorted);
+
+                  proveedorDropdown.dataset.ph = 'Proveedor';
+                  setOptionsToDropdown(proveedorDropdown, opts);
+                  setDropdownPlaceholder(proveedorDropdown);
+                })
+                .getProveedoresPorProducto(gastoState.categoria, gastoState.producto);
+            }
+
             if (typeof google !== 'undefined' && google.script && google.script.run){
               // TODO: Reemplazar por una función backend dedicada a obtener el ID del producto
               google.script.run
@@ -1016,6 +1041,29 @@
                 })
                 .getIdProducto(gastoState.categoria, gastoState.producto);
             }
+          }
+
+          if (dropdown === proveedorDropdown){
+            var previousProveedor = gastoState.proveedor;
+
+            if (value === 'Nuevo proveedor'){
+              updateGastoState('origen', 'GASTO');
+              loadPage('nuevoProveedor');
+              closeOverlay();
+              if (btn){
+                setTimeout(()=>btn.focus({preventScroll:true}),0);
+              }
+              return;
+            }
+
+            if (previousProveedor !== value){
+              updateGastoState('unidad', null);
+              updateGastoState('precioUnitario', null);
+              updateGastoState('cantidad', null);
+              updateGastoState('gasto', null);
+            }
+
+            updateGastoState('proveedor', value);
           }
 
           closeOverlay();
