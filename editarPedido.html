@@ -492,6 +492,33 @@
       return tabla;
     }
 
+    var sectoresLoading = false;
+
+    function ensureSectoresEnCtx(callback){
+      var ctx = (typeof window !== 'undefined' && window.SECO_CTX) ? window.SECO_CTX : {};
+      var sectoresExistentes = Array.isArray(ctx && ctx.sectores) && ctx.sectores.length > 0;
+
+      if (sectoresExistentes){
+        if (typeof callback === 'function'){ callback(); }
+        return;
+      }
+
+      if (sectoresLoading){ return; }
+      sectoresLoading = true;
+
+      google.script.run
+        .withSuccessHandler(function(resp){
+          sectoresLoading = false;
+          if (resp && resp.ok && Array.isArray(resp.sectores)){
+            window.SECO_CTX = window.SECO_CTX || {};
+            window.SECO_CTX.sectores = resp.sectores;
+            if (typeof callback === 'function'){ callback(); }
+          }
+        })
+        .withFailureHandler(function(){ sectoresLoading = false; })
+        .listarSectores();
+    }
+
     function getPrecioBaseDesdeCtx(cantidadActual){
       var ctx = (typeof window !== 'undefined' && window.SECO_CTX) ? window.SECO_CTX : {};
       var pedido = (ctx && ctx.pedidoEnEdicion) || (ctx && ctx.pedido) || {};
@@ -542,6 +569,11 @@
 
     function actualizarPrecio(){
       var cantidad = obtenerCantidadSeleccionada();
+      ensureSectoresEnCtx(function(){
+        // Recalcular una vez cargados los sectores (si aún no estaban).
+        actualizarPrecio();
+      });
+
       var precioBase = getPrecioBaseDesdeCtx(cantidad);
       var total = precioBase * cantidad;
 
