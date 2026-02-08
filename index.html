@@ -910,6 +910,28 @@
         var obsField = document.getElementById('obsField');
         var errorContainer = document.getElementById('registrarGastoError') || document.querySelector('[data-role="error"]');
         var btnRegistrarGasto = document.getElementById('btnRegistrar');
+        var btnRegistrarCostoCta = document.getElementById('btnRegistrarCostoCta');
+
+        var sectionProducto = document.getElementById('sectionProducto');
+        var sectionProveedor = document.getElementById('sectionProveedor');
+        var sectionUnidad = document.getElementById('sectionUnidad');
+        var sectionObservaciones = document.getElementById('sectionObservaciones');
+        var sepAfterProducto = document.getElementById('sepAfterProducto');
+        var sepBeforeCosto = document.getElementById('sepBeforeCosto');
+        var sepAfterCosto = document.getElementById('sepAfterCosto');
+        var sepBeforeButtons = document.getElementById('sepBeforeButtons');
+
+        function hideElement(el){
+          if (!el) return;
+          el.style.display = 'none';
+          el.classList.add('hidden');
+        }
+
+        function showElement(el){
+          if (!el) return;
+          el.style.display = '';
+          el.classList.remove('hidden');
+        }
 
         function formatMoney(val){
           var num = typeof val === 'number' ? val : parseFloat(val);
@@ -975,6 +997,20 @@
             }
             btnRegistrarGasto.classList.remove('btn-noir');
           }
+        }
+
+        function hideSeccionesFinales(){
+          hideElement(sectionObservaciones);
+          hideElement(sepAfterCosto);
+          hideElement(sepBeforeButtons);
+          hideElement(btnRegistrarGasto);
+        }
+
+        function showSeccionesFinales(){
+          showElement(sectionObservaciones);
+          showElement(sepAfterCosto);
+          showElement(sepBeforeButtons);
+          showElement(btnRegistrarGasto);
         }
 
         function sanitizeCantidadInput(){
@@ -1157,6 +1193,14 @@
           }
 
           refreshExpenseCard();
+
+          hideElement(sectionProducto);
+          hideElement(sepAfterProducto);
+          hideElement(sectionProveedor);
+          hideElement(sectionUnidad);
+          hideElement(sepBeforeCosto);
+          hideSeccionesFinales();
+          ocultarSeccionesCosto();
         }
 
         function resetCamposDesdeProducto(){
@@ -1186,60 +1230,50 @@
           }
 
           refreshExpenseCard();
+
+          hideElement(sectionProveedor);
+          hideElement(sectionUnidad);
+          hideElement(sepBeforeCosto);
+          hideSeccionesFinales();
+          ocultarSeccionesCosto();
         }
 
         function ocultarSeccionesCosto(){
-          if (registrarCostoContainer){
-            registrarCostoContainer.style.display = 'none';
-            registrarCostoContainer.classList.add('hidden');
-          }
-
-          if (precioUnitarioContainer){
-            precioUnitarioContainer.style.display = 'none';
-            precioUnitarioContainer.classList.add('hidden');
-          }
+          hideElement(registrarCostoContainer);
+          hideElement(precioUnitarioContainer);
+          hideSeccionesFinales();
 
           refreshExpenseCard();
         }
 
         function mostrarRegistrarCosto(){
-          if (registrarCostoContainer){
-            registrarCostoContainer.style.display = '';
-            registrarCostoContainer.classList.remove('hidden');
-          }
-
-          if (precioUnitarioContainer){
-            precioUnitarioContainer.style.display = 'none';
-            precioUnitarioContainer.classList.add('hidden');
-          }
+          showElement(registrarCostoContainer);
+          hideElement(precioUnitarioContainer);
+          hideSeccionesFinales();
 
           refreshExpenseCard();
         }
 
         function mostrarPrecioUnitario(){
-          if (precioUnitarioContainer){
-            precioUnitarioContainer.style.display = '';
-            precioUnitarioContainer.classList.remove('hidden');
-          }
-
-          if (registrarCostoContainer){
-            registrarCostoContainer.style.display = 'none';
-            registrarCostoContainer.classList.add('hidden');
-          }
+          showElement(precioUnitarioContainer);
+          hideElement(registrarCostoContainer);
+          showSeccionesFinales();
 
           refreshExpenseCard();
         }
 
         function showProductoContainer(){
-          if (!productoDropdown) return;
-          productoDropdown.style.display = '';
-          productoDropdown.classList.remove('hidden');
+          showElement(sectionProducto);
+          showElement(sepAfterProducto);
         }
 
         function showProveedorContainer(){
-          if (!proveedorDropdown) return;
-          proveedorDropdown.style.display = '';
-          proveedorDropdown.classList.remove('hidden');
+          showElement(sectionProveedor);
+        }
+
+        function showUnidadContainer(){
+          showElement(sectionUnidad);
+          showElement(sepBeforeCosto);
         }
 
         function getOptionsFromDropdown(dropdown){
@@ -1307,6 +1341,7 @@
               if (!Array.isArray(unidades)) unidades = [];
 
               prepararDropdownUnidad(unidades);
+              showUnidadContainer();
             })
             .withFailureHandler(function(err){
               var msg = (err && err.message) ? err.message : 'No se pudieron cargar las unidades.';
@@ -1462,6 +1497,8 @@
               updateGastoState('cantidad', null);
               updateGastoState('gasto', null);
               ocultarSeccionesCosto();
+              hideElement(sectionUnidad);
+              hideElement(sepBeforeCosto);
             }
 
             updateGastoState('proveedor', value);
@@ -1481,6 +1518,10 @@
             }
 
             updateGastoState('unidad', value);
+            updateGastoState('cantidad', null);
+            updateGastoState('gasto', null);
+            if (qtyInput){ qtyInput.value = ''; }
+            if (expenseTotal){ expenseTotal.textContent = '0,00 $'; }
             cargarCostoSiListo();
           }
 
@@ -1508,6 +1549,22 @@
               if (dropdown === categoriaDropdown){
                 resetCamposDependientes();
                 updateGastoState('categoria', null);
+              }
+              if (dropdown === productoDropdown){
+                updateGastoState('producto', null);
+                updateGastoState('idProducto', null);
+                resetCamposDesdeProducto();
+              }
+              if (dropdown === proveedorDropdown){
+                updateGastoState('proveedor', null);
+                updateGastoState('unidad', null);
+                updateGastoState('precioUnitario', null);
+                updateGastoState('cantidad', null);
+                updateGastoState('gasto', null);
+                hideElement(sectionUnidad);
+                hideElement(sepBeforeCosto);
+                ocultarSeccionesCosto();
+                setDropdownPlaceholder(unidadDropdown);
               }
               closeOverlay();
               if (btn){
@@ -1717,6 +1774,13 @@
           });
         }
 
+        if (btnRegistrarCostoCta){
+          btnRegistrarCostoCta.addEventListener('click', function(){
+            updateGastoState('origen', 'GASTO');
+            loadPage('registrarCosto');
+          });
+        }
+
         if (!gastoState.categoria){
           setDropdownPlaceholder(categoriaDropdown);
         }
@@ -1736,7 +1800,7 @@
             setDropdownPlaceholder(unidadDropdown);
           }
         }
-        ocultarSeccionesCosto();
+        resetCamposDependientes();
         refreshExpenseCard();
         initDropdowns();
         cargarCategorias();
@@ -1749,6 +1813,7 @@
         }
         if (gastoState.proveedor){
           cargarUnidades();
+          showUnidadContainer();
         }
         if (gastoState.idProducto && gastoState.proveedor && gastoState.unidad){
           cargarCostoSiListo();
