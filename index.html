@@ -1639,6 +1639,13 @@
 
               setOptionsToDropdown(categoriaDropdown, categorias);
 
+              if (!categorias.length){
+                setDropdownPlaceholder(categoriaDropdown);
+                showError('Aucune catégorie disponible – ajoutez un produit');
+                resetCamposDependientes();
+                return;
+              }
+
               if (gastoState.categoria && categorias.indexOf(gastoState.categoria) !== -1){
                 selectOption(categoriaDropdown, gastoState.categoria);
               } else {

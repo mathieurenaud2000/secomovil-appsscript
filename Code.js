@@ -4583,10 +4583,10 @@ function registrarIngresoDesdePedidos_(pedidosDelDia) {
 }
 
 /**
- * Devuelve la lista de categorías (LISTAS!D) ordenadas A→Z.
+ * Devuelve la lista de categorías únicas desde PRODUCTO!B ordenadas A→Z.
  */
 function getCategorias() {
-  var sheet = getSheet_('LISTAS');
+  var sheet = getSheet_('PRODUCTO');
   var lastRow = sheet.getLastRow();
 
   if (lastRow < 2) {
@@ -4594,7 +4594,7 @@ function getCategorias() {
   }
 
   var categorias = sheet
-    .getRange('D2:D' + lastRow)
+    .getRange('B2:B' + lastRow)
     .getValues()
     .map(function (row) {
       return (row[0] || '').toString().trim();
@@ -4603,7 +4603,18 @@ function getCategorias() {
       return value;
     });
 
-  categorias.sort(function (a, b) {
+  var categoriasUnicas = [];
+  var categoriasVistas = {};
+
+  categorias.forEach(function (categoria) {
+    var key = categoria.toLowerCase();
+    if (!categoriasVistas[key]) {
+      categoriasVistas[key] = true;
+      categoriasUnicas.push(categoria);
+    }
+  });
+
+  categoriasUnicas.sort(function (a, b) {
     var aLower = a.toLowerCase();
     var bLower = b.toLowerCase();
 
@@ -4612,7 +4623,7 @@ function getCategorias() {
     return 0;
   });
 
-  return categorias;
+  return categoriasUnicas;
 }
 
 /**
@@ -5291,7 +5302,6 @@ function editarCosto(idProducto, proveedor, unidad, precioUnitario) {
     };
   }
 }
-
 
 
 
