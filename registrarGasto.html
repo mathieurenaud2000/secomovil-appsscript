@@ -284,7 +284,7 @@
       </div>
 
       <!-- Produit -->
-      <div class="form-section">
+      <div class="form-section" id="sectionProducto" style="display:none;">
         <div class="dropdown" data-variant="boxed" data-ph="Producto" data-value="">
           <button type="button" class="dd-button" data-placeholder="true">
             <span class="dd-label">Producto</span><span class="dd-caret" aria-hidden="true"></span>
@@ -295,10 +295,10 @@
         </div>
       </div>
 
-      <div class="sep-gray"></div>
+      <div class="sep-gray" id="sepAfterProducto" style="display:none;"></div>
 
       <!-- Fournisseur -->
-      <div class="form-section">
+      <div class="form-section" id="sectionProveedor" style="display:none;">
         <div class="label">Proveedor</div>
         <div class="dropdown" data-variant="boxed" data-ph="Proveedor" data-value="">
           <button type="button" class="dd-button" data-placeholder="true">
@@ -310,7 +310,25 @@
         </div>
       </div>
 
+      <!-- Unidad -->
+      <div class="form-section" id="sectionUnidad" style="display:none;">
+        <div class="label">Unidad</div>
+        <div class="dropdown" data-variant="boxed" data-ph="Unidad" data-value="">
+          <button type="button" class="dd-button" data-placeholder="true">
+            <span class="dd-label">Unidad</span><span class="dd-caret" aria-hidden="true"></span>
+          </button>
+          <script type="application/json" class="dd-data">[]</script>
+        </div>
+      </div>
+
+      <div class="sep-gray" id="sepBeforeCosto" style="display:none;"></div>
+
+      <div id="registrarCostoContainer" class="stack" style="display:none;">
+        <button class="btn btn-blanc" id="btnRegistrarCostoCta">REGISTRAR UN COSTO</button>
+      </div>
+
       <!-- CARTE DÉPENSE -->
+      <div id="precioUnitarioContainer" style="display:none;">
       <div class="expense-card" id="expenseCard" data-unit-label="Lb" data-unit-price="1.75">
         <!-- Ligne 1 -->
         <div class="exp-row1">
@@ -337,19 +355,20 @@
           <div class="exp-total" id="expenseTotal">0,00 $</div>
         </div>
       </div>
+      </div>
 
-      <div class="sep-gray"></div>
+      <div class="sep-gray" id="sepAfterCosto" style="display:none;"></div>
 
       <!-- Observations -->
-      <div class="form-section">
+      <div class="form-section" id="sectionObservaciones" style="display:none;">
         <div class="label">Observaciones <span class="opt">(Opcional)</span></div>
         <textarea class="field-multi" id="obsField"></textarea>
       </div>
 
-      <div class="sep-gray"></div>
+      <div class="sep-gray" id="sepBeforeButtons" style="display:none;"></div>
 
       <!-- Boutons -->
-      <button class="btn btn-noir" id="btnRegistrar" disabled>REGISTRAR</button>
+      <button class="btn btn-noir" id="btnRegistrar" disabled style="display:none;">REGISTRAR</button>
       <button class="btn btn-blanc" data-role="volver-inicio">VOLVER AL INICIO</button>
 
       <div style="height: calc(24px * var(--fix));"></div>
