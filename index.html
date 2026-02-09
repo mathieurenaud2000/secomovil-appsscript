@@ -1403,6 +1403,9 @@
           overlay.setAttribute('data-open','false');
           document.body.style.overflow = '';
           currentDropdown = null;
+          if (overlayList){
+            overlayList.innerHTML = '';
+          }
         }
 
         function selectOption(dropdown, value){
@@ -1596,12 +1599,7 @@
             li.className = 'dd-overlay-option';
             li.setAttribute('role','option');
             li.textContent = txt;
-            li.addEventListener('click', function(){
-              selectOption(dropdown, txt);
-              if (btn){
-                setTimeout(()=>btn.focus({preventScroll:true}),0);
-              }
-            });
+            li.dataset.value = txt;
             overlayList.appendChild(li);
           });
 
@@ -1633,6 +1631,47 @@
 
           if (overlay){
             overlay.addEventListener('click', function(e){
+              var option = e.target && e.target.closest ? e.target.closest('.dd-overlay-option') : null;
+              if (option && currentDropdown && overlayList && overlayList.contains(option)){
+                if (option.classList.contains('placeholder')){
+                  var btn = currentDropdown.querySelector('.dd-button');
+                  setDropdownPlaceholder(currentDropdown);
+                  if (currentDropdown === categoriaDropdown){
+                    resetCamposDependientes();
+                    updateGastoState('categoria', null);
+                  }
+                  if (currentDropdown === productoDropdown){
+                    updateGastoState('producto', null);
+                    updateGastoState('idProducto', null);
+                    resetCamposDesdeProducto();
+                  }
+                  if (currentDropdown === proveedorDropdown){
+                    updateGastoState('proveedor', null);
+                    updateGastoState('unidad', null);
+                    updateGastoState('precioUnitario', null);
+                    updateGastoState('cantidad', null);
+                    updateGastoState('gasto', null);
+                    hideElement(sectionUnidad);
+                    hideElement(sepBeforeCosto);
+                    ocultarSeccionesCosto();
+                    setDropdownPlaceholder(unidadDropdown);
+                  }
+                  closeOverlay();
+                  if (btn){
+                    setTimeout(()=>btn.focus({preventScroll:true}),0);
+                  }
+                  return;
+                }
+
+                var value = option.dataset.value || option.textContent;
+                var btnSelected = currentDropdown.querySelector('.dd-button');
+                selectOption(currentDropdown, value);
+                if (btnSelected){
+                  setTimeout(()=>btnSelected.focus({preventScroll:true}),0);
+                }
+                return;
+              }
+
               if (e.target === overlay){
                 closeOverlay();
               }
