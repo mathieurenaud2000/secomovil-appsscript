@@ -1657,8 +1657,14 @@
                 }
 
                 var value = option.dataset.value || option.textContent;
-                var btnSelected = currentDropdown.querySelector('.dd-button');
-                selectOption(currentDropdown, value);
+                var selectedDropdown = currentDropdown;
+                var btnSelected = selectedDropdown.querySelector('.dd-button');
+
+                if (selectedDropdown === productoDropdown){
+                  closeOverlay();
+                }
+
+                selectOption(selectedDropdown, value);
                 if (btnSelected){
                   setTimeout(()=>btnSelected.focus({preventScroll:true}),0);
                 }
