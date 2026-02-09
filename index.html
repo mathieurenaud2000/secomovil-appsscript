@@ -1402,6 +1402,8 @@
           if (!overlay) return;
           overlay.setAttribute('data-open','false');
           document.body.style.overflow = '';
+          document.body.classList.remove('dd-open');
+          document.documentElement.classList.remove('dd-open');
           currentDropdown = null;
           if (overlayList){
             overlayList.innerHTML = '';
@@ -1580,6 +1582,8 @@
 
           overlay.setAttribute('data-open','true');
           document.body.style.overflow = 'hidden';
+          document.body.classList.add('dd-open');
+          document.documentElement.classList.add('dd-open');
         }
 
         function setupDropdown(dropdown){
@@ -1664,8 +1668,7 @@
             };
 
             if (overlayList){
-              overlayList.addEventListener('pointerdown', overlaySelectionHandler);
-              overlayList.addEventListener('mousedown', overlaySelectionHandler);
+              overlayList.addEventListener('click', overlaySelectionHandler);
             }
 
             overlay.addEventListener('click', function(e){
