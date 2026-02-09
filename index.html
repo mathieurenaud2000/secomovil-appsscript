@@ -1561,42 +1561,17 @@
 
           var liPh = document.createElement('li');
           liPh.className = 'dd-overlay-option placeholder';
+          liPh.style.pointerEvents = 'auto';
+          liPh.setAttribute('role', 'option');
           liPh.textContent = placeholderText;
-          if (dropdown !== unidadDropdown){
-            liPh.addEventListener('click', function(){
-              setDropdownPlaceholder(dropdown);
-              if (dropdown === categoriaDropdown){
-                resetCamposDependientes();
-                updateGastoState('categoria', null);
-              }
-              if (dropdown === productoDropdown){
-                updateGastoState('producto', null);
-                updateGastoState('idProducto', null);
-                resetCamposDesdeProducto();
-              }
-              if (dropdown === proveedorDropdown){
-                updateGastoState('proveedor', null);
-                updateGastoState('unidad', null);
-                updateGastoState('precioUnitario', null);
-                updateGastoState('cantidad', null);
-                updateGastoState('gasto', null);
-                hideElement(sectionUnidad);
-                hideElement(sepBeforeCosto);
-                ocultarSeccionesCosto();
-                setDropdownPlaceholder(unidadDropdown);
-              }
-              closeOverlay();
-              if (btn){
-                setTimeout(()=>btn.focus({preventScroll:true}),0);
-              }
-            });
-          }
+          liPh.dataset.value = '';
           overlayList.appendChild(liPh);
 
           var options = getOptionsFromDropdown(dropdown);
           options.forEach(function(txt){
             var li = document.createElement('li');
             li.className = 'dd-overlay-option';
+            li.style.pointerEvents = 'auto';
             li.setAttribute('role','option');
             li.textContent = txt;
             li.dataset.value = txt;
@@ -1630,31 +1605,40 @@
           dropdowns.forEach(setupDropdown);
 
           if (overlay){
-            overlay.addEventListener('click', function(e){
-              var option = e.target && e.target.closest ? e.target.closest('.dd-overlay-option') : null;
+            if (overlayList){
+              overlayList.style.pointerEvents = 'auto';
+            }
+
+            overlay.addEventListener('pointerdown', function(e){
+              var option = e.target && e.target.closest ? e.target.closest('[data-value]') : null;
               if (option && currentDropdown && overlayList && overlayList.contains(option)){
+                e.preventDefault();
+                e.stopPropagation();
+
                 if (option.classList.contains('placeholder')){
                   var btn = currentDropdown.querySelector('.dd-button');
-                  setDropdownPlaceholder(currentDropdown);
-                  if (currentDropdown === categoriaDropdown){
-                    resetCamposDependientes();
-                    updateGastoState('categoria', null);
-                  }
-                  if (currentDropdown === productoDropdown){
-                    updateGastoState('producto', null);
-                    updateGastoState('idProducto', null);
-                    resetCamposDesdeProducto();
-                  }
-                  if (currentDropdown === proveedorDropdown){
-                    updateGastoState('proveedor', null);
-                    updateGastoState('unidad', null);
-                    updateGastoState('precioUnitario', null);
-                    updateGastoState('cantidad', null);
-                    updateGastoState('gasto', null);
-                    hideElement(sectionUnidad);
-                    hideElement(sepBeforeCosto);
-                    ocultarSeccionesCosto();
-                    setDropdownPlaceholder(unidadDropdown);
+                  if (currentDropdown !== unidadDropdown){
+                    setDropdownPlaceholder(currentDropdown);
+                    if (currentDropdown === categoriaDropdown){
+                      resetCamposDependientes();
+                      updateGastoState('categoria', null);
+                    }
+                    if (currentDropdown === productoDropdown){
+                      updateGastoState('producto', null);
+                      updateGastoState('idProducto', null);
+                      resetCamposDesdeProducto();
+                    }
+                    if (currentDropdown === proveedorDropdown){
+                      updateGastoState('proveedor', null);
+                      updateGastoState('unidad', null);
+                      updateGastoState('precioUnitario', null);
+                      updateGastoState('cantidad', null);
+                      updateGastoState('gasto', null);
+                      hideElement(sectionUnidad);
+                      hideElement(sepBeforeCosto);
+                      ocultarSeccionesCosto();
+                      setDropdownPlaceholder(unidadDropdown);
+                    }
                   }
                   closeOverlay();
                   if (btn){
@@ -1672,9 +1656,10 @@
                 return;
               }
 
-              if (e.target === overlay){
-                closeOverlay();
-              }
+            });
+
+            overlay.addEventListener('click', function(e){
+              if (e.target === overlay) closeOverlay();
             });
           }
 
