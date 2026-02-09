@@ -912,6 +912,10 @@
         var btnRegistrarGasto = document.getElementById('btnRegistrar');
         var btnRegistrarCostoCta = document.getElementById('btnRegistrarCostoCta');
 
+        var registrarGastoLoading = document.getElementById('registrarGastoLoading');
+        var registrarGastoFields = document.getElementById('registrarGastoFields');
+
+        var sectionCategoria = document.getElementById('sectionCategoria');
         var sectionProducto = document.getElementById('sectionProducto');
         var sectionProveedor = document.getElementById('sectionProveedor');
         var sectionUnidad = document.getElementById('sectionUnidad');
@@ -931,6 +935,18 @@
           if (!el) return;
           el.style.display = '';
           el.classList.remove('hidden');
+        }
+
+        function setInitialLoadingState(){
+          hideElement(registrarGastoFields);
+          hideElement(sectionCategoria);
+          showElement(registrarGastoLoading);
+        }
+
+        function setCategoriasReadyState(){
+          hideElement(registrarGastoLoading);
+          showElement(registrarGastoFields);
+          showElement(sectionCategoria);
         }
 
         function formatMoney(val){
@@ -1631,12 +1647,19 @@
         }
 
         function cargarCategorias(){
-          if (!categoriaDropdown || typeof google === 'undefined' || !google.script || !google.script.run) return;
+          if (!categoriaDropdown) return;
+
+          if (typeof google === 'undefined' || !google.script || !google.script.run){
+            setCategoriasReadyState();
+            setDropdownPlaceholder(categoriaDropdown);
+            return;
+          }
 
           google.script.run
             .withSuccessHandler(function(categorias){
               if (!Array.isArray(categorias)) categorias = [];
 
+              setCategoriasReadyState();
               setOptionsToDropdown(categoriaDropdown, categorias);
 
               if (!categorias.length){
@@ -1653,6 +1676,7 @@
               }
             })
             .withFailureHandler(function(err){
+              setCategoriasReadyState();
               setDropdownPlaceholder(categoriaDropdown);
               var msg = (err && err.message) ? err.message : 'No se pudieron cargar las categorías.';
               showError(msg);
@@ -1807,6 +1831,7 @@
             setDropdownPlaceholder(unidadDropdown);
           }
         }
+        setInitialLoadingState();
         resetCamposDependientes();
         refreshExpenseCard();
         initDropdowns();
