@@ -1609,8 +1609,13 @@
               overlayList.style.pointerEvents = 'auto';
             }
 
-            overlay.addEventListener('pointerdown', function(e){
-              var option = e.target && e.target.closest ? e.target.closest('[data-value]') : null;
+            var overlaySelectionHandler = function(e){
+              var eventTarget = e.target;
+              if (eventTarget && eventTarget.nodeType === Node.TEXT_NODE){
+                eventTarget = eventTarget.parentElement;
+              }
+
+              var option = eventTarget && eventTarget.closest ? eventTarget.closest('[data-value]') : null;
               if (option && currentDropdown && overlayList && overlayList.contains(option)){
                 e.preventDefault();
                 e.stopPropagation();
@@ -1656,7 +1661,12 @@
                 return;
               }
 
-            });
+            };
+
+            if (overlayList){
+              overlayList.addEventListener('pointerdown', overlaySelectionHandler);
+              overlayList.addEventListener('mousedown', overlaySelectionHandler);
+            }
 
             overlay.addEventListener('click', function(e){
               if (e.target === overlay) closeOverlay();
