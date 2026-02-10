@@ -915,6 +915,11 @@
         var registrarGastoLoading = document.getElementById('registrarGastoLoading');
         var registrarGastoFields = document.getElementById('registrarGastoFields');
 
+        var categoriaLoading = false;
+        var productoLoading = false;
+        var proveedorLoading = false;
+        var unidadLoading = false;
+
         var sectionCategoria = document.getElementById('sectionCategoria');
         var sectionProducto = document.getElementById('sectionProducto');
         var sectionProveedor = document.getElementById('sectionProveedor');
@@ -1176,6 +1181,51 @@
           dropdown.dataset.value = '';
         }
 
+        function showDropdownSpinner(dropdown){
+          if (!dropdown) return;
+          var btn = dropdown.querySelector('.dd-button');
+          if (!btn) return;
+          btn.classList.add('dd-loading');
+          btn.disabled = true;
+          btn.setAttribute('aria-busy', 'true');
+        }
+
+        function hideDropdownSpinner(dropdown){
+          if (!dropdown) return;
+          var btn = dropdown.querySelector('.dd-button');
+          if (!btn) return;
+          btn.classList.remove('dd-loading');
+          btn.disabled = false;
+          btn.removeAttribute('aria-busy');
+        }
+
+        function isDropdownLoading(dropdown){
+          if (dropdown === categoriaDropdown) return categoriaLoading;
+          if (dropdown === productoDropdown) return productoLoading;
+          if (dropdown === proveedorDropdown) return proveedorLoading;
+          if (dropdown === unidadDropdown) return unidadLoading;
+          return false;
+        }
+
+        function setDropdownLoading(dropdown, loading){
+          if (dropdown === categoriaDropdown){
+            categoriaLoading = !!loading;
+          } else if (dropdown === productoDropdown){
+            productoLoading = !!loading;
+          } else if (dropdown === proveedorDropdown){
+            proveedorLoading = !!loading;
+          } else if (dropdown === unidadDropdown){
+            unidadLoading = !!loading;
+          }
+
+          if (loading){
+            showDropdownSpinner(dropdown);
+            return;
+          }
+
+          hideDropdownSpinner(dropdown);
+        }
+
         function resetGastoStateDependencias(){
           updateGastoState('producto', null);
           updateGastoState('idProducto', null);
@@ -1189,8 +1239,12 @@
         function resetCamposDependientes(){
           resetGastoStateDependencias();
 
+          setDropdownLoading(productoDropdown, false);
+          setDropdownLoading(proveedorDropdown, false);
+          setDropdownLoading(unidadDropdown, false);
           setDropdownPlaceholder(productoDropdown);
           setDropdownPlaceholder(proveedorDropdown);
+          setDropdownPlaceholder(unidadDropdown);
 
           if (qtyInput){
             qtyInput.value = '';
@@ -1226,8 +1280,12 @@
           updateGastoState('cantidad', null);
           updateGastoState('gasto', null);
 
+          setDropdownLoading(proveedorDropdown, false);
+          setDropdownLoading(unidadDropdown, false);
           setDropdownPlaceholder(proveedorDropdown);
           setOptionsToDropdown(proveedorDropdown, []);
+          setDropdownPlaceholder(unidadDropdown);
+          setOptionsToDropdown(unidadDropdown, []);
 
           if (qtyInput){
             qtyInput.value = '';
@@ -1328,38 +1386,34 @@
         }
 
         function cargarUnidades(){
-          if (
-            !unidadDropdown ||
-            !gastoState.proveedor ||
-            typeof google === 'undefined' ||
-            !google.script ||
-            !google.script.run
-          ) return;
+          if (!unidadDropdown || !gastoState.proveedor) return;
 
           setOptionsToDropdown(unidadDropdown, []);
           unidadDropdown.dataset.ph = 'Unidad';
-          if (!gastoState.unidad){
+          showUnidadContainer();
+          setDropdownLoading(unidadDropdown, true);
+
+          if (
+            typeof google === 'undefined' ||
+            !google.script ||
+            !google.script.run
+          ){
+            setDropdownLoading(unidadDropdown, false);
             setDropdownPlaceholder(unidadDropdown);
-          } else {
-            var label = unidadDropdown.querySelector('.dd-label');
-            var btn = unidadDropdown.querySelector('.dd-button');
-            if (label){
-              label.textContent = gastoState.unidad;
-            }
-            if (btn){
-              btn.removeAttribute('data-placeholder');
-            }
-            unidadDropdown.dataset.value = gastoState.unidad;
+            return;
           }
 
           google.script.run
             .withSuccessHandler(function(unidades){
+              setDropdownLoading(unidadDropdown, false);
               if (!Array.isArray(unidades)) unidades = [];
 
               prepararDropdownUnidad(unidades);
               showUnidadContainer();
             })
             .withFailureHandler(function(err){
+              setDropdownLoading(unidadDropdown, false);
+              setDropdownPlaceholder(unidadDropdown);
               var msg = (err && err.message) ? err.message : 'No se pudieron cargar las unidades.';
               showError(msg);
             })
@@ -1452,36 +1506,48 @@
 
             if (
               gastoState.categoria &&
-              gastoState.producto &&
-              typeof google !== 'undefined' &&
-              google.script &&
-              google.script.run
+              gastoState.producto
             ){
-              google.script.run
-                .withSuccessHandler(function(proveedores){
-                  if (!Array.isArray(proveedores)) proveedores = [];
+              proveedorDropdown.dataset.ph = 'Proveedor';
+              setOptionsToDropdown(proveedorDropdown, []);
+              setDropdownLoading(proveedorDropdown, true);
 
-                  var sorted = proveedores.slice().sort(function(a, b){
-                    return String(a || '').localeCompare(String(b || ''));
-                  });
+              if (
+                typeof google !== 'undefined' &&
+                google.script &&
+                google.script.run
+              ){
+                google.script.run
+                  .withSuccessHandler(function(proveedores){
+                    setDropdownLoading(proveedorDropdown, false);
+                    if (!Array.isArray(proveedores)) proveedores = [];
 
-                  var opts = ['Nuevo proveedor'].concat(sorted);
+                    var sorted = proveedores.slice().sort(function(a, b){
+                      return String(a || '').localeCompare(String(b || ''));
+                    });
 
-                  proveedorDropdown.dataset.ph = 'Proveedor';
-                  setOptionsToDropdown(proveedorDropdown, opts);
+                    var opts = ['Nuevo proveedor'].concat(sorted);
 
-                  if (gastoState.proveedor && opts.indexOf(gastoState.proveedor) !== -1){
-                    selectOption(proveedorDropdown, gastoState.proveedor);
-                  } else {
+                    proveedorDropdown.dataset.ph = 'Proveedor';
+                    setOptionsToDropdown(proveedorDropdown, opts);
+
+                    if (gastoState.proveedor && opts.indexOf(gastoState.proveedor) !== -1){
+                      selectOption(proveedorDropdown, gastoState.proveedor);
+                    } else {
+                      setDropdownPlaceholder(proveedorDropdown);
+                    }
+                  })
+                  .withFailureHandler(function(err){
+                    setDropdownLoading(proveedorDropdown, false);
                     setDropdownPlaceholder(proveedorDropdown);
-                  }
-                })
-                .withFailureHandler(function(err){
-                  setDropdownPlaceholder(proveedorDropdown);
-                  var msg = (err && err.message) ? err.message : 'No se pudieron cargar los proveedores.';
-                  showError(msg);
-                })
-                .getProveedoresPorProducto(gastoState.categoria, gastoState.producto);
+                    var msg = (err && err.message) ? err.message : 'No se pudieron cargar los proveedores.';
+                    showError(msg);
+                  })
+                  .getProveedoresPorProducto(gastoState.categoria, gastoState.producto);
+              } else {
+                setDropdownLoading(proveedorDropdown, false);
+                setDropdownPlaceholder(proveedorDropdown);
+              }
             }
 
             if (typeof google !== 'undefined' && google.script && google.script.run && (!gastoState.idProducto || shouldResetProductoDeps)){
@@ -1542,7 +1608,7 @@
         }
 
         function openOverlay(dropdown){
-          if (!overlay || !overlayList || !dropdown) return;
+          if (!overlay || !overlayList || !dropdown || isDropdownLoading(dropdown)) return;
 
           currentDropdown = dropdown;
           overlayList.innerHTML = "";
@@ -1682,14 +1748,18 @@
         function cargarCategorias(){
           if (!categoriaDropdown) return;
 
+          setDropdownLoading(categoriaDropdown, true);
+
           if (typeof google === 'undefined' || !google.script || !google.script.run){
             setCategoriasReadyState();
+            setDropdownLoading(categoriaDropdown, false);
             setDropdownPlaceholder(categoriaDropdown);
             return;
           }
 
           google.script.run
             .withSuccessHandler(function(categorias){
+              setDropdownLoading(categoriaDropdown, false);
               if (!Array.isArray(categorias)) categorias = [];
 
               setCategoriasReadyState();
@@ -1710,6 +1780,7 @@
             })
             .withFailureHandler(function(err){
               setCategoriasReadyState();
+              setDropdownLoading(categoriaDropdown, false);
               setDropdownPlaceholder(categoriaDropdown);
               var msg = (err && err.message) ? err.message : 'No se pudieron cargar las categorías.';
               showError(msg);
@@ -1718,16 +1789,21 @@
         }
 
         function cargarProductosPorCategoria(categoria){
-          if (!productoDropdown || typeof google === 'undefined' || !google.script || !google.script.run) return;
+          if (!productoDropdown) return;
 
           productoDropdown.dataset.ph = 'Producto';
           setOptionsToDropdown(productoDropdown, []);
-          setDropdownPlaceholder(productoDropdown);
+          setDropdownLoading(productoDropdown, true);
 
-          if (!categoria) return;
+          if (!categoria || typeof google === 'undefined' || !google.script || !google.script.run){
+            setDropdownLoading(productoDropdown, false);
+            setDropdownPlaceholder(productoDropdown);
+            return;
+          }
 
           google.script.run
             .withSuccessHandler(function(productos){
+              setDropdownLoading(productoDropdown, false);
               if (!Array.isArray(productos)) productos = [];
 
               setOptionsToDropdown(productoDropdown, productos);
@@ -1739,6 +1815,7 @@
               }
             })
             .withFailureHandler(function(err){
+              setDropdownLoading(productoDropdown, false);
               setDropdownPlaceholder(productoDropdown);
               var msg = (err && err.message) ? err.message : 'No se pudieron cargar los productos.';
               showError(msg);
