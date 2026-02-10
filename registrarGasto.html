@@ -160,18 +160,18 @@
       transform:translateY(-50%);
       display:none;
       align-items:center;
-      justify-content:center;
+      justify-content:flex-start;
       pointer-events:none;
     }
     .dd-button.dd-loading .dd-label{ visibility:hidden; }
     .dd-button.dd-loading .dd-spinner-wrap{ display:flex; }
     .dd-spinner{
-      width: calc(16px * var(--fix));
-      height: calc(16px * var(--fix));
+      width: calc(18px * var(--fix));
+      height: calc(18px * var(--fix));
       border-radius:50%;
-      border:2px solid var(--gray20);
-      border-top-color:#000;
-      animation: dd-spin .7s linear infinite;
+      border:5px solid rgba(22, 163, 74, 0.22);
+      border-top-color:var(--green, #16a34a);
+      animation: dd-spin 1s linear infinite;
     }
     @keyframes dd-spin{ to{ transform:rotate(360deg); } }
     .dd-caret{
