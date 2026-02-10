@@ -1453,6 +1453,41 @@
             .getCosto(gastoState.idProducto, gastoState.proveedor, gastoState.unidad);
         }
 
+        function resolverIdProductoYCargarCosto(){
+          if (
+            typeof google === 'undefined' ||
+            !google.script ||
+            !google.script.run ||
+            !gastoState.categoria ||
+            !gastoState.producto ||
+            !gastoState.proveedor ||
+            !gastoState.unidad
+          ) return;
+
+          google.script.run
+            .withSuccessHandler(function(id){
+              updateGastoState('idProducto', id || null);
+
+              if (!id){
+                updateGastoState('precioUnitario', null);
+                mostrarRegistrarCosto();
+                refreshExpenseCard();
+                return;
+              }
+
+              cargarCostoSiListo();
+            })
+            .withFailureHandler(function(err){
+              updateGastoState('idProducto', null);
+              updateGastoState('precioUnitario', null);
+              mostrarRegistrarCosto();
+              refreshExpenseCard();
+              var msg = (err && err.message) ? err.message : 'No se pudo obtener el producto seleccionado.';
+              showError(msg);
+            })
+            .getIdProducto(gastoState.categoria, gastoState.producto, gastoState.proveedor, gastoState.unidad);
+        }
+
         function closeOverlay(){
           if (!overlay) return;
           overlay.setAttribute('data-open','false');
@@ -1550,20 +1585,6 @@
                 setDropdownPlaceholder(proveedorDropdown);
               }
             }
-
-            if (typeof google !== 'undefined' && google.script && google.script.run && (!gastoState.idProducto || shouldResetProductoDeps)){
-              // TODO: Reemplazar por una función backend dedicada a obtener el ID del producto
-              google.script.run
-                .withSuccessHandler(function(id){
-                  updateGastoState('idProducto', id);
-                })
-                .withFailureHandler(function(err){
-                  updateGastoState('idProducto', null);
-                  var msg = (err && err.message) ? err.message : 'No se pudo obtener el producto seleccionado.';
-                  showError(msg);
-                })
-                .getIdProducto(gastoState.categoria, gastoState.producto);
-            }
           }
 
           if (dropdown === proveedorDropdown){
@@ -1580,6 +1601,7 @@
             }
 
             if (previousProveedor !== value){
+              updateGastoState('idProducto', null);
               updateGastoState('unidad', null);
               updateGastoState('precioUnitario', null);
               updateGastoState('cantidad', null);
@@ -1595,12 +1617,13 @@
           }
 
           if (dropdown === unidadDropdown){
+            updateGastoState('idProducto', null);
             updateGastoState('unidad', value);
             updateGastoState('cantidad', null);
             updateGastoState('gasto', null);
             if (qtyInput){ qtyInput.value = ''; }
             if (expenseTotal){ expenseTotal.textContent = '0,00 $'; }
-            cargarCostoSiListo();
+            resolverIdProductoYCargarCosto();
           }
 
           refreshExpenseCard();
