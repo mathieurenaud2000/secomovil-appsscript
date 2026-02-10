@@ -924,6 +924,8 @@
         var productoLoading = false;
         var proveedorLoading = false;
         var unidadLoading = false;
+        var costoLookupPending = false;
+        var costoLookupFailedParse = false;
 
         var sectionCategoria = document.getElementById('sectionCategoria');
         var sectionProducto = document.getElementById('sectionProducto');
@@ -1114,6 +1116,10 @@
           var hasData = gastoState.categoria && gastoState.producto && gastoState.proveedor && gastoState.unidad;
           var precioNumber = parseFloat(gastoState.precioUnitario);
           var canShowCard = hasData && isFinite(precioNumber);
+          var costoDebug = gastoState.costoDebug;
+          var hasLookupStatus = !!(costoDebug && costoDebug.matchStatus);
+          var lookupStatusInvalido = hasLookupStatus && costoDebug.matchStatus !== 'row_found';
+          var shouldShowCostoError = hasData && !costoLookupPending && (lookupStatusInvalido || costoLookupFailedParse);
 
           if (expenseCard){
             if (canShowCard){
@@ -1132,9 +1138,8 @@
             if (qtyInput){
               qtyInput.value = '';
             }
-            if (hasData && !isFinite(precioNumber)){
+            if (shouldShowCostoError){
               var errorCosto = 'No hay costo disponible para el producto seleccionado.';
-              var costoDebug = gastoState.costoDebug;
               if (DEBUG_COSTO && costoDebug){
                 var sheet = costoDebug.sheet || 'PRODUCTO';
                 var cell = costoDebug.priceCell || '';
@@ -1248,6 +1253,8 @@
         }
 
         function resetGastoStateDependencias(){
+          costoLookupPending = false;
+          costoLookupFailedParse = false;
           updateGastoState('producto', null);
           updateGastoState('idProducto', null);
           updateGastoState('proveedor', null);
@@ -1295,6 +1302,8 @@
         }
 
         function resetCamposDesdeProducto(){
+          costoLookupPending = false;
+          costoLookupFailedParse = false;
           updateGastoState('proveedor', null);
           updateGastoState('unidad', null);
           updateGastoState('precioUnitario', null);
@@ -1451,21 +1460,37 @@
             !gastoState.unidad
           ) return;
 
+          costoLookupPending = true;
+          costoLookupFailedParse = false;
+
           google.script.run
             .withSuccessHandler(function(costo){
               updateGastoState('costoDebug', (costo && costo.debug) ? costo.debug : null);
 
-              if (costo && typeof costo.precioUnitario !== 'undefined' && costo.precioUnitario !== null){
-                updateGastoState('precioUnitario', costo.precioUnitario);
+              var precioRaw = (costo && typeof costo.precioUnitario !== 'undefined' && costo.precioUnitario !== null)
+                ? costo.precioUnitario
+                : null;
+              var precioNormalizado = (typeof precioRaw === 'string') ? precioRaw.replace(',', '.') : precioRaw;
+              var precioNumero = (precioRaw === null) ? NaN : Number(precioNormalizado);
+
+
+              if (isFinite(precioNumero)){
+                updateGastoState('precioUnitario', precioNumero);
+                costoLookupFailedParse = false;
                 mostrarPrecioUnitario();
               } else {
                 updateGastoState('precioUnitario', null);
+                costoLookupFailedParse = (precioRaw !== null);
                 mostrarRegistrarCosto();
               }
 
+
+              costoLookupPending = false;
               refreshExpenseCard();
             })
             .withFailureHandler(function(err){
+              costoLookupPending = false;
+              costoLookupFailedParse = false;
               updateGastoState('precioUnitario', null);
               updateGastoState('costoDebug', null);
               mostrarRegistrarCosto();
@@ -1492,6 +1517,8 @@
               updateGastoState('idProducto', id || null);
 
               if (!id){
+                costoLookupPending = false;
+                costoLookupFailedParse = false;
                 updateGastoState('precioUnitario', null);
                 updateGastoState('costoDebug', null);
                 mostrarRegistrarCosto();
@@ -1502,6 +1529,8 @@
               cargarCostoSiListo();
             })
             .withFailureHandler(function(err){
+              costoLookupPending = false;
+              costoLookupFailedParse = false;
               updateGastoState('idProducto', null);
               updateGastoState('precioUnitario', null);
               updateGastoState('costoDebug', null);
@@ -1644,8 +1673,11 @@
           if (dropdown === unidadDropdown){
             updateGastoState('idProducto', null);
             updateGastoState('unidad', value);
+            updateGastoState('precioUnitario', null);
             updateGastoState('cantidad', null);
             updateGastoState('gasto', null);
+            costoLookupPending = true;
+            costoLookupFailedParse = false;
             if (qtyInput){ qtyInput.value = ''; }
             if (expenseTotal){ expenseTotal.textContent = '0,00 $'; }
             resolverIdProductoYCargarCosto();
