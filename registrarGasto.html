@@ -165,16 +165,26 @@
     }
     .dd-button.dd-loading .dd-label{ visibility:hidden; }
     .dd-button.dd-loading .dd-spinner-wrap{ display:flex; }
-    .dd-spinner{
-      width: calc(32px * var(--fix));
-      height: calc(32px * var(--fix));
-      border-radius:50%;
-      box-sizing:border-box;
-      border:10px solid rgba(0,0,0,0.22);
-      border-top-color:var(--black);
-      animation: dd-spin 1s linear infinite;
+    .dd-dots{
+      display:inline-flex;
+      align-items:center;
+      gap: calc(5px * var(--fix));
+      min-height: calc(10px * var(--fix));
     }
-    @keyframes dd-spin{ to{ transform:rotate(360deg); } }
+    .dd-dot{
+      width: calc(7px * var(--fix));
+      height: calc(7px * var(--fix));
+      border-radius:50%;
+      background: var(--black);
+      opacity:0.28;
+      animation: dd-dot-pulse 1s ease-in-out infinite;
+    }
+    .dd-dot:nth-child(2){ animation-delay: 0.15s; }
+    .dd-dot:nth-child(3){ animation-delay: 0.30s; }
+    @keyframes dd-dot-pulse{
+      0%, 80%, 100%{ opacity:0.28; transform:translateY(0); }
+      40%{ opacity:1; transform:translateY(calc(-1px * var(--fix))); }
+    }
     .dd-caret{
       position:absolute; right: calc(16px * var(--fix)); top:50%; transform: translateY(-50%);
       width: 0; height: 0; pointer-events:none;
@@ -339,7 +349,7 @@
       <div id="registrarGastoLoading" class="loading-block">
         <div class="dropdown" data-variant="boxed" data-ph="Categoría" data-value="">
           <button type="button" class="dd-button dd-loading" data-placeholder="true" disabled aria-busy="true">
-            <span class="dd-label">Categoría</span><span class="dd-spinner-wrap" aria-hidden="true"><span class="dd-spinner"></span></span><span class="dd-caret" aria-hidden="true"></span>
+            <span class="dd-label">Categoría</span><span class="dd-spinner-wrap" aria-hidden="true"><span class="dd-dots"><span class="dd-dot"></span><span class="dd-dot"></span><span class="dd-dot"></span></span></span><span class="dd-caret" aria-hidden="true"></span>
           </button>
         </div>
       </div>
@@ -350,7 +360,7 @@
       <div class="form-section first-dropdown" id="sectionCategoria">
         <div class="dropdown" data-variant="boxed" data-ph="Categoría" data-value="">
           <button type="button" class="dd-button" data-placeholder="true">
-            <span class="dd-label">Categoría</span><span class="dd-spinner-wrap" aria-hidden="true"><span class="dd-spinner"></span></span><span class="dd-caret" aria-hidden="true"></span>
+            <span class="dd-label">Categoría</span><span class="dd-spinner-wrap" aria-hidden="true"><span class="dd-dots"><span class="dd-dot"></span><span class="dd-dot"></span><span class="dd-dot"></span></span></span><span class="dd-caret" aria-hidden="true"></span>
           </button>
           <script type="application/json" class="dd-data">[]</script>
         </div>
@@ -360,7 +370,7 @@
       <div class="form-section" id="sectionProducto" style="display:none;">
         <div class="dropdown" data-variant="boxed" data-ph="Producto" data-value="">
           <button type="button" class="dd-button" data-placeholder="true">
-            <span class="dd-label">Producto</span><span class="dd-spinner-wrap" aria-hidden="true"><span class="dd-spinner"></span></span><span class="dd-caret" aria-hidden="true"></span>
+            <span class="dd-label">Producto</span><span class="dd-spinner-wrap" aria-hidden="true"><span class="dd-dots"><span class="dd-dot"></span><span class="dd-dot"></span><span class="dd-dot"></span></span></span><span class="dd-caret" aria-hidden="true"></span>
           </button>
           <script type="application/json" class="dd-data">[]</script>
         </div>
@@ -373,7 +383,7 @@
         <div class="label">Proveedor</div>
         <div class="dropdown" data-variant="boxed" data-ph="Proveedor" data-value="">
           <button type="button" class="dd-button" data-placeholder="true">
-            <span class="dd-label">Proveedor</span><span class="dd-spinner-wrap" aria-hidden="true"><span class="dd-spinner"></span></span><span class="dd-caret" aria-hidden="true"></span>
+            <span class="dd-label">Proveedor</span><span class="dd-spinner-wrap" aria-hidden="true"><span class="dd-dots"><span class="dd-dot"></span><span class="dd-dot"></span><span class="dd-dot"></span></span></span><span class="dd-caret" aria-hidden="true"></span>
           </button>
           <script type="application/json" class="dd-data">[]</script>
         </div>
@@ -384,7 +394,7 @@
         <div class="label">Unidad</div>
         <div class="dropdown" data-variant="boxed" data-ph="Unidad" data-value="">
           <button type="button" class="dd-button" data-placeholder="true">
-            <span class="dd-label">Unidad</span><span class="dd-spinner-wrap" aria-hidden="true"><span class="dd-spinner"></span></span><span class="dd-caret" aria-hidden="true"></span>
+            <span class="dd-label">Unidad</span><span class="dd-spinner-wrap" aria-hidden="true"><span class="dd-dots"><span class="dd-dot"></span><span class="dd-dot"></span><span class="dd-dot"></span></span></span><span class="dd-caret" aria-hidden="true"></span>
           </button>
           <script type="application/json" class="dd-data">[]</script>
         </div>
