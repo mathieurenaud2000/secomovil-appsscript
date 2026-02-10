@@ -166,12 +166,12 @@
     .dd-button.dd-loading .dd-label{ visibility:hidden; }
     .dd-button.dd-loading .dd-spinner-wrap{ display:flex; }
     .dd-spinner{
-      width: calc(32px * var(--fix));
-      height: calc(32px * var(--fix));
+      width: calc(24px * var(--fix));
+      height: calc(24px * var(--fix));
       border-radius:50%;
       box-sizing:border-box;
-      border:10px solid rgba(0,0,0,0.22);
-      border-top-color:var(--black);
+      border:5px solid var(--black);
+      border-top-color:#00a651;
       animation: dd-spin 1s linear infinite;
     }
     @keyframes dd-spin{ to{ transform:rotate(360deg); } }
