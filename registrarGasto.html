@@ -93,10 +93,10 @@
     }
 
     .loading-block{
-      text-align:center;
-      padding: calc(12px * var(--fix)) 0;
-      font-size: calc(var(--font-body) * var(--fix));
-      color:#111;
+      display:flex;
+      flex-direction:column;
+      gap: calc(6px * var(--fix));
+      margin-top: calc(12px * var(--fix));
     }
 
     .txt-mini{
@@ -166,11 +166,12 @@
     .dd-button.dd-loading .dd-label{ visibility:hidden; }
     .dd-button.dd-loading .dd-spinner-wrap{ display:flex; }
     .dd-spinner{
-      width: calc(18px * var(--fix));
-      height: calc(18px * var(--fix));
+      width: calc(32px * var(--fix));
+      height: calc(32px * var(--fix));
       border-radius:50%;
-      border:5px solid rgba(22, 163, 74, 0.22);
-      border-top-color:var(--green, #16a34a);
+      box-sizing:border-box;
+      border:10px solid rgba(0,0,0,0.22);
+      border-top-color:var(--black);
       animation: dd-spin 1s linear infinite;
     }
     @keyframes dd-spin{ to{ transform:rotate(360deg); } }
@@ -335,7 +336,13 @@
     <!-- CONTENU -->
     <div class="stack">
 
-      <div id="registrarGastoLoading" class="loading-block">Cargando...</div>
+      <div id="registrarGastoLoading" class="loading-block">
+        <div class="dropdown" data-variant="boxed" data-ph="Categoría" data-value="">
+          <button type="button" class="dd-button dd-loading" data-placeholder="true" disabled aria-busy="true">
+            <span class="dd-label">Categoría</span><span class="dd-spinner-wrap" aria-hidden="true"><span class="dd-spinner"></span></span><span class="dd-caret" aria-hidden="true"></span>
+          </button>
+        </div>
+      </div>
 
       <div id="registrarGastoFields" style="display:none;">
 
