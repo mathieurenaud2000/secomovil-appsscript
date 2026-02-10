@@ -4627,29 +4627,65 @@ function getCategorias() {
 }
 
 /**
- * Devuelve la lista de unidades (LISTAS!E) en minúsculas y ordenadas A→Z.
+ * Devuelve las unidades registradas en PRODUCTO para una combinación concreta
+ * de categoría, producto y proveedor.
+ *
+ * @param {string} categoria
+ * @param {string} producto
+ * @param {string} proveedor
+ * @returns {string[]} unidades (sin duplicados, ordenadas A→Z)
  */
-function getUnidades() {
-  var sheet = getSheet_('LISTAS');
-  var lastRow = sheet.getLastRow();
+function getUnidades(categoria, producto, proveedor) {
+  var categoriaFiltro = (categoria || '').toString().trim();
+  var productoFiltro = (producto || '').toString().trim();
+  var proveedorFiltro = (proveedor || '').toString().trim();
 
+  if (!categoriaFiltro || !productoFiltro || !proveedorFiltro) {
+    return [];
+  }
+
+  var sheet = getSheet_('PRODUCTO');
+  var lastRow = sheet.getLastRow();
   if (lastRow < 2) {
     return [];
   }
 
-  var unidades = sheet
-    .getRange('E2:E' + lastRow)
-    .getValues()
-    .map(function (row) {
-      return (row[0] || '').toString().trim().toLowerCase();
-    })
-    .filter(function (value) {
-      return value;
-    });
+  var categoriaObjetivo = categoriaFiltro.toLowerCase();
+  var productoObjetivo = productoFiltro.toLowerCase();
+  var proveedorObjetivo = proveedorFiltro.toLowerCase();
+  var filas = sheet.getRange(2, 2, lastRow - 1, 4).getValues(); // B:E
+  var unidadesMap = {};
+
+  filas.forEach(function (row) {
+    var categoriaRow = (row[0] || '').toString().trim();
+    var productoRow = (row[1] || '').toString().trim();
+    var proveedorRow = (row[2] || '').toString().trim();
+    var unidadRow = (row[3] || '').toString().trim();
+
+    if (!categoriaRow || !productoRow || !proveedorRow || !unidadRow) return;
+
+    if (
+      categoriaRow.toLowerCase() === categoriaObjetivo &&
+      productoRow.toLowerCase() === productoObjetivo &&
+      proveedorRow.toLowerCase() === proveedorObjetivo
+    ) {
+      var key = unidadRow.toLowerCase();
+      if (!unidadesMap[key]) {
+        unidadesMap[key] = unidadRow;
+      }
+    }
+  });
+
+  var unidades = Object.keys(unidadesMap).map(function (key) {
+    return unidadesMap[key];
+  });
 
   unidades.sort(function (a, b) {
-    if (a < b) return -1;
-    if (a > b) return 1;
+    var aLower = a.toLowerCase();
+    var bLower = b.toLowerCase();
+
+    if (aLower < bLower) return -1;
+    if (aLower > bLower) return 1;
     return 0;
   });
 
@@ -5302,7 +5338,6 @@ function editarCosto(idProducto, proveedor, unidad, precioUnitario) {
     };
   }
 }
-
 
 
 

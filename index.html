@@ -1317,7 +1317,7 @@
 
           unidadDropdown.dataset.ph = 'Unidad';
 
-          var opts = ['Nueva unidad'].concat(unidades || []);
+          var opts = (unidades || []).slice();
           setOptionsToDropdown(unidadDropdown, opts);
 
           if (gastoState.unidad && opts.indexOf(gastoState.unidad) !== -1){
@@ -1363,7 +1363,7 @@
               var msg = (err && err.message) ? err.message : 'No se pudieron cargar las unidades.';
               showError(msg);
             })
-            .getUnidades();
+            .getUnidades(gastoState.categoria, gastoState.producto, gastoState.proveedor);
         }
 
         function cargarCostoSiListo(){
@@ -1528,16 +1528,6 @@
           }
 
           if (dropdown === unidadDropdown){
-            if (value === 'Nueva unidad'){
-              updateGastoState('origen', 'GASTO');
-              if (btn){
-                setTimeout(()=>btn.focus({preventScroll:true}),0);
-              }
-              loadPage('nuevaUnidad');
-              closeOverlay();
-              return;
-            }
-
             updateGastoState('unidad', value);
             updateGastoState('cantidad', null);
             updateGastoState('gasto', null);
