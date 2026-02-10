@@ -911,6 +911,7 @@
         var registrarCostoContainer = document.getElementById('registrarCostoContainer');
         var precioUnitarioContainer = document.getElementById('precioUnitarioContainer');
         var expenseCard = document.getElementById('expenseCard');
+        var expenseCardLoading = document.getElementById('expenseCardLoading');
         var qtyInput = document.getElementById('qtyInput');
         var unitLabel = document.getElementById('unitLabel');
         var unitPriceText = document.getElementById('unitPriceText');
@@ -1112,10 +1113,29 @@
           setRegistrarEnabled(isFormularioValido());
         }
 
+        function setExpenseCardLoading(isLoading){
+          if (!expenseCard) return;
+
+          if (isLoading){
+            showElement(precioUnitarioContainer);
+            hideElement(registrarCostoContainer);
+            expenseCard.classList.add('is-loading');
+            if (expenseCardLoading){
+              expenseCardLoading.setAttribute('aria-hidden', 'false');
+            }
+            return;
+          }
+
+          expenseCard.classList.remove('is-loading');
+          if (expenseCardLoading){
+            expenseCardLoading.setAttribute('aria-hidden', 'true');
+          }
+        }
+
         function refreshExpenseCard(){
           var hasData = gastoState.categoria && gastoState.producto && gastoState.proveedor && gastoState.unidad;
           var precioNumber = parseFloat(gastoState.precioUnitario);
-          var canShowCard = hasData && isFinite(precioNumber);
+          var canShowCard = hasData && (costoLookupPending || isFinite(precioNumber));
           var costoDebug = gastoState.costoDebug;
           var hasLookupStatus = !!(costoDebug && costoDebug.matchStatus);
           var lookupStatusInvalido = hasLookupStatus && costoDebug.matchStatus !== 'row_found';
@@ -1132,6 +1152,7 @@
           }
 
           if (!canShowCard){
+            setExpenseCardLoading(false);
             if (expenseTotal){
               expenseTotal.textContent = '0,00 $';
             }
@@ -1160,6 +1181,13 @@
             return;
           }
 
+          if (costoLookupPending){
+            setExpenseCardLoading(true);
+            setRegistrarEnabled(false);
+            return;
+          }
+
+          setExpenseCardLoading(false);
           clearError();
 
           if (unitLabel){
@@ -1486,10 +1514,12 @@
 
 
               costoLookupPending = false;
+              setExpenseCardLoading(false);
               refreshExpenseCard();
             })
             .withFailureHandler(function(err){
               costoLookupPending = false;
+              setExpenseCardLoading(false);
               costoLookupFailedParse = false;
               updateGastoState('precioUnitario', null);
               updateGastoState('costoDebug', null);
@@ -1518,6 +1548,7 @@
 
               if (!id){
                 costoLookupPending = false;
+                setExpenseCardLoading(false);
                 costoLookupFailedParse = false;
                 updateGastoState('precioUnitario', null);
                 updateGastoState('costoDebug', null);
@@ -1530,6 +1561,7 @@
             })
             .withFailureHandler(function(err){
               costoLookupPending = false;
+              setExpenseCardLoading(false);
               costoLookupFailedParse = false;
               updateGastoState('idProducto', null);
               updateGastoState('precioUnitario', null);
@@ -1680,6 +1712,7 @@
             costoLookupFailedParse = false;
             if (qtyInput){ qtyInput.value = ''; }
             if (expenseTotal){ expenseTotal.textContent = '0,00 $'; }
+            setExpenseCardLoading(true);
             resolverIdProductoYCargarCosto();
           }
 
