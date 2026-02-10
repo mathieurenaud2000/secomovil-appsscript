@@ -4757,21 +4757,38 @@ function getIdProducto(categoria, producto, proveedor, unidad) {
  * @param {string} idProducto
  * @param {string} proveedor
  * @param {string} unidad
- * @returns {{precioUnitario:number|null}}
+ * @param {string=} categoria
+ * @param {string=} producto
+ * @returns {{precioUnitario:number|null,debug:Object}}
  */
-function getCosto(idProducto, proveedor, unidad) {
+function getCosto(idProducto, proveedor, unidad, categoria, producto) {
+  var sheetName = 'PRODUCTO';
   var idProductoStr = (idProducto || '').toString().trim();
+  var categoriaStr = (categoria || '').toString().trim();
+  var productoStr = (producto || '').toString().trim();
   var proveedorStr = (proveedor || '').toString().trim().toLowerCase();
   var unidadStr = (unidad || '').toString().trim().toLowerCase();
+  var debugInfo = {
+    sheet: sheetName,
+    priceCell: '',
+    rawValue: '',
+    idProducto: idProductoStr,
+    categoria: categoriaStr,
+    producto: productoStr,
+    proveedor: (proveedor || '').toString().trim(),
+    unidad: (unidad || '').toString().trim(),
+    matchStatus: 'missing_input'
+  };
 
   if (!idProductoStr || !proveedorStr || !unidadStr) {
-    return { precioUnitario: null };
+    return { precioUnitario: null, debug: debugInfo };
   }
 
-  var sheet = getSheet_('PRODUCTO');
+  var sheet = getSheet_(sheetName);
   var lastRow = sheet.getLastRow();
   if (lastRow < 2) {
-    return { precioUnitario: null };
+    debugInfo.matchStatus = 'empty_sheet';
+    return { precioUnitario: null, debug: debugInfo };
   }
 
   var filas = sheet.getRange(2, 1, lastRow - 1, 6).getValues(); // A:F
@@ -4783,13 +4800,21 @@ function getCosto(idProducto, proveedor, unidad) {
     if (idRow !== idProductoStr) continue;
     if (proveedorRow !== proveedorStr || unidadRow !== unidadStr) continue;
 
-    var precioNum = Number(filas[i][5]);
+    var rowIndex = i + 2;
+    var rawValue = filas[i][5];
+    debugInfo.priceCell = 'F' + rowIndex;
+    debugInfo.rawValue = rawValue;
+
+    var precioNum = Number(rawValue);
+    debugInfo.matchStatus = isNaN(precioNum) ? 'row_found_but_invalid_price' : 'row_found';
     return {
-      precioUnitario: isNaN(precioNum) ? null : precioNum
+      precioUnitario: isNaN(precioNum) ? null : precioNum,
+      debug: debugInfo
     };
   }
 
-  return { precioUnitario: null };
+  debugInfo.matchStatus = 'no_row';
+  return { precioUnitario: null, debug: debugInfo };
 }
 
 /**
@@ -5438,6 +5463,5 @@ function editarCosto(idProducto, proveedor, unidad, precioUnitario) {
     };
   }
 }
-
 
 
