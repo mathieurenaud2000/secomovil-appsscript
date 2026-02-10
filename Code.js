@@ -4693,6 +4693,106 @@ function getUnidades(categoria, producto, proveedor) {
 }
 
 /**
+ * Resuelve el ID de PRODUCTO para una combinación exacta de
+ * categoría, producto, proveedor y unidad.
+ *
+ * Si hubiera varias filas exactamente iguales (no debería pasar),
+ * se devuelve la primera coincidencia encontrada.
+ *
+ * @param {string} categoria
+ * @param {string} producto
+ * @param {string} proveedor
+ * @param {string} unidad
+ * @returns {string|null}
+ */
+function getIdProducto(categoria, producto, proveedor, unidad) {
+  var categoriaFiltro = (categoria || '').toString().trim();
+  var productoFiltro = (producto || '').toString().trim();
+  var proveedorFiltro = (proveedor || '').toString().trim();
+  var unidadFiltro = (unidad || '').toString().trim();
+
+  if (!categoriaFiltro || !productoFiltro || !proveedorFiltro || !unidadFiltro) {
+    return null;
+  }
+
+  var sheet = getSheet_('PRODUCTO');
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) {
+    return null;
+  }
+
+  var categoriaObjetivo = categoriaFiltro.toLowerCase();
+  var productoObjetivo = productoFiltro.toLowerCase();
+  var proveedorObjetivo = proveedorFiltro.toLowerCase();
+  var unidadObjetivo = unidadFiltro.toLowerCase();
+  var filas = sheet.getRange(2, 1, lastRow - 1, 5).getValues(); // A:E
+
+  for (var i = 0; i < filas.length; i++) {
+    var idProducto = (filas[i][0] || '').toString().trim();
+    var categoriaRow = (filas[i][1] || '').toString().trim();
+    var productoRow = (filas[i][2] || '').toString().trim();
+    var proveedorRow = (filas[i][3] || '').toString().trim();
+    var unidadRow = (filas[i][4] || '').toString().trim();
+
+    if (!idProducto || !categoriaRow || !productoRow || !proveedorRow || !unidadRow) {
+      continue;
+    }
+
+    if (
+      categoriaRow.toLowerCase() === categoriaObjetivo &&
+      productoRow.toLowerCase() === productoObjetivo &&
+      proveedorRow.toLowerCase() === proveedorObjetivo &&
+      unidadRow.toLowerCase() === unidadObjetivo
+    ) {
+      return idProducto;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Devuelve el costo unitario para un registro exacto de PRODUCTO.
+ *
+ * @param {string} idProducto
+ * @param {string} proveedor
+ * @param {string} unidad
+ * @returns {{precioUnitario:number|null}}
+ */
+function getCosto(idProducto, proveedor, unidad) {
+  var idProductoStr = (idProducto || '').toString().trim();
+  var proveedorStr = (proveedor || '').toString().trim().toLowerCase();
+  var unidadStr = (unidad || '').toString().trim().toLowerCase();
+
+  if (!idProductoStr || !proveedorStr || !unidadStr) {
+    return { precioUnitario: null };
+  }
+
+  var sheet = getSheet_('PRODUCTO');
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) {
+    return { precioUnitario: null };
+  }
+
+  var filas = sheet.getRange(2, 1, lastRow - 1, 6).getValues(); // A:F
+  for (var i = 0; i < filas.length; i++) {
+    var idRow = (filas[i][0] || '').toString().trim();
+    var proveedorRow = (filas[i][3] || '').toString().trim().toLowerCase();
+    var unidadRow = (filas[i][4] || '').toString().trim().toLowerCase();
+
+    if (idRow !== idProductoStr) continue;
+    if (proveedorRow !== proveedorStr || unidadRow !== unidadStr) continue;
+
+    var precioNum = Number(filas[i][5]);
+    return {
+      precioUnitario: isNaN(precioNum) ? null : precioNum
+    };
+  }
+
+  return { precioUnitario: null };
+}
+
+/**
  * Crea una nueva categoría en LISTAS!D y ordena la columna.
  *
  * @param {string} nombre
@@ -5338,7 +5438,6 @@ function editarCosto(idProducto, proveedor, unidad, precioUnitario) {
     };
   }
 }
-
 
 
 
