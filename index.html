@@ -894,7 +894,11 @@
         var overlayList = document.getElementById('ddOverlayList');
         var currentDropdown = null;
 
-        var dropdowns = Array.from(document.querySelectorAll('.dropdown[data-variant="boxed"]'));
+        var registrarGastoLoading = document.getElementById('registrarGastoLoading');
+        var registrarGastoFields = document.getElementById('registrarGastoFields');
+
+        var dropdownScope = registrarGastoFields || document;
+        var dropdowns = Array.from(dropdownScope.querySelectorAll('.dropdown[data-variant="boxed"]'));
         var categoriaDropdown = dropdowns.length ? dropdowns[0] : null;
         var productoDropdown = dropdowns.length > 1 ? dropdowns[1] : null;
         var proveedorDropdown = dropdowns.length > 2 ? dropdowns[2] : null;
@@ -911,9 +915,6 @@
         var errorContainer = document.getElementById('registrarGastoError') || document.querySelector('[data-role="error"]');
         var btnRegistrarGasto = document.getElementById('btnRegistrar');
         var btnRegistrarCostoCta = document.getElementById('btnRegistrarCostoCta');
-
-        var registrarGastoLoading = document.getElementById('registrarGastoLoading');
-        var registrarGastoFields = document.getElementById('registrarGastoFields');
 
         var categoriaLoading = false;
         var productoLoading = false;
