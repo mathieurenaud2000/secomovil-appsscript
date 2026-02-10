@@ -16,7 +16,8 @@
       cantidad: null,
       gasto: null,
       observaciones: '',
-      origen: null
+      origen: null,
+      costoDebug: null
     };
 
     function resetGastoState() {
@@ -31,7 +32,8 @@
         cantidad: null,
         gasto: null,
         observaciones: '',
-        origen: null
+        origen: null,
+        costoDebug: null
       };
     }
 
@@ -70,6 +72,8 @@
         number: isFinite(numberVal) ? numberVal : null
       };
     }
+
+    const DEBUG_COSTO = true;
   </script>
   <style>
     .btn-noir[data-spinner="1"]{
@@ -1129,7 +1133,23 @@
               qtyInput.value = '';
             }
             if (hasData && !isFinite(precioNumber)){
-              showError('No hay costo disponible para el producto seleccionado.');
+              var errorCosto = 'No hay costo disponible para el producto seleccionado.';
+              var costoDebug = gastoState.costoDebug;
+              if (DEBUG_COSTO && costoDebug){
+                var sheet = costoDebug.sheet || 'PRODUCTO';
+                var cell = costoDebug.priceCell || '';
+                var rawValue = costoDebug.rawValue;
+                var rawText = (rawValue === null || typeof rawValue === 'undefined' || rawValue === '') ? '' : String(rawValue);
+                var cellExpr = cell ? (sheet + '!' + cell) : (sheet + '!');
+                errorCosto += ' [' + cellExpr + " = '" + rawText + "']" +
+                  ' (idProducto=' + (costoDebug.idProducto || '') +
+                  ', categoria=' + (costoDebug.categoria || '') +
+                  ', producto=' + (costoDebug.producto || '') +
+                  ', proveedor=' + (costoDebug.proveedor || '') +
+                  ', unidad=' + (costoDebug.unidad || '') +
+                  ', status=' + (costoDebug.matchStatus || '') + ')';
+              }
+              showError(errorCosto);
             }
             setRegistrarEnabled(false);
             return;
@@ -1433,6 +1453,8 @@
 
           google.script.run
             .withSuccessHandler(function(costo){
+              updateGastoState('costoDebug', (costo && costo.debug) ? costo.debug : null);
+
               if (costo && typeof costo.precioUnitario !== 'undefined' && costo.precioUnitario !== null){
                 updateGastoState('precioUnitario', costo.precioUnitario);
                 mostrarPrecioUnitario();
@@ -1445,12 +1467,13 @@
             })
             .withFailureHandler(function(err){
               updateGastoState('precioUnitario', null);
+              updateGastoState('costoDebug', null);
               mostrarRegistrarCosto();
               refreshExpenseCard();
               var msg = (err && err.message) ? err.message : 'No se pudo obtener el costo.';
               showError(msg);
             })
-            .getCosto(gastoState.idProducto, gastoState.proveedor, gastoState.unidad);
+            .getCosto(gastoState.idProducto, gastoState.proveedor, gastoState.unidad, gastoState.categoria, gastoState.producto);
         }
 
         function resolverIdProductoYCargarCosto(){
@@ -1470,6 +1493,7 @@
 
               if (!id){
                 updateGastoState('precioUnitario', null);
+                updateGastoState('costoDebug', null);
                 mostrarRegistrarCosto();
                 refreshExpenseCard();
                 return;
@@ -1480,6 +1504,7 @@
             .withFailureHandler(function(err){
               updateGastoState('idProducto', null);
               updateGastoState('precioUnitario', null);
+              updateGastoState('costoDebug', null);
               mostrarRegistrarCosto();
               refreshExpenseCard();
               var msg = (err && err.message) ? err.message : 'No se pudo obtener el producto seleccionado.';
