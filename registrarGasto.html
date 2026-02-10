@@ -247,6 +247,7 @@
 
     /* ===== CARTE DÉPENSE ===== */
     .expense-card{
+      position:relative;
       border-radius: var(--radius);
       border:5px solid #000;
       background:#fff;
@@ -254,6 +255,31 @@
       display:flex;
       flex-direction:column;
       overflow:hidden;
+      min-height: calc(146px * var(--fix));
+    }
+
+    .expense-card-loading{
+      position:absolute;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      pointer-events:none;
+      background:#fff;
+      z-index:2;
+    }
+    .expense-card-loading .dd-dots{
+      gap: calc(6px * var(--fix));
+    }
+    .expense-card-loading .dd-dot{
+      width: calc(9px * var(--fix));
+      height: calc(9px * var(--fix));
+    }
+    .expense-card.is-loading .expense-card-loading{
+      display:flex;
+    }
+    .expense-card.is-loading .expense-card-content{
+      visibility:hidden;
     }
 
     .exp-row1{
@@ -412,6 +438,10 @@
       <!-- CARTE DÉPENSE -->
       <div id="precioUnitarioContainer" style="display:none;">
       <div class="expense-card" id="expenseCard" data-unit-label="Lb" data-unit-price="1.75">
+        <div class="expense-card-loading" id="expenseCardLoading" aria-hidden="true">
+          <span class="dd-dots"><span class="dd-dot"></span><span class="dd-dot"></span><span class="dd-dot"></span></span>
+        </div>
+        <div class="expense-card-content" id="expenseCardContent">
         <!-- Ligne 1 -->
         <div class="exp-row1">
           <div class="exp-qty-wrap">
@@ -435,6 +465,7 @@
         <div class="exp-row3">
           <div class="exp-label">Gasto</div>
           <div class="exp-total" id="expenseTotal">0,00 $</div>
+        </div>
         </div>
       </div>
       </div>
