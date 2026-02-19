@@ -1,0 +1,160 @@
+<style>
+    :root{
+      --fix: 1;
+      --gap: 12px;
+      --radius: 40px;
+      --font-label: 12px;
+      --font-small: 14px;
+      --font-body: 15px;
+      --btn-fs: 16px;
+      --btn-ph: 14px;
+      --btn-pw: 18px;
+      --btn-minh: 48px;
+      --black: #000;
+      --white: #fff;
+      --gray05: rgba(0,0,0,0.05);
+      --gray10: rgba(0,0,0,0.10);
+      --gray20: rgba(0,0,0,0.20);
+      --gray25: rgba(0,0,0,0.25);
+    }
+
+    html, body{
+      margin:0; padding:0;
+      width:100%; max-width:100%;
+      overflow-x:hidden; box-sizing:border-box;
+      background:#fff;
+      font-family: Roboto, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    }
+    *, *::before, *::after{ box-sizing:inherit; }
+    *:focus{ outline:none!important; box-shadow:none!important; }
+
+    .wrapper{
+      padding: 0 50px;
+      margin: 0 auto;
+      max-width: 640px;
+    }
+
+    .header{ display:block; margin: calc(var(--gap) * var(--fix)) 0; }
+    .header-logo{ display:block; width:100%; line-height:0; margin:0; }
+    .header-img{
+      display:block; width:100%; height:auto;
+      object-fit:contain; object-position:left center;
+      margin:0 8px 15px 0;
+      padding-bottom:30px;
+    }
+
+    .sep-black{ height:0; border-top: 5px solid var(--black); }
+    .sep-gray { height:0; border-top: 2px solid var(--gray20); }
+
+    .header-grid{
+      display:grid; grid-template-columns: 1fr;
+      align-items:end;
+      gap: calc(8px * var(--fix));
+      padding: calc(12px * var(--fix)) 0;
+      text-align:center;
+    }
+    .header-title{
+      text-transform: uppercase; font-weight: 900;
+      font-size: calc(21px * var(--fix));
+      line-height: calc(20px * var(--fix));
+      text-align:center;
+    }
+    .header-title span{ display:block; }
+
+    .stack{
+      display:flex; flex-direction:column;
+      gap: calc(var(--gap) * var(--fix));
+    }
+
+    .label{
+      font-size: calc(var(--font-label) * var(--fix));
+      color:#111;
+      font-weight:500;
+    }
+
+    .form-section{ display:flex; flex-direction:column; gap: calc(6px * var(--fix)); }
+
+    .label + .field{
+      margin-top: calc((-1 * var(--gap) / 2) * var(--fix));
+    }
+
+    .field{
+      width:100%;
+      background:#fff;
+      color:#000;
+      border:5px solid var(--black);
+      border-radius: var(--radius);
+      font-size: calc(var(--font-body) * var(--fix));
+      line-height:1.3;
+      padding: calc(10px * var(--fix)) calc(12px * var(--fix));
+    }
+    .field::placeholder{ color: var(--gray25); }
+
+    .btn{
+      display:block; width:100%;
+      text-transform:uppercase; font-weight:700;
+      font-size: calc(var(--btn-fs) * var(--fix)); line-height:1.2;
+      padding: calc(var(--btn-ph) * var(--fix)) calc(var(--btn-pw) * var(--fix));
+      min-height: calc(var(--btn-minh) * var(--fix));
+      border-radius: var(--radius);
+      border: 5px solid transparent; cursor:pointer;
+      transition: filter .15s ease, background .15s ease, color .15s ease, border-color .15s ease;
+    }
+    .btn:active{ filter:brightness(0.95); }
+
+    .btn-noir{
+      background:#000; color:#fff; border-color:#000;
+      box-shadow:0 20px 40px rgba(0,0,0,0.40);
+    }
+    .btn-blanc{
+      background:#fff; color:#000; border-color: var(--gray20);
+    }
+    .btn-blanc:active{
+      color: rgba(0,0,0,0.5);
+    }
+    .btn[disabled]{ opacity:0.6; box-shadow:none; cursor:not-allowed; }
+
+    .error-text{
+      color: #b00020;
+      font-size: calc(11px * var(--fix));
+      margin-top: calc((-4px) * var(--fix));
+      display:none;
+    }
+  </style>
+  <div class="wrapper">
+
+    <header class="header">
+      <div class="header-logo">
+        <img class="header-img" id="headerImg"
+             src="https://lh3.googleusercontent.com/d/15N5N0TgMBTxmn2v-sKsG53mEAKaxXYtA"
+             alt="Logo SecoMobil">
+      </div>
+
+      <div class="sep-black"></div>
+
+      <div class="header-grid">
+        <div class="header-title">
+          <span>NUEVA</span>
+          <span>CATEGORIA</span>
+        </div>
+      </div>
+
+      <div class="sep-black"></div>
+    </header>
+
+    <div class="stack">
+      <div class="form-section">
+        <div class="label">Categoria</div>
+        <input class="field" type="text" id="nombreCategoria" placeholder="Ingrese el nombre de la categoria">
+
+        <div class="error-text" id="nuevaCategoriaError" aria-live="polite"></div>
+      </div>
+
+      <div class="sep-gray"></div>
+
+      <button class="btn btn-noir" id="btnGuardarCategoria">GUARDAR</button>
+      <button class="btn btn-blanc" id="btnVolverCategoria">CANCELAR</button>
+
+      <div style="height:0;"></div>
+    </div>
+  </div>
