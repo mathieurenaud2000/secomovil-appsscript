@@ -1118,6 +1118,8 @@
 
           if (isLoading){
             showElement(precioUnitarioContainer);
+            expenseCard.style.display = '';
+            expenseCard.classList.remove('hidden');
             hideElement(registrarCostoContainer);
             expenseCard.classList.add('is-loading');
             if (expenseCardLoading){
@@ -1135,7 +1137,7 @@
         function refreshExpenseCard(){
           var hasData = gastoState.categoria && gastoState.producto && gastoState.proveedor && gastoState.unidad;
           var precioNumber = parseFloat(gastoState.precioUnitario);
-          var canShowCard = hasData && (costoLookupPending || isFinite(precioNumber));
+          var canShowCard = (costoLookupPending && !!gastoState.unidad) || (hasData && isFinite(precioNumber));
           var costoDebug = gastoState.costoDebug;
           var hasLookupStatus = !!(costoDebug && costoDebug.matchStatus);
           var lookupStatusInvalido = hasLookupStatus && costoDebug.matchStatus !== 'row_found';
