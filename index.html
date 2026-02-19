@@ -1604,6 +1604,16 @@
           dropdown.dataset.value = value;
 
           if (dropdown === categoriaDropdown){
+            if (value === 'Nueva categoria'){
+              updateGastoState('origen', 'GASTO');
+              loadPage('nuevaCategoria');
+              closeOverlay();
+              if (btn){
+                setTimeout(()=>btn.focus({preventScroll:true}),0);
+              }
+              return;
+            }
+
             var previousCategoria = gastoState.categoria;
             updateGastoState('categoria', value);
 
@@ -1877,9 +1887,10 @@
             .withSuccessHandler(function(categorias){
               setDropdownLoading(categoriaDropdown, false);
               if (!Array.isArray(categorias)) categorias = [];
+              var categoriaOpts = ['Nueva categoria'].concat(categorias);
 
               setCategoriasReadyState();
-              setOptionsToDropdown(categoriaDropdown, categorias);
+              setOptionsToDropdown(categoriaDropdown, categoriaOpts);
 
               if (!categorias.length){
                 setDropdownPlaceholder(categoriaDropdown);
