@@ -2549,7 +2549,34 @@
               updateGastoState('precioUnitario', null);
               updateGastoState('idProducto', null);
               updateGastoState('origen', null);
-              loadPage('registrarGasto');
+
+              google.script.run
+                .withSuccessHandler(function(html){
+                  var app = document.getElementById('app');
+                  if (!app) {
+                    alert('Erreur: #app introuvable');
+                    return;
+                  }
+
+                  app.innerHTML = html;
+
+                  var registrarGastoInit =
+                    (window.pageInit && typeof window.pageInit.registrarGasto === 'function')
+                      ? window.pageInit.registrarGasto
+                      : ((typeof pageInit !== 'undefined' && pageInit && typeof pageInit.registrarGasto === 'function')
+                        ? pageInit.registrarGasto
+                        : null);
+
+                  if (registrarGastoInit) {
+                    registrarGastoInit();
+                  } else {
+                    alert('Erreur: pageInit.registrarGasto introuvable');
+                  }
+                })
+                .withFailureHandler(function(err){
+                  alert('Erreur chargement registrarGasto (getPage): ' + ((err && err.message) ? err.message : JSON.stringify(err)));
+                })
+                .getPage('registrarGasto');
             })
             .withFailureHandler(function(err){
               setGuardarLoading(false);
