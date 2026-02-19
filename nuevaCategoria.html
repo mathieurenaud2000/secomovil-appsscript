@@ -51,13 +51,13 @@
       align-items:end;
       gap: calc(8px * var(--fix));
       padding: calc(12px * var(--fix)) 0;
-      text-align:center;
+      text-align:left;
     }
     .header-title{
       text-transform: uppercase; font-weight: 900;
       font-size: calc(21px * var(--fix));
       line-height: calc(20px * var(--fix));
-      text-align:center;
+      text-align:left;
     }
     .header-title span{ display:block; }
 
@@ -75,7 +75,7 @@
     .form-section{ display:flex; flex-direction:column; gap: calc(6px * var(--fix)); }
 
     .label + .field{
-      margin-top: calc((-1 * var(--gap) / 2) * var(--fix));
+      margin-top: calc((var(--gap) / 3) * var(--fix));
     }
 
     .field{
