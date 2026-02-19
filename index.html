@@ -2425,6 +2425,130 @@
     }
   },
 
+  nuevaCategoria: function(){
+    var categoriaInput = document.getElementById('nombreCategoria')
+      || document.getElementById('categoriaNombre')
+      || document.querySelector('input[name="categoriaNombre"]')
+      || document.querySelector('input[type="text"]');
+    var errorContainer = document.getElementById('nuevaCategoriaError')
+      || document.querySelector('[data-role="error"]');
+    var btnGuardar = document.getElementById('btnGuardarCategoria') || document.getElementById('btnRegistrar');
+    var btnCancelar = document.getElementById('btnVolverCategoria') || document.getElementById('btnVolver');
+
+    function clearError(){
+      if (errorContainer){
+        errorContainer.textContent = '';
+        errorContainer.style.display = 'none';
+      }
+    }
+
+    function showError(msg){
+      if (errorContainer){
+        errorContainer.textContent = msg;
+        errorContainer.style.display = '';
+      } else {
+        alert(msg);
+      }
+    }
+
+    function setGuardarLoading(isLoading){
+      if (!btnGuardar) return;
+      if (btnGuardar.classList && btnGuardar.classList.contains('btn-noir')){
+        window.secoSetBlackButtonLoading(btnGuardar, isLoading);
+        return;
+      }
+      if (isLoading){
+        if (btnGuardar.dataset.spinner === '1') return;
+        btnGuardar.disabled = true;
+        btnGuardar.dataset.spinner = '1';
+      } else {
+        btnGuardar.disabled = false;
+        btnGuardar.removeAttribute('data-spinner');
+      }
+    }
+
+    function setCancelarEnabled(enable){
+      if (btnCancelar){
+        btnCancelar.disabled = !enable;
+      }
+    }
+
+    function setGuardarEnabled(enable){
+      if (!btnGuardar || btnGuardar.dataset.spinner === '1') return;
+      btnGuardar.disabled = !enable;
+    }
+
+    if (categoriaInput){
+      categoriaInput.value = '';
+      categoriaInput.addEventListener('input', function(){
+        clearError();
+        setGuardarEnabled(!!categoriaInput.value.trim());
+      });
+    }
+    clearError();
+    setGuardarLoading(false);
+    setGuardarEnabled(false);
+
+    if (btnCancelar){
+      btnCancelar.addEventListener('click', function(){
+        if (btnCancelar.disabled) return;
+        loadPage('registrarGasto');
+      });
+    }
+
+    if (btnGuardar){
+      btnGuardar.addEventListener('click', function(){
+        if (btnGuardar.disabled) return;
+
+        var nombre = (categoriaInput ? categoriaInput.value : '').toString().trim();
+        if (!nombre){
+          showError('Ingrese el nombre de la categoria.');
+          if (categoriaInput) categoriaInput.focus();
+          return;
+        }
+
+        clearError();
+        setGuardarEnabled(false);
+        setGuardarLoading(true);
+        setCancelarEnabled(false);
+
+        var nombreNormalizado = nombre;
+
+        if (typeof google !== 'undefined' && google.script && google.script.run){
+          google.script.run
+            .withSuccessHandler(function(resp){
+              var ok = (resp && (resp.ok || resp.success)) || resp === undefined || resp === null || resp === true;
+              if (!ok){
+                setGuardarLoading(false);
+                setCancelarEnabled(true);
+                setGuardarEnabled(true);
+                var msg = (resp && resp.error) ? resp.error : 'Error al crear la categoria.';
+                showError(msg);
+                return;
+              }
+
+              updateGastoState('categoria', nombreNormalizado);
+              updateGastoState('origen', null);
+              loadPage('registrarGasto');
+            })
+            .withFailureHandler(function(err){
+              setGuardarLoading(false);
+              setCancelarEnabled(true);
+              setGuardarEnabled(true);
+              var msg = (err && err.message) ? err.message : 'Error al crear la categoria.';
+              showError(msg);
+            })
+            .crearCategoria(nombreNormalizado);
+        } else {
+          setGuardarLoading(false);
+          setCancelarEnabled(true);
+          setGuardarEnabled(true);
+          showError('No se pudo crear la categoria.');
+        }
+      });
+    }
+  },
+
   nuevaUnidad: function(){
     var unidadInput = document.getElementById('nombreUnidad')
       || document.getElementById('unidadNombre')
