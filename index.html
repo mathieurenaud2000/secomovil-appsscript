@@ -1901,6 +1901,21 @@
 
               if (gastoState.categoria && categorias.indexOf(gastoState.categoria) !== -1){
                 selectOption(categoriaDropdown, gastoState.categoria);
+              } else if (gastoState.categoria){
+                if (categoriaDropdown){
+                  var categoriaLabel = categoriaDropdown.querySelector('.dd-label');
+                  var categoriaBtn = categoriaDropdown.querySelector('.dd-button');
+                  if (categoriaLabel){
+                    categoriaLabel.textContent = gastoState.categoria;
+                  }
+                  if (categoriaBtn){
+                    categoriaBtn.removeAttribute('data-placeholder');
+                  }
+                  categoriaDropdown.dataset.value = gastoState.categoria;
+                }
+                showProductoContainer();
+                productoDropdown.dataset.ph = 'Producto';
+                setDropdownPlaceholder(productoDropdown);
               } else {
                 setDropdownPlaceholder(categoriaDropdown);
               }
@@ -2528,6 +2543,11 @@
               }
 
               updateGastoState('categoria', nombreNormalizado);
+              updateGastoState('producto', null);
+              updateGastoState('proveedor', null);
+              updateGastoState('unidad', null);
+              updateGastoState('precioUnitario', null);
+              updateGastoState('idProducto', null);
               updateGastoState('origen', null);
               loadPage('registrarGasto');
             })
