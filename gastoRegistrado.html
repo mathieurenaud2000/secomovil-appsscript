@@ -56,6 +56,7 @@
       text-transform: uppercase; font-weight: 900;
       font-size: calc(21px * var(--fix));
       line-height: calc(20px * var(--fix));
+      text-align:left;
     }
     .header-title span{ display:block; }
 
@@ -144,11 +145,10 @@
         <div class="confirm-text">GASTO REGISTRADO</div>
       </div>
 
-      <button class="btn btn-noir">OK</button>
+      <button class="btn btn-noir" onclick="if(window.secoSetBlackButtonLoading){window.secoSetBlackButtonLoading(this,true);} loadPage('inicio');">OK</button>
 
       <!-- ESPACEMENT SOUS LE BOUTON = 0 PX -->
       <div style="height:0;"></div>
 
     </div>
   </div>
-
