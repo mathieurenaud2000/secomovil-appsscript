@@ -149,6 +149,43 @@
       padding: calc(10px * var(--fix)) calc(36px * var(--fix)) calc(10px * var(--fix)) calc(10px * var(--fix));
     }
 
+    .locked-field-row{
+      display:flex;
+      align-items:center;
+      gap: calc(8px * var(--fix));
+      width:100%;
+    }
+    .locked-field{
+      flex:1;
+      min-height: calc(48px * var(--fix));
+      border: 5px solid var(--black);
+      border-radius: var(--radius);
+      background:#fff;
+      color:#000;
+      padding: calc(10px * var(--fix));
+      font-size: calc(var(--font-body) * var(--fix));
+      line-height:1.3;
+      display:flex;
+      align-items:center;
+      user-select:none;
+    }
+    .btn-x-noir{
+      width: calc(48px * var(--fix));
+      min-width: calc(48px * var(--fix));
+      height: calc(48px * var(--fix));
+      border-radius: 50%;
+      border: 5px solid var(--black);
+      background:#000;
+      color:#fff;
+      font-size: calc(20px * var(--fix));
+      line-height:1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      padding:0;
+    }
+
     .dd-button{
       width:100%; text-align:left; position:relative; cursor:pointer;
       line-height:1.3; font-size: inherit;
@@ -392,6 +429,10 @@
             <span class="dd-label">Categoría</span><span class="dd-spinner-wrap" aria-hidden="true"><span class="dd-dots"><span class="dd-dot"></span><span class="dd-dot"></span><span class="dd-dot"></span></span></span><span class="dd-caret" aria-hidden="true"></span>
           </button>
           <script type="application/json" class="dd-data">[]</script>
+        </div>
+        <div id="categoriaLockedContainer" class="locked-field-row" style="display:none;">
+          <div id="categoriaLockedValue" class="locked-field" aria-live="polite"></div>
+          <button type="button" id="btnUnlockCategoria" class="btn-x-noir" aria-label="Desbloquear categoría">✕</button>
         </div>
       </div>
 

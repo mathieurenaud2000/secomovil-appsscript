@@ -937,6 +937,9 @@
         var sepBeforeCosto = document.getElementById('sepBeforeCosto');
         var sepAfterCosto = document.getElementById('sepAfterCosto');
         var sepBeforeButtons = document.getElementById('sepBeforeButtons');
+        var categoriaLockedContainer = document.getElementById('categoriaLockedContainer');
+        var categoriaLockedValue = document.getElementById('categoriaLockedValue');
+        var btnUnlockCategoria = document.getElementById('btnUnlockCategoria');
 
         function hideElement(el){
           if (!el) return;
@@ -1235,6 +1238,37 @@
             btn.setAttribute('data-placeholder', 'true');
           }
           dropdown.dataset.value = '';
+        }
+
+        function lockCategoria(value){
+          if (categoriaLockedValue){
+            categoriaLockedValue.textContent = value || '';
+          }
+          if (categoriaDropdown){
+            hideElement(categoriaDropdown);
+          }
+          if (categoriaLockedContainer){
+            showElement(categoriaLockedContainer);
+          }
+        }
+
+        function unlockCategoria(){
+          updateGastoState('categoria', null);
+          resetCamposDependientes();
+          setDropdownPlaceholder(categoriaDropdown);
+          if (categoriaLockedContainer){
+            hideElement(categoriaLockedContainer);
+          }
+          if (categoriaDropdown){
+            showElement(categoriaDropdown);
+          }
+        }
+
+        function bindUnlockCategoria(){
+          if (!btnUnlockCategoria) return;
+          btnUnlockCategoria.addEventListener('click', function(){
+            unlockCategoria();
+          });
         }
 
         function showDropdownSpinner(dropdown){
@@ -1622,6 +1656,7 @@
             }
 
             if (value){
+              lockCategoria(value);
               showProductoContainer();
               cargarProductosPorCategoria(value);
             }
@@ -1913,10 +1948,17 @@
                   }
                   categoriaDropdown.dataset.value = gastoState.categoria;
                 }
+                lockCategoria(gastoState.categoria);
                 showProductoContainer();
                 productoDropdown.dataset.ph = 'Producto';
                 setDropdownPlaceholder(productoDropdown);
               } else {
+                if (categoriaLockedContainer){
+                  hideElement(categoriaLockedContainer);
+                }
+                if (categoriaDropdown){
+                  showElement(categoriaDropdown);
+                }
                 setDropdownPlaceholder(categoriaDropdown);
               }
             })
@@ -2086,6 +2128,7 @@
         setInitialLoadingState();
         resetCamposDependientes();
         refreshExpenseCard();
+        bindUnlockCategoria();
         initDropdowns();
         cargarCategorias();
         if (gastoState.categoria){
