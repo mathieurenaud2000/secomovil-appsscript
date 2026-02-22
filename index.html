@@ -1924,35 +1924,33 @@
             .withSuccessHandler(function(categorias){
               setDropdownLoading(categoriaDropdown, false);
               if (!Array.isArray(categorias)) categorias = [];
-              var categoriaOpts = ['Nueva categoria'].concat(categorias);
 
               setCategoriasReadyState();
-              setOptionsToDropdown(categoriaDropdown, categoriaOpts);
 
-              if (!categorias.length){
-                setDropdownPlaceholder(categoriaDropdown);
-                showError('Aucune catégorie disponible – ajoutez un produit');
-                resetCamposDependientes();
-                return;
-              }
-
-              if (gastoState.categoria && gastoState.categoria_isDraft === true){
-                if (categoriaDropdown){
-                  var categoriaDraftLabel = categoriaDropdown.querySelector('.dd-label');
-                  var categoriaDraftBtn = categoriaDropdown.querySelector('.dd-button');
-                  if (categoriaDraftLabel){
-                    categoriaDraftLabel.textContent = gastoState.categoria;
-                  }
-                  if (categoriaDraftBtn){
-                    categoriaDraftBtn.removeAttribute('data-placeholder');
-                  }
-                  categoriaDropdown.dataset.value = gastoState.categoria;
-                }
+              if (gastoState.categoria_isDraft === true && gastoState.categoria){
                 lockCategoria(gastoState.categoria);
                 showProductoContainer();
                 productoDropdown.dataset.ph = 'Producto';
                 setDropdownPlaceholder(productoDropdown);
-              } else if (gastoState.categoria && categorias.indexOf(gastoState.categoria) !== -1){
+                return;
+              }
+
+              var categoriaOpts = ['Nueva categoria'].concat(categorias);
+
+              setOptionsToDropdown(categoriaDropdown, categoriaOpts);
+
+              if (!categorias.length){
+                if (categoriaLockedContainer){
+                  hideElement(categoriaLockedContainer);
+                }
+                if (categoriaDropdown){
+                  showElement(categoriaDropdown);
+                }
+                setDropdownPlaceholder(categoriaDropdown);
+                return;
+              }
+
+              if (gastoState.categoria && categorias.indexOf(gastoState.categoria) !== -1){
                 selectOption(categoriaDropdown, gastoState.categoria);
               } else if (gastoState.categoria){
                 if (categoriaDropdown){
