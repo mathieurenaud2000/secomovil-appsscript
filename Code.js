@@ -5032,6 +5032,31 @@ function getProductosPorCategoria(categoria) {
 }
 
 /**
+ * Devuelve un índice liviano de productos/categorías para validaciones UI.
+ *
+ * @returns {{categoria:string, producto:string}[]}
+ */
+function getProductosIndex() {
+  var sheet = getSheet_('PRODUCTO');
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) {
+    return [];
+  }
+
+  var rows = sheet.getRange(2, 2, lastRow - 1, 2).getValues(); // B:C
+  var out = [];
+
+  rows.forEach(function (row) {
+    var categoria = (row[0] || '').toString().trim();
+    var producto = (row[1] || '').toString().trim();
+    if (!categoria || !producto) return;
+    out.push({ categoria: categoria, producto: producto });
+  });
+
+  return out;
+}
+
+/**
  * Devuelve los proveedores registrados para una categoría y producto.
  *
  * @param {string} categoria
@@ -5463,5 +5488,4 @@ function editarCosto(idProducto, proveedor, unidad, precioUnitario) {
     };
   }
 }
-
 
