@@ -150,18 +150,17 @@
     #globalLoadingOverlay{
       position:fixed;
       inset:0;
-      background:rgba(0,0,0,0.2);
-      display:flex;
-      align-items:center;
-      justify-content:center;
+      background:#fff;
+      display:grid;
+      place-items:center;
       z-index:9999;
     }
     #globalLoadingOverlay .global-loader{
-      width:calc(52px * var(--fix));
-      height:calc(52px * var(--fix));
+      width:calc(28px * var(--fix));
+      height:calc(28px * var(--fix));
       border-radius:50%;
-      border:calc(10px * var(--fix)) solid rgba(255,255,255,0.35);
-      border-top-color:#fff;
+      border:calc(12px * var(--fix)) solid rgba(0,0,0,0.35);
+      border-top-color:#000;
       animation: btnNoirSpin 0.9s linear infinite;
     }
 
