@@ -1778,46 +1778,7 @@
               gastoState.categoria &&
               gastoState.producto
             ){
-              proveedorDropdown.dataset.ph = 'Proveedor';
-              setOptionsToDropdown(proveedorDropdown, []);
-              setDropdownLoading(proveedorDropdown, true);
-
-              if (
-                typeof google !== 'undefined' &&
-                google.script &&
-                google.script.run
-              ){
-                google.script.run
-                  .withSuccessHandler(function(proveedores){
-                    setDropdownLoading(proveedorDropdown, false);
-                    if (!Array.isArray(proveedores)) proveedores = [];
-
-                    var sorted = proveedores.slice().sort(function(a, b){
-                      return String(a || '').localeCompare(String(b || ''));
-                    });
-
-                    var opts = ['Nuevo proveedor'].concat(sorted);
-
-                    proveedorDropdown.dataset.ph = 'Proveedor';
-                    setOptionsToDropdown(proveedorDropdown, opts);
-
-                    if (gastoState.proveedor && opts.indexOf(gastoState.proveedor) !== -1){
-                      selectOption(proveedorDropdown, gastoState.proveedor);
-                    } else {
-                      setDropdownPlaceholder(proveedorDropdown);
-                    }
-                  })
-                  .withFailureHandler(function(err){
-                    setDropdownLoading(proveedorDropdown, false);
-                    setDropdownPlaceholder(proveedorDropdown);
-                    var msg = (err && err.message) ? err.message : 'No se pudieron cargar los proveedores.';
-                    showError(msg);
-                  })
-                  .getProveedoresPorProducto(gastoState.categoria, gastoState.producto);
-              } else {
-                setDropdownLoading(proveedorDropdown, false);
-                setDropdownPlaceholder(proveedorDropdown);
-              }
+              cargarProveedoresPorProducto(gastoState.categoria, gastoState.producto);
             }
           }
 
@@ -2119,6 +2080,7 @@
             if (gastoState.producto_isDraft === true && gastoState.producto){
               lockProducto(gastoState.producto);
               showProveedorContainer();
+              cargarProveedoresPorProducto(gastoState.categoria, gastoState.producto);
               return;
             }
             if (productoLockedContainer){
@@ -2149,6 +2111,7 @@
               if (gastoState.producto_isDraft === true && gastoState.producto){
                 lockProducto(gastoState.producto);
                 showProveedorContainer();
+                cargarProveedoresPorProducto(gastoState.categoria, gastoState.producto);
                 return;
               }
 
@@ -2173,6 +2136,53 @@
               showError(msg);
             })
             .getProductosPorCategoria(categoria);
+        }
+
+
+        function cargarProveedoresPorProducto(categoria, producto){
+          if (!proveedorDropdown) return;
+          if (!categoria || !producto) return;
+
+          proveedorDropdown.dataset.ph = 'Proveedor';
+          setOptionsToDropdown(proveedorDropdown, []);
+          setDropdownLoading(proveedorDropdown, true);
+
+          if (
+            typeof google !== 'undefined' &&
+            google.script &&
+            google.script.run
+          ){
+            google.script.run
+              .withSuccessHandler(function(proveedores){
+                setDropdownLoading(proveedorDropdown, false);
+                if (!Array.isArray(proveedores)) proveedores = [];
+
+                var sorted = proveedores.slice().sort(function(a, b){
+                  return String(a || '').localeCompare(String(b || ''));
+                });
+
+                var opts = ['Nuevo proveedor'].concat(sorted);
+
+                proveedorDropdown.dataset.ph = 'Proveedor';
+                setOptionsToDropdown(proveedorDropdown, opts);
+
+                if (gastoState.proveedor && opts.indexOf(gastoState.proveedor) !== -1){
+                  selectOption(proveedorDropdown, gastoState.proveedor);
+                } else {
+                  setDropdownPlaceholder(proveedorDropdown);
+                }
+              })
+              .withFailureHandler(function(err){
+                setDropdownLoading(proveedorDropdown, false);
+                setDropdownPlaceholder(proveedorDropdown);
+                var msg = (err && err.message) ? err.message : 'No se pudieron cargar los proveedores.';
+                showError(msg);
+              })
+              .getProveedoresPorProducto(categoria, producto);
+          } else {
+            setDropdownLoading(proveedorDropdown, false);
+            setDropdownPlaceholder(proveedorDropdown);
+          }
         }
 
         if (qtyInput){
