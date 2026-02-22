@@ -1924,8 +1924,18 @@
             .withSuccessHandler(function(categorias){
               setDropdownLoading(categoriaDropdown, false);
               if (!Array.isArray(categorias)) categorias = [];
+              categorias = categorias
+                .map(function(c){ return (c || '').toString().trim(); })
+                .filter(function(c){ return c.length > 0; });
+              categorias = Array.from(new Set(categorias)).sort(function(a, b){
+                return a.localeCompare(b, 'es', { sensitivity: 'base' });
+              });
 
               setCategoriasReadyState();
+
+              var categoriaOpts = ['Nueva categoria'].concat(categorias);
+
+              setOptionsToDropdown(categoriaDropdown, categoriaOpts);
 
               if (gastoState.categoria_isDraft === true && gastoState.categoria){
                 lockCategoria(gastoState.categoria);
@@ -1934,10 +1944,6 @@
                 setDropdownPlaceholder(productoDropdown);
                 return;
               }
-
-              var categoriaOpts = ['Nueva categoria'].concat(categorias);
-
-              setOptionsToDropdown(categoriaDropdown, categoriaOpts);
 
               if (!categorias.length){
                 if (categoriaLockedContainer){
