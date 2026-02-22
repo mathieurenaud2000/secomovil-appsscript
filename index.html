@@ -147,6 +147,25 @@
     }
 
 
+    #globalLoadingOverlay{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.2);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:9999;
+    }
+    #globalLoadingOverlay .global-loader{
+      width:calc(52px * var(--fix));
+      height:calc(52px * var(--fix));
+      border-radius:50%;
+      border:calc(10px * var(--fix)) solid rgba(255,255,255,0.35);
+      border-top-color:#fff;
+      animation: btnNoirSpin 0.9s linear infinite;
+    }
+
+
 
     @keyframes btnNoirSpin{
       from { transform: rotate(0deg); }
@@ -170,6 +189,26 @@
       } else {
         btn.disabled = false;
         btn.removeAttribute('data-spinner');
+      }
+    };
+
+
+    window.showGlobalLoading = function(){
+      if (document.getElementById('globalLoadingOverlay')) return;
+      var overlay = document.createElement('div');
+      overlay.id = 'globalLoadingOverlay';
+
+      var loader = document.createElement('div');
+      loader.className = 'global-loader';
+
+      overlay.appendChild(loader);
+      document.body.appendChild(overlay);
+    };
+
+    window.hideGlobalLoading = function(){
+      var overlay = document.getElementById('globalLoadingOverlay');
+      if (overlay && overlay.parentNode){
+        overlay.parentNode.removeChild(overlay);
       }
     };
 
@@ -877,6 +916,7 @@
   },
 
   registrarGasto: function(){
+    hideGlobalLoading();
     (function(){
         const expenseDate = document.getElementById('expenseDate');
         const today = new Date();
@@ -1471,7 +1511,7 @@
 
           unidadDropdown.dataset.ph = 'Unidad';
 
-          var opts = (unidades || []).slice();
+          var opts = ['Nueva unidad'].concat((unidades || []).slice());
           setOptionsToDropdown(unidadDropdown, opts);
 
           if (gastoState.unidad && opts.indexOf(gastoState.unidad) !== -1){
@@ -1642,8 +1682,9 @@
           if (dropdown === categoriaDropdown){
             if (value === 'Nueva categoria'){
               updateGastoState('origen', 'GASTO');
-              loadPage('nuevaCategoria');
               closeOverlay();
+              showGlobalLoading();
+              loadPage('nuevaCategoria');
               if (btn){
                 setTimeout(()=>btn.focus({preventScroll:true}),0);
               }
@@ -1665,6 +1706,14 @@
           }
 
           if (dropdown === productoDropdown){
+            if (value === 'Nuevo producto'){
+              updateGastoState('origen', 'GASTO');
+              closeOverlay();
+              showGlobalLoading();
+              // Futur: activer loadPage('nuevoProducto') dès que la page sera disponible.
+              return;
+            }
+
             var previousProducto = gastoState.producto;
             var shouldResetProductoDeps = previousProducto !== value;
 
@@ -1727,8 +1776,9 @@
 
             if (value === 'Nuevo proveedor'){
               updateGastoState('origen', 'GASTO');
-              loadPage('nuevoProveedor');
               closeOverlay();
+              showGlobalLoading();
+              loadPage('nuevoProveedor');
               if (btn){
                 setTimeout(()=>btn.focus({preventScroll:true}),0);
               }
@@ -1752,6 +1802,14 @@
           }
 
           if (dropdown === unidadDropdown){
+            if (value === 'Nueva unidad'){
+              updateGastoState('origen', 'GASTO');
+              closeOverlay();
+              showGlobalLoading();
+              loadPage('nuevaUnidad');
+              return;
+            }
+
             updateGastoState('idProducto', null);
             updateGastoState('unidad', value);
             updateGastoState('precioUnitario', null);
@@ -2379,6 +2437,7 @@
   },
 
   nuevoProveedor: function(){
+    hideGlobalLoading();
     var nombreInput = document.getElementById('nombreProveedor')
       || document.getElementById('proveedorNombre')
       || document.querySelector('input[name="proveedorNombre"]')
@@ -2509,6 +2568,7 @@
   },
 
   nuevaCategoria: function(){
+    hideGlobalLoading();
     var categoriaInput = document.getElementById('nombreCategoria')
       || document.getElementById('categoriaNombre')
       || document.querySelector('input[name="categoriaNombre"]')
@@ -2612,6 +2672,7 @@
   },
 
   nuevaUnidad: function(){
+    hideGlobalLoading();
     var unidadInput = document.getElementById('nombreUnidad')
       || document.getElementById('unidadNombre')
       || document.querySelector('input[name="unidadNombre"]')
