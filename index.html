@@ -155,13 +155,13 @@
       place-items:center;
       z-index:9999;
     }
-    #globalLoadingOverlay .global-loader{
-      width:calc(28px * var(--fix));
-      height:calc(28px * var(--fix));
+    #globalLoadingOverlay .global-spinner{
+      width:calc(80px * var(--fix));
+      height:calc(80px * var(--fix));
       border-radius:50%;
-      border:calc(12px * var(--fix)) solid rgba(0,0,0,0.35);
+      border:calc(15px * var(--fix)) solid rgba(0,0,0,0.1);
       border-top-color:#000;
-      animation: btnNoirSpin 0.9s linear infinite;
+      animation: spin 1s linear infinite;
     }
 
 
@@ -198,7 +198,7 @@
       overlay.id = 'globalLoadingOverlay';
 
       var loader = document.createElement('div');
-      loader.className = 'global-loader';
+      loader.className = 'global-spinner';
 
       overlay.appendChild(loader);
       document.body.appendChild(overlay);
