@@ -1254,6 +1254,7 @@
 
         function unlockCategoria(){
           updateGastoState('categoria', null);
+          updateGastoState('categoria_isDraft', false);
           resetCamposDependientes();
           setDropdownPlaceholder(categoriaDropdown);
           if (categoriaLockedContainer){
@@ -1262,6 +1263,7 @@
           if (categoriaDropdown){
             showElement(categoriaDropdown);
           }
+          closeOverlay();
         }
 
         function bindUnlockCategoria(){
@@ -1650,13 +1652,13 @@
 
             var previousCategoria = gastoState.categoria;
             updateGastoState('categoria', value);
+            updateGastoState('categoria_isDraft', false);
 
             if (previousCategoria !== value){
               resetCamposDependientes();
             }
 
             if (value){
-              lockCategoria(value);
               showProductoContainer();
               cargarProductosPorCategoria(value);
             }
@@ -1934,7 +1936,23 @@
                 return;
               }
 
-              if (gastoState.categoria && categorias.indexOf(gastoState.categoria) !== -1){
+              if (gastoState.categoria && gastoState.categoria_isDraft === true){
+                if (categoriaDropdown){
+                  var categoriaDraftLabel = categoriaDropdown.querySelector('.dd-label');
+                  var categoriaDraftBtn = categoriaDropdown.querySelector('.dd-button');
+                  if (categoriaDraftLabel){
+                    categoriaDraftLabel.textContent = gastoState.categoria;
+                  }
+                  if (categoriaDraftBtn){
+                    categoriaDraftBtn.removeAttribute('data-placeholder');
+                  }
+                  categoriaDropdown.dataset.value = gastoState.categoria;
+                }
+                lockCategoria(gastoState.categoria);
+                showProductoContainer();
+                productoDropdown.dataset.ph = 'Producto';
+                setDropdownPlaceholder(productoDropdown);
+              } else if (gastoState.categoria && categorias.indexOf(gastoState.categoria) !== -1){
                 selectOption(categoriaDropdown, gastoState.categoria);
               } else if (gastoState.categoria){
                 if (categoriaDropdown){
@@ -1948,10 +1966,13 @@
                   }
                   categoriaDropdown.dataset.value = gastoState.categoria;
                 }
-                lockCategoria(gastoState.categoria);
+                if (categoriaLockedContainer){
+                  hideElement(categoriaLockedContainer);
+                }
+                if (categoriaDropdown){
+                  showElement(categoriaDropdown);
+                }
                 showProductoContainer();
-                productoDropdown.dataset.ph = 'Producto';
-                setDropdownPlaceholder(productoDropdown);
               } else {
                 if (categoriaLockedContainer){
                   hideElement(categoriaLockedContainer);
@@ -2572,43 +2593,16 @@
 
         var nombreNormalizado = nombre;
 
-        if (typeof google !== 'undefined' && google.script && google.script.run){
-          google.script.run
-            .withSuccessHandler(function(resp){
-              var ok = (resp && (resp.ok || resp.success)) || resp === undefined || resp === null || resp === true;
-              if (!ok){
-                setGuardarLoading(false);
-                setCancelarEnabled(true);
-                setGuardarEnabled(true);
-                var msg = (resp && resp.error) ? resp.error : 'Error al crear la categoria.';
-                showError(msg);
-                return;
-              }
+        updateGastoState('categoria', nombreNormalizado);
+        updateGastoState('categoria_isDraft', true);
+        updateGastoState('producto', null);
+        updateGastoState('proveedor', null);
+        updateGastoState('unidad', null);
+        updateGastoState('precioUnitario', null);
+        updateGastoState('idProducto', null);
+        updateGastoState('origen', null);
 
-              updateGastoState('categoria', nombreNormalizado);
-              updateGastoState('producto', null);
-              updateGastoState('proveedor', null);
-              updateGastoState('unidad', null);
-              updateGastoState('precioUnitario', null);
-              updateGastoState('idProducto', null);
-              updateGastoState('origen', null);
-
-              loadPage('registrarGasto');
-            })
-            .withFailureHandler(function(err){
-              setGuardarLoading(false);
-              setCancelarEnabled(true);
-              setGuardarEnabled(true);
-              var msg = (err && err.message) ? err.message : 'Error al crear la categoria.';
-              showError(msg);
-            })
-            .crearCategoria(nombreNormalizado);
-        } else {
-          setGuardarLoading(false);
-          setCancelarEnabled(true);
-          setGuardarEnabled(true);
-          showError('No se pudo crear la categoria.');
-        }
+        loadPage('registrarGasto');
       });
     }
   },
