@@ -2283,6 +2283,13 @@
                 setOptionsToDropdown(proveedorDropdown, opts);
 
                 if (gastoState.proveedor_isDraft === true && gastoState.proveedor){
+                  showProveedorContainer();
+                  lockProveedor(gastoState.proveedor);
+
+                  if (gastoState.categoria && gastoState.producto){
+                    showUnidadContainer();
+                    cargarUnidades();
+                  }
                   return;
                 }
 
