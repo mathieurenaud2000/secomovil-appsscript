@@ -2463,8 +2463,15 @@
             setDropdownPlaceholder(unidadDropdown);
           }
         }
+        var fromNuevoProveedor = (
+          gastoState.proveedor_isDraft === true &&
+          gastoState.origen === 'nuevoProveedor'
+        );
+
         setInitialLoadingState();
-        if (gastoState.producto_isDraft === true && gastoState.producto){
+        if (fromNuevoProveedor){
+          resetCamposDesdeProveedor();
+        } else if (gastoState.producto_isDraft === true && gastoState.producto){
           resetCamposDesdeProducto();
         } else if (gastoState.proveedor_isDraft === true && gastoState.proveedor) {
           resetCamposDesdeProveedor();
@@ -2476,8 +2483,13 @@
         bindUnlockProducto();
         bindUnlockProveedor();
         initDropdowns();
+        if (fromNuevoProveedor && gastoState.proveedor){
+          showProveedorContainer();
+          lockProveedor(gastoState.proveedor);
+          updateGastoState('origen', null);
+        }
         cargarCategorias();
-        if (gastoState.proveedor_isDraft === true && gastoState.proveedor){
+        if (!fromNuevoProveedor && gastoState.proveedor_isDraft === true && gastoState.proveedor){
           showProveedorContainer();
           lockProveedor(gastoState.proveedor);
 
@@ -2814,7 +2826,7 @@
 
               updateGastoState('proveedor', nombreNormalizado);
               updateGastoState('proveedor_isDraft', true);
-              updateGastoState('origen', null);
+              updateGastoState('origen', 'nuevoProveedor');
               loadPage('registrarGasto');
             })
             .withFailureHandler(function(err){
