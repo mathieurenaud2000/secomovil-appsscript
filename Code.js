@@ -4486,6 +4486,145 @@ function registrarGasto(data) {
 }
 
 /**
+ * Inserta una oferta nueva en PRODUCTO (A:F) sin tocar LISTAS.
+ *
+ * @param {string} categoria
+ * @param {string} producto
+ * @param {string} proveedor
+ * @param {string} unidad
+ * @param {number} precioUnitario
+ * @returns {string} idProducto generado
+ */
+function insertProductoOferta_(categoria, producto, proveedor, unidad, precioUnitario) {
+  var categoriaStr = (categoria || '').toString().trim();
+  var productoStr = (producto || '').toString().trim();
+  var proveedorStr = (proveedor || '').toString().trim();
+  var unidadStr = (unidad || '').toString().trim();
+  var precioNum = Number(precioUnitario);
+
+  if (!categoriaStr || !productoStr || !proveedorStr || !unidadStr) {
+    throw new Error('Faltan categoría, producto, proveedor o unidad para crear la oferta.');
+  }
+
+  if (!isFinite(precioNum) || precioNum <= 0) {
+    throw new Error('Precio unitario inválido para crear la oferta.');
+  }
+
+  var precioRedondeado = Math.round(precioNum * 100) / 100;
+  var sheet = getSheet_('PRODUCTO');
+  var newRow = getFirstEmptyRowInColumn_(sheet, 1);
+  var idProducto = generarIdProducto_();
+
+  sheet.getRange(newRow, 1).setValue(idProducto);
+  sheet.getRange(newRow, 2).setValue(categoriaStr);
+  sheet.getRange(newRow, 3).setValue(productoStr);
+  sheet.getRange(newRow, 4).setValue(proveedorStr);
+  sheet.getRange(newRow, 5).setValue(unidadStr);
+  sheet.getRange(newRow, 6).setValue(precioRedondeado);
+
+  return idProducto;
+}
+
+/**
+ * Registra un gasto garantizando ID_PRODUCTO mediante upsert en PRODUCTO.
+ * - Si la combinación existe: reutiliza ID y actualiza precio solo si cambia (2 decimales).
+ * - Si no existe: inserta nueva oferta en PRODUCTO (A:F), sin tocar LISTAS.
+ * - Luego escribe GASTOS con idProducto en columna L.
+ *
+ * @param {Object} data
+ * @returns {{success:boolean, idProducto?:string, actionProducto?:string, error?:string}}
+ */
+function registrarGastoUpsertProducto(data) {
+  try {
+    data = data || {};
+
+    var categoria = (data.categoria || '').toString().trim();
+    var producto = (data.producto || '').toString().trim();
+    var proveedor = (data.proveedor || '').toString().trim();
+    var unidad = (data.unidad || '').toString().trim();
+    var fecha = (data.fecha || '').toString().trim();
+
+    var precioNum = Number(data.precioUnitario);
+    if (!isFinite(precioNum) || precioNum <= 0) {
+      return { success: false, error: 'Precio unitario inválido.' };
+    }
+    var precioNuevo = Math.round(precioNum * 100) / 100;
+
+    var cantidadNum = Number(data.cantidad);
+    if (!isFinite(cantidadNum) || cantidadNum <= 0) {
+      return { success: false, error: 'Cantidad inválida.' };
+    }
+
+    if (!fecha || !categoria || !producto || !proveedor || !unidad) {
+      return { success: false, error: 'Faltan datos obligatorios del gasto.' };
+    }
+
+    var id = getIdProducto(categoria, producto, proveedor, unidad);
+    var idFinal = null;
+    var actionProducto = 'none';
+
+    if (id) {
+      var costoResp = getCosto(id, proveedor, unidad, categoria, producto) || {};
+      var precioExistente = Number(costoResp.precioUnitario);
+      var precioExistenteRedondeado = isFinite(precioExistente)
+        ? Math.round(precioExistente * 100) / 100
+        : null;
+
+      if (precioExistenteRedondeado === null || precioExistenteRedondeado !== precioNuevo) {
+        var updateResp = registrarCosto(id, categoria, producto, proveedor, unidad, precioNuevo);
+        if (!updateResp || !updateResp.success) {
+          return {
+            success: false,
+            error: (updateResp && updateResp.error) ? updateResp.error : 'No se pudo actualizar el costo del producto.'
+          };
+        }
+        actionProducto = 'update';
+      }
+
+      idFinal = id;
+    } else {
+      idFinal = insertProductoOferta_(categoria, producto, proveedor, unidad, precioNuevo);
+      actionProducto = 'insert';
+    }
+
+    var montoCalculado = Math.round((cantidadNum * precioNuevo) * 100) / 100;
+    var dataFinal = {
+      fecha: fecha,
+      mes: (data.mes || '').toString().trim(),
+      categoria: categoria,
+      producto: producto,
+      cantidad: cantidadNum,
+      unidad: unidad,
+      precioUnitario: precioNuevo,
+      monto: montoCalculado,
+      proveedor: proveedor,
+      observaciones: (data.observaciones || '').toString(),
+      idProducto: idFinal
+    };
+
+    var gastoResp = registrarGasto(dataFinal);
+    if (!gastoResp || !gastoResp.success) {
+      return {
+        success: false,
+        error: (gastoResp && gastoResp.error) ? gastoResp.error : 'No se pudo registrar el gasto.'
+      };
+    }
+
+    return {
+      success: true,
+      idProducto: idFinal,
+      actionProducto: actionProducto,
+      idGasto: gastoResp.idGasto
+    };
+  } catch (e) {
+    return {
+      success: false,
+      error: e && e.message ? e.message : 'Error al registrar el gasto con upsert de producto.'
+    };
+  }
+}
+
+/**
  * Mise à jour de la BASE DE CLIENTES
  */
 function actualizarUltimoPedidoCliente(data) {
@@ -5524,4 +5663,3 @@ function editarCosto(idProducto, proveedor, unidad, precioUnitario) {
     };
   }
 }
-
