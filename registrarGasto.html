@@ -381,13 +381,11 @@
       display:flex;
       justify-content:flex-end;
     }
-    .exp-edit img{
+    .exp-edit #btnEditPrecioCard{
       display:block;
       width: calc(18px * var(--fix));
-      height:auto;
-      object-fit:contain;
-      opacity:1;
-      filter: brightness(0) saturate(100%);
+      height: calc(18px * var(--fix));
+      fill:#000;
       cursor:pointer;
     }
 
@@ -546,7 +544,9 @@
             <span id="unitLabel">Lb</span>
           </div>
           <div class="exp-edit">
-            <img id="btnEditPrecioCard" src="https://lh3.googleusercontent.com/d/1IJOPYYBICvweVK9rn2mQqckhfyQOHvrJ" alt="Éditer">
+            <svg id="btnEditPrecioCard" viewBox="0 0 24 24" role="img" aria-label="Éditer" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 17.25V21h3.75L18.81 8.94l-3.75-3.75L3 17.25zm17.71-10.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-1.79z"/>
+            </svg>
           </div>
         </div>
 
