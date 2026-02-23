@@ -2447,16 +2447,14 @@
         bindUnlockProveedor();
         initDropdowns();
         cargarCategorias();
-        if (
-          gastoState.categoria &&
-          gastoState.producto &&
-          gastoState.proveedor_isDraft === true &&
-          gastoState.proveedor
-        ){
+        if (gastoState.proveedor_isDraft === true && gastoState.proveedor){
           showProveedorContainer();
           lockProveedor(gastoState.proveedor);
-          showUnidadContainer();
-          cargarUnidades();
+
+          if (gastoState.categoria && gastoState.producto){
+            showUnidadContainer();
+            cargarUnidades();
+          }
         }
         if (gastoState.categoria){
           showProductoContainer();
