@@ -2708,6 +2708,11 @@
           showUnidadContainer();
           lockUnidad(gastoState.unidad);
           updateGastoState('origen', null);
+
+          var precioNum = Number(String(gastoState.precioUnitario || '').replace(',', '.'));
+          if (!isFinite(precioNum) || precioNum <= 0){
+            mostrarPrecioInline();
+          }
         }
         cargarCategorias();
         if (!fromNuevoProveedor && gastoState.proveedor_isDraft === true && gastoState.proveedor){
