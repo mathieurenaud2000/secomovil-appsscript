@@ -4512,8 +4512,45 @@ function insertProductoOferta_(categoria, producto, proveedor, unidad, precioUni
 
   var precioRedondeado = Math.round(precioNum * 100) / 100;
   var sheet = getSheet_('PRODUCTO');
-  var newRow = getFirstEmptyRowInColumn_(sheet, 1);
-  var idProducto = generarIdProducto_();
+  var lastRow = sheet.getLastRow();
+  var newRow = lastRow < 1 ? 1 : lastRow + 1;
+
+  var formatSample = generarIdProducto_();
+  var formatMatch = /^([^0-9]*)(\d+)$/.exec((formatSample || '').toString().trim());
+  var prefix = formatMatch ? formatMatch[1] : 'PROD-';
+  var padding = formatMatch ? formatMatch[2].length : 5;
+
+  var maxNum = 0;
+  if (lastRow >= 2) {
+    var ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+    var escapedPrefix = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    var idRegex = new RegExp('^' + escapedPrefix + '(\\d+)$', 'i');
+
+    for (var i = 0; i < ids.length; i++) {
+      var id = (ids[i][0] || '').toString().trim();
+      if (!id) continue;
+      var match = id.match(idRegex);
+      if (!match) continue;
+
+      var parsed = parseInt(match[1], 10);
+      if (!isNaN(parsed) && parsed > maxNum) {
+        maxNum = parsed;
+      }
+    }
+  }
+
+  var nextNum = maxNum + 1;
+  var idProducto = prefix + Utilities.formatString('%0' + padding + 'd', nextNum);
+
+  if (lastRow >= 2) {
+    var existingIds = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+    for (var j = 0; j < existingIds.length; j++) {
+      var existingId = (existingIds[j][0] || '').toString().trim();
+      if (existingId && existingId.toLowerCase() === idProducto.toLowerCase()) {
+        throw new Error('ID_PRODUCTO duplicado');
+      }
+    }
+  }
 
   sheet.getRange(newRow, 1).setValue(idProducto);
   sheet.getRange(newRow, 2).setValue(categoriaStr);
