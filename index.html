@@ -1160,8 +1160,7 @@
             gastoState.unidad &&
             isFinite(precioNumero) &&
             isFinite(cantidadParsed) &&
-            cantidadParsed > 0 &&
-            gastoState.idProducto
+            cantidadParsed > 0
           );
         }
 
@@ -2673,7 +2672,7 @@
                 var msg = (err && err.message) ? err.message : 'No se pudo registrar el gasto.';
                 showError(msg);
               })
-              .registrarGasto(data);
+              .registrarGastoUpsertProducto(data);
           });
         }
 
