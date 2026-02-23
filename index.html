@@ -2283,9 +2283,6 @@
                 setOptionsToDropdown(proveedorDropdown, opts);
 
                 if (gastoState.proveedor_isDraft === true && gastoState.proveedor){
-                  lockProveedor(gastoState.proveedor);
-                  showUnidadContainer();
-                  cargarUnidades();
                   return;
                 }
 
@@ -2297,6 +2294,12 @@
               })
               .withFailureHandler(function(err){
                 if (currentRequestId !== proveedorLoadRequestId) return;
+
+                if (gastoState.proveedor_isDraft === true && gastoState.proveedor){
+                  setDropdownLoading(proveedorDropdown, false);
+                  return;
+                }
+
                 setDropdownLoading(proveedorDropdown, false);
                 setDropdownPlaceholder(proveedorDropdown);
                 var msg = (err && err.message) ? err.message : 'No se pudieron cargar los proveedores.';
@@ -2305,6 +2308,9 @@
               .getProveedoresPorProducto(categoria, producto);
           } else {
             setDropdownLoading(proveedorDropdown, false);
+            if (gastoState.proveedor_isDraft === true && gastoState.proveedor){
+              return;
+            }
             setDropdownPlaceholder(proveedorDropdown);
           }
         }
@@ -2448,7 +2454,9 @@
           gastoState.proveedor
         ){
           showProveedorContainer();
-          cargarProveedoresPorProducto(gastoState.categoria, gastoState.producto);
+          lockProveedor(gastoState.proveedor);
+          showUnidadContainer();
+          cargarUnidades();
         }
         if (gastoState.categoria){
           showProductoContainer();
