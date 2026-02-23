@@ -975,6 +975,7 @@
         var productoLoading = false;
         var proveedorLoading = false;
         var unidadLoading = false;
+        var proveedorLoadRequestId = 0;
         var costoLookupPending = false;
         var costoLookupFailedParse = false;
 
@@ -2223,6 +2224,16 @@
               } else {
                 setDropdownPlaceholder(productoDropdown);
               }
+
+              if (
+                gastoState.categoria &&
+                gastoState.producto &&
+                gastoState.proveedor_isDraft === true &&
+                gastoState.proveedor
+              ){
+                showProveedorContainer();
+                cargarProveedoresPorProducto(gastoState.categoria, gastoState.producto);
+              }
             })
             .withFailureHandler(function(err){
               setDropdownLoading(productoDropdown, false);
@@ -2239,6 +2250,8 @@
           if (!proveedorDropdown) return;
           if (!categoria || !producto) return;
 
+          var currentRequestId = ++proveedorLoadRequestId;
+
           proveedorDropdown.dataset.ph = 'Proveedor';
           setOptionsToDropdown(proveedorDropdown, []);
           setDropdownLoading(proveedorDropdown, true);
@@ -2250,6 +2263,7 @@
           ){
             google.script.run
               .withSuccessHandler(function(proveedores){
+                if (currentRequestId !== proveedorLoadRequestId) return;
                 setDropdownLoading(proveedorDropdown, false);
                 if (!Array.isArray(proveedores)) proveedores = [];
 
@@ -2276,6 +2290,7 @@
                 }
               })
               .withFailureHandler(function(err){
+                if (currentRequestId !== proveedorLoadRequestId) return;
                 setDropdownLoading(proveedorDropdown, false);
                 setDropdownPlaceholder(proveedorDropdown);
                 var msg = (err && err.message) ? err.message : 'No se pudieron cargar los proveedores.';
@@ -2427,7 +2442,7 @@
         if (gastoState.producto){
           showProveedorContainer();
         }
-        if (gastoState.proveedor){
+        if (gastoState.proveedor && gastoState.proveedor_isDraft !== true){
           cargarUnidades();
           showUnidadContainer();
         }
