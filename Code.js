@@ -5057,6 +5057,42 @@ function getProductosIndex() {
 }
 
 /**
+ * Devuelve la lista única de proveedores registrados en PRODUCTO!D.
+ *
+ * @returns {string[]} proveedores únicos ordenados A→Z
+ */
+function getProveedoresIndex() {
+  var sheet = getSheet_('PRODUCTO');
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) {
+    return [];
+  }
+
+  var rows = sheet.getRange(2, 4, lastRow - 1, 1).getValues(); // D
+  var proveedoresMap = {};
+
+  rows.forEach(function (row) {
+    var proveedor = (row[0] || '').toString().trim();
+    if (!proveedor) return;
+
+    var key = proveedor.toLowerCase();
+    if (!proveedoresMap[key]) {
+      proveedoresMap[key] = proveedor;
+    }
+  });
+
+  var proveedores = Object.keys(proveedoresMap).map(function (key) {
+    return proveedoresMap[key];
+  });
+
+  proveedores.sort(function (a, b) {
+    return a.toLowerCase().localeCompare(b.toLowerCase());
+  });
+
+  return proveedores;
+}
+
+/**
  * Devuelve los proveedores registrados para una categoría y producto.
  *
  * @param {string} categoria
