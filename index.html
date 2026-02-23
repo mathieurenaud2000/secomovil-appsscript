@@ -13,6 +13,7 @@
       producto_isDraft: false,
       idProducto: null,
       proveedor: null,
+      proveedor_isDraft: false,
       unidad: null,
       precioUnitario: null,
       cantidad: null,
@@ -31,6 +32,7 @@
         producto_isDraft: false,
         idProducto: null,
         proveedor: null,
+        proveedor_isDraft: false,
         unidad: null,
         precioUnitario: null,
         cantidad: null,
@@ -991,6 +993,9 @@
         var productoLockedContainer = document.getElementById('productoLockedContainer');
         var productoLockedValue = document.getElementById('productoLockedValue');
         var btnUnlockProducto = document.getElementById('btnUnlockProducto');
+        var proveedorLockedContainer = document.getElementById('proveedorLockedContainer');
+        var proveedorLockedValue = document.getElementById('proveedorLockedValue');
+        var btnUnlockProveedor = document.getElementById('btnUnlockProveedor');
 
         function hideElement(el){
           if (!el) return;
@@ -1361,6 +1366,79 @@
           });
         }
 
+        function lockProveedor(value){
+          if (proveedorLockedValue){
+            proveedorLockedValue.textContent = value || '';
+          }
+          if (proveedorDropdown){
+            hideElement(proveedorDropdown);
+          }
+          if (proveedorLockedContainer){
+            showElement(proveedorLockedContainer);
+          }
+        }
+
+        function resetCamposDesdeProveedor(){
+          costoLookupPending = false;
+          costoLookupFailedParse = false;
+          updateGastoState('idProducto', null);
+          updateGastoState('unidad', null);
+          updateGastoState('precioUnitario', null);
+          updateGastoState('cantidad', null);
+          updateGastoState('gasto', null);
+
+          setDropdownLoading(unidadDropdown, false);
+          setDropdownPlaceholder(unidadDropdown);
+          setOptionsToDropdown(unidadDropdown, []);
+
+          if (qtyInput){
+            qtyInput.value = '';
+          }
+
+          if (unitLabel){
+            unitLabel.textContent = '';
+          }
+
+          if (unitPriceText){
+            unitPriceText.textContent = '';
+          }
+
+          if (expenseTotal){
+            expenseTotal.textContent = '0,00 $';
+          }
+
+          refreshExpenseCard();
+
+          hideElement(sectionUnidad);
+          hideElement(sepBeforeCosto);
+          hideSeccionesFinales();
+          ocultarSeccionesCosto();
+        }
+
+        function unlockProveedor(){
+          updateGastoState('proveedor', null);
+          updateGastoState('proveedor_isDraft', false);
+          resetCamposDesdeProveedor();
+          setDropdownPlaceholder(proveedorDropdown);
+          if (proveedorLockedContainer){
+            hideElement(proveedorLockedContainer);
+          }
+          if (proveedorDropdown){
+            showElement(proveedorDropdown);
+          }
+          closeOverlay();
+          if (gastoState.categoria && gastoState.producto){
+            cargarProveedoresPorProducto(gastoState.categoria, gastoState.producto);
+          }
+        }
+
+        function bindUnlockProveedor(){
+          if (!btnUnlockProveedor) return;
+          btnUnlockProveedor.addEventListener('click', function(){
+            unlockProveedor();
+          });
+        }
+
         function showDropdownSpinner(dropdown){
           if (!dropdown) return;
           var btn = dropdown.querySelector('.dd-button');
@@ -1413,6 +1491,7 @@
           updateGastoState('producto_isDraft', false);
           updateGastoState('idProducto', null);
           updateGastoState('proveedor', null);
+          updateGastoState('proveedor_isDraft', false);
           updateGastoState('unidad', null);
           updateGastoState('precioUnitario', null);
           updateGastoState('cantidad', null);
@@ -1428,6 +1507,12 @@
           setDropdownPlaceholder(productoDropdown);
           setDropdownPlaceholder(proveedorDropdown);
           setDropdownPlaceholder(unidadDropdown);
+          if (proveedorLockedContainer){
+            hideElement(proveedorLockedContainer);
+          }
+          if (proveedorDropdown){
+            showElement(proveedorDropdown);
+          }
 
           if (qtyInput){
             qtyInput.value = '';
@@ -1460,6 +1545,7 @@
           costoLookupPending = false;
           costoLookupFailedParse = false;
           updateGastoState('proveedor', null);
+          updateGastoState('proveedor_isDraft', false);
           updateGastoState('unidad', null);
           updateGastoState('precioUnitario', null);
           updateGastoState('cantidad', null);
@@ -1469,6 +1555,12 @@
           setDropdownLoading(unidadDropdown, false);
           setDropdownPlaceholder(proveedorDropdown);
           setOptionsToDropdown(proveedorDropdown, []);
+          if (proveedorLockedContainer){
+            hideElement(proveedorLockedContainer);
+          }
+          if (proveedorDropdown){
+            showElement(proveedorDropdown);
+          }
           setDropdownPlaceholder(unidadDropdown);
           setOptionsToDropdown(unidadDropdown, []);
 
@@ -1790,9 +1882,6 @@
               closeOverlay();
               showGlobalLoading();
               loadPage('nuevoProveedor');
-              if (btn){
-                setTimeout(()=>btn.focus({preventScroll:true}),0);
-              }
               return;
             }
 
@@ -1808,6 +1897,13 @@
             }
 
             updateGastoState('proveedor', value);
+            updateGastoState('proveedor_isDraft', false);
+            if (proveedorLockedContainer){
+              hideElement(proveedorLockedContainer);
+            }
+            if (proveedorDropdown){
+              showElement(proveedorDropdown);
+            }
 
             cargarUnidades();
           }
@@ -2166,6 +2262,13 @@
                 proveedorDropdown.dataset.ph = 'Proveedor';
                 setOptionsToDropdown(proveedorDropdown, opts);
 
+                if (gastoState.proveedor_isDraft === true && gastoState.proveedor){
+                  lockProveedor(gastoState.proveedor);
+                  showUnidadContainer();
+                  cargarUnidades();
+                  return;
+                }
+
                 if (gastoState.proveedor && opts.indexOf(gastoState.proveedor) !== -1){
                   selectOption(proveedorDropdown, gastoState.proveedor);
                 } else {
@@ -2306,12 +2409,15 @@
         setInitialLoadingState();
         if (gastoState.producto_isDraft === true && gastoState.producto){
           resetCamposDesdeProducto();
+        } else if (gastoState.proveedor_isDraft === true && gastoState.proveedor) {
+          resetCamposDesdeProveedor();
         } else {
           resetCamposDependientes();
         }
         refreshExpenseCard();
         bindUnlockCategoria();
         bindUnlockProducto();
+        bindUnlockProveedor();
         initDropdowns();
         cargarCategorias();
         if (gastoState.categoria){
@@ -2544,8 +2650,8 @@
       || document.querySelector('input[type="text"]');
     var errorContainer = document.getElementById('nuevoProveedorError')
       || document.querySelector('[data-role="error"]');
-    var btnRegistrar = document.getElementById('btnRegistrarProveedor') || document.getElementById('btnRegistrar');
-    var btnVolverInicio = document.querySelector('button[data-role="volver-inicio"]') || document.getElementById('btnVolverInicio');
+    var btnGuardar = document.getElementById('btnGuardarProveedor') || document.getElementById('btnGuardar');
+    var btnCancelar = document.getElementById('btnVolverProveedor') || document.getElementById('btnCancelar');
 
     function clearError(){
       if (errorContainer){
@@ -2563,109 +2669,104 @@
       }
     }
 
-    function setRegistrarLoading(isLoading){
-      if (!btnRegistrar) return;
-      if (btnRegistrar.classList && btnRegistrar.classList.contains('btn-noir')){
-        window.secoSetBlackButtonLoading(btnRegistrar, isLoading);
+    function setGuardarLoading(isLoading){
+      if (!btnGuardar) return;
+      if (btnGuardar.classList && btnGuardar.classList.contains('btn-noir')){
+        window.secoSetBlackButtonLoading(btnGuardar, isLoading);
         return;
       }
       if (isLoading){
-        if (btnRegistrar.dataset.spinner === '1') return;
-        btnRegistrar.disabled = true;
-        btnRegistrar.dataset.spinner = '1';
+        if (btnGuardar.dataset.spinner === '1') return;
+        btnGuardar.disabled = true;
+        btnGuardar.dataset.spinner = '1';
       } else {
-        btnRegistrar.disabled = false;
-        btnRegistrar.removeAttribute('data-spinner');
+        btnGuardar.disabled = false;
+        btnGuardar.removeAttribute('data-spinner');
       }
     }
 
-    function setVolverInicioEnabled(enable){
-      if (btnVolverInicio){
-        btnVolverInicio.disabled = !enable;
-      }
+    function setGuardarEnabled(enable){
+      if (!btnGuardar || btnGuardar.dataset.spinner === '1') return;
+      btnGuardar.disabled = !enable;
     }
 
-    function setRegistrarEnabled(enable){
-      if (!btnRegistrar || btnRegistrar.dataset.spinner === '1') return;
-      btnRegistrar.disabled = !enable;
+    function normalizeNombreProveedor(raw){
+      return (raw || '').toString().replace(/\s+/g, ' ').trim();
+    }
+
+    function volverARegistrarGasto(){
+      updateGastoState('origen', null);
+      loadPage('registrarGasto');
     }
 
     if (nombreInput){
       nombreInput.value = '';
       nombreInput.addEventListener('input', function(){
         clearError();
-        setRegistrarEnabled(!!nombreInput.value.trim());
+        setGuardarEnabled(!!normalizeNombreProveedor(nombreInput.value));
       });
     }
-    clearError();
-    setRegistrarEnabled(false);
 
-    if (btnVolverInicio){
-      if (typeof registerVolverInicioHook === 'function'){
-        registerVolverInicioHook(btnVolverInicio, function(){
-          resetGastoState();
-        });
-      } else {
-        btnVolverInicio.addEventListener('click', function(){
-          if (btnVolverInicio.disabled) return;
-          resetGastoState();
-          loadPage('inicio');
-        });
-      }
+    clearError();
+    setGuardarEnabled(false);
+
+    if (btnCancelar){
+      btnCancelar.addEventListener('click', function(){
+        volverARegistrarGasto();
+      });
     }
 
-    if (btnRegistrar){
-      btnRegistrar.addEventListener('click', function(){
-        if (btnRegistrar.disabled) return;
+    if (btnGuardar){
+      btnGuardar.addEventListener('click', function(){
+        if (btnGuardar.disabled) return;
 
-        var nombre = (nombreInput ? nombreInput.value : '').toString().trim();
-        if (!nombre){
+        var nombreNormalizado = normalizeNombreProveedor(nombreInput ? nombreInput.value : '');
+        if (!nombreNormalizado){
           showError('Ingrese el nombre del proveedor.');
           if (nombreInput) nombreInput.focus();
           return;
         }
 
         clearError();
-        setRegistrarEnabled(false);
-        setRegistrarLoading(true);
-        setVolverInicioEnabled(false);
-
-        var nomNormalizado = nombre;
+        setGuardarEnabled(false);
+        setGuardarLoading(true);
 
         if (typeof google !== 'undefined' && google.script && google.script.run){
           google.script.run
-            .withSuccessHandler(function(resp){
-              var ok = (resp && (resp.ok || resp.success)) || resp === undefined || resp === null || resp === true;
-              if (!ok){
-                setRegistrarLoading(false);
-                setVolverInicioEnabled(true);
-                setRegistrarEnabled(true);
-                var msg = (resp && resp.error) ? resp.error : 'Error al crear el proveedor.';
-                showError(msg);
+            .withSuccessHandler(function(proveedores){
+              var existentes = Array.isArray(proveedores) ? proveedores : [];
+              var existe = existentes.some(function(item){
+                return normalizeNombreProveedor(item).toLowerCase() === nombreNormalizado.toLowerCase();
+              });
+
+              if (existe){
+                setGuardarLoading(false);
+                setGuardarEnabled(true);
+                showError('El proveedor ya existe.');
                 return;
               }
 
-              updateGastoState('proveedor', nomNormalizado);
+              updateGastoState('proveedor', nombreNormalizado);
+              updateGastoState('proveedor_isDraft', true);
               updateGastoState('origen', null);
               loadPage('registrarGasto');
             })
             .withFailureHandler(function(err){
-              setRegistrarLoading(false);
-              setVolverInicioEnabled(true);
-              setRegistrarEnabled(true);
-              var msg = (err && err.message) ? err.message : 'Error al crear el proveedor.';
+              setGuardarLoading(false);
+              setGuardarEnabled(true);
+              var msg = (err && err.message) ? err.message : 'No se pudo validar el proveedor.';
               showError(msg);
             })
-            .crearProveedor(nomNormalizado);
+            .getProveedoresIndex();
         } else {
-          setRegistrarLoading(false);
-          setVolverInicioEnabled(true);
-          setRegistrarEnabled(true);
-          showError('No se pudo crear el proveedor.');
+          setGuardarLoading(false);
+          setGuardarEnabled(true);
+          showError('No se pudo validar el proveedor.');
         }
       });
     }
   },
+
 
   nuevaCategoria: function(){
     hideGlobalLoading();
