@@ -121,6 +121,7 @@
     #sectionProducto{ margin-top: calc(var(--gap) * var(--fix)); }
     #sepAfterProducto{ margin: calc(var(--gap) * var(--fix)) 0; }
     #sectionUnidad{ margin-top: calc(var(--gap) * var(--fix)); }
+    #precioInlineContainer{ margin-top: calc(var(--gap) * var(--fix)); }
     #sepBeforeCosto{ margin: calc(var(--gap) * var(--fix)) 0; }
     #sepAfterCosto{ margin: calc(var(--gap) * var(--fix)) 0; }
     #sectionObservaciones{ margin: calc(var(--gap) * var(--fix)) 0; }
@@ -385,7 +386,9 @@
       width: calc(18px * var(--fix));
       height:auto;
       object-fit:contain;
-      opacity:0.45;
+      opacity:1;
+      filter: brightness(0) saturate(100%);
+      cursor:pointer;
     }
 
     .exp-row2{
@@ -543,7 +546,7 @@
             <span id="unitLabel">Lb</span>
           </div>
           <div class="exp-edit">
-            <img src="https://lh3.googleusercontent.com/d/1IJOPYYBICvweVK9rn2mQqckhfyQOHvrJ" alt="Éditer">
+            <img id="btnEditPrecioCard" src="https://lh3.googleusercontent.com/d/1IJOPYYBICvweVK9rn2mQqckhfyQOHvrJ" alt="Éditer">
           </div>
         </div>
 

@@ -965,6 +965,7 @@
         var precioInlineContainer = document.getElementById('precioInlineContainer');
         var precioInlineInput = document.getElementById('precioInlineInput');
         var btnConfirmPrecioInline = document.getElementById('btnConfirmPrecioInline');
+        var btnEditPrecioCard = document.getElementById('btnEditPrecioCard');
         var precioInlineError = document.getElementById('precioInlineError');
         var expenseCard = document.getElementById('expenseCard');
         var expenseCardLoading = document.getElementById('expenseCardLoading');
@@ -1035,6 +1036,14 @@
           var num = typeof val === 'number' ? val : parseFloat(val);
           if (!isFinite(num)) num = 0;
           return num.toFixed(2).replace('.', ',') + ' $';
+        }
+
+        function formatPrecioInline(val){
+          var num = typeof val === 'number' ? val : parseFloat(val);
+          if (!isFinite(num) || num < 0){
+            num = 0;
+          }
+          return num.toFixed(2).replace('.', ',');
         }
 
         function getMesFromFecha(fecha){
@@ -1739,6 +1748,20 @@
           clearPrecioInlineError();
           if (precioInlineInput){
             precioInlineInput.value = '';
+          }
+        }
+
+        function mostrarEdicionPrecioInline(){
+          showElement(precioInlineContainer);
+          hideElement(registrarCostoContainer);
+          hideElement(precioUnitarioContainer);
+          hideSeccionesFinales();
+          clearPrecioInlineError();
+          setRegistrarEnabled(false);
+          if (precioInlineInput){
+            precioInlineInput.value = formatPrecioInline(gastoState.precioUnitario);
+            precioInlineInput.focus();
+            precioInlineInput.select();
           }
         }
 
@@ -2520,6 +2543,12 @@
             clearError();
             clearPrecioInlineError();
             normalizeNumericInput(precioInlineInput);
+          });
+        }
+
+        if (btnEditPrecioCard){
+          btnEditPrecioCard.addEventListener('click', function(){
+            mostrarEdicionPrecioInline();
           });
         }
 
