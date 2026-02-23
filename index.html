@@ -21,6 +21,7 @@
       gasto: null,
       observaciones: '',
       origen: null,
+      preserveOnReturn: false,
       costoDebug: null
     };
 
@@ -41,6 +42,7 @@
         gasto: null,
         observaciones: '',
         origen: null,
+        preserveOnReturn: false,
         costoDebug: null
       };
     }
@@ -2704,6 +2706,47 @@
             setDropdownPlaceholder(unidadDropdown);
           }
         }
+
+        if (gastoState.preserveOnReturn === true){
+          updateGastoState('preserveOnReturn', false);
+          updateGastoState('origen', null);
+
+          setInitialLoadingState();
+          refreshExpenseCard();
+          bindUnlockCategoria();
+          bindUnlockProducto();
+          bindUnlockProveedor();
+          bindUnlockUnidad();
+          initDropdowns();
+
+          if (gastoState.proveedor_isDraft === true && gastoState.proveedor){
+            showProveedorContainer();
+            lockProveedor(gastoState.proveedor);
+          }
+
+          if (gastoState.unidad_isDraft === true && gastoState.unidad){
+            showUnidadContainer();
+            lockUnidad(gastoState.unidad);
+          }
+
+          cargarCategorias();
+          if (gastoState.categoria){
+            showProductoContainer();
+            cargarProductosPorCategoria(gastoState.categoria);
+          }
+          if (gastoState.producto){
+            showProveedorContainer();
+          }
+          if (gastoState.proveedor && gastoState.proveedor_isDraft !== true){
+            cargarUnidades();
+            showUnidadContainer();
+          }
+          if (gastoState.idProducto && gastoState.proveedor && gastoState.unidad){
+            cargarCostoSiListo();
+          }
+          return;
+        }
+
         var fromNuevoProveedor = (
           gastoState.proveedor_isDraft === true &&
           gastoState.origen === 'nuevoProveedor'
@@ -3031,7 +3074,7 @@
     }
 
     function volverARegistrarGasto(){
-      updateGastoState('origen', null);
+      updateGastoState('preserveOnReturn', true);
       loadPage('registrarGasto');
     }
 
@@ -3172,6 +3215,7 @@
     if (btnCancelar){
       btnCancelar.addEventListener('click', function(){
         if (btnCancelar.disabled) return;
+        updateGastoState('preserveOnReturn', true);
         loadPage('registrarGasto');
       });
     }
@@ -3314,6 +3358,7 @@
     if (btnCancelar){
       btnCancelar.addEventListener('click', function(){
         if (btnCancelar.disabled) return;
+        updateGastoState('preserveOnReturn', true);
         loadPage('registrarGasto');
       });
     }
@@ -3473,6 +3518,7 @@
     if (btnCancelar){
       btnCancelar.addEventListener('click', function(){
         if (btnCancelar.disabled) return;
+        updateGastoState('preserveOnReturn', true);
         loadPage('registrarGasto');
       });
     }
