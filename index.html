@@ -2420,6 +2420,15 @@
         bindUnlockProveedor();
         initDropdowns();
         cargarCategorias();
+        if (
+          gastoState.categoria &&
+          gastoState.producto &&
+          gastoState.proveedor_isDraft === true &&
+          gastoState.proveedor
+        ){
+          showProveedorContainer();
+          cargarProveedoresPorProducto(gastoState.categoria, gastoState.producto);
+        }
         if (gastoState.categoria){
           showProductoContainer();
           cargarProductosPorCategoria(gastoState.categoria);
@@ -2427,7 +2436,7 @@
         if (gastoState.producto){
           showProveedorContainer();
         }
-        if (gastoState.proveedor){
+        if (gastoState.proveedor && gastoState.proveedor_isDraft !== true){
           cargarUnidades();
           showUnidadContainer();
         }
