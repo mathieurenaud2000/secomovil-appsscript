@@ -185,6 +185,33 @@
       cursor:pointer;
       padding:0;
     }
+    .btn-check-noir{
+      width: calc(48px * var(--fix));
+      min-width: calc(48px * var(--fix));
+      height: calc(48px * var(--fix));
+      border-radius: 50%;
+      border: 5px solid var(--black);
+      background:#000;
+      color:#fff;
+      font-size: calc(22px * var(--fix));
+      line-height:1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      padding:0;
+    }
+    .locked-field-input{
+      width:100%;
+      border:0;
+      background:transparent;
+      color:#000;
+      font-size: calc(var(--font-body) * var(--fix));
+      line-height:1.3;
+      outline:none;
+      padding:0;
+    }
+    .locked-field-input::placeholder{ color: var(--gray25); }
 
     .dd-button{
       width:100%; text-align:left; position:relative; cursor:pointer;
@@ -476,6 +503,17 @@
           </button>
           <script type="application/json" class="dd-data">[]</script>
         </div>
+      </div>
+
+      <div class="form-section" id="precioInlineContainer" style="display:none;">
+        <div class="label">Precio por cantidad</div>
+        <div class="locked-field-row">
+          <div class="locked-field">
+            <input type="text" id="precioInlineInput" class="locked-field-input" inputmode="decimal" placeholder="0,00">
+          </div>
+          <button type="button" id="btnConfirmPrecioInline" class="btn-check-noir" aria-label="Confirmar precio">✓</button>
+        </div>
+        <div class="error-text" id="precioInlineError" aria-live="polite" style="display:none;"></div>
       </div>
 
       <div class="sep-gray" id="sepBeforeCosto" style="display:none;"></div>

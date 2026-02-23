@@ -960,6 +960,10 @@
 
         var registrarCostoContainer = document.getElementById('registrarCostoContainer');
         var precioUnitarioContainer = document.getElementById('precioUnitarioContainer');
+        var precioInlineContainer = document.getElementById('precioInlineContainer');
+        var precioInlineInput = document.getElementById('precioInlineInput');
+        var btnConfirmPrecioInline = document.getElementById('btnConfirmPrecioInline');
+        var precioInlineError = document.getElementById('precioInlineError');
         var expenseCard = document.getElementById('expenseCard');
         var expenseCardLoading = document.getElementById('expenseCardLoading');
         var qtyInput = document.getElementById('qtyInput');
@@ -1039,6 +1043,22 @@
             errorContainer.textContent = '';
             errorContainer.style.display = 'none';
           }
+        }
+
+        function clearPrecioInlineError(){
+          if (precioInlineError){
+            precioInlineError.textContent = '';
+            precioInlineError.style.display = 'none';
+          }
+        }
+
+        function showPrecioInlineError(msg){
+          if (precioInlineError){
+            precioInlineError.textContent = msg || 'Precio inválido.';
+            precioInlineError.style.display = '';
+            return;
+          }
+          showError(msg || 'Precio inválido.');
         }
 
         function showError(msg){
@@ -1593,20 +1613,47 @@
         function ocultarSeccionesCosto(){
           hideElement(registrarCostoContainer);
           hideElement(precioUnitarioContainer);
+          hideElement(precioInlineContainer);
+          clearPrecioInlineError();
+          if (precioInlineInput){
+            precioInlineInput.value = '';
+          }
           hideSeccionesFinales();
 
           refreshExpenseCard();
         }
 
+        function mostrarPrecioInline(){
+          showElement(precioInlineContainer);
+          hideElement(registrarCostoContainer);
+          hideElement(precioUnitarioContainer);
+          hideSeccionesFinales();
+          setRegistrarEnabled(false);
+          clearPrecioInlineError();
+          if (precioInlineInput){
+            precioInlineInput.value = '';
+          }
+        }
+
+        function ocultarPrecioInline(){
+          hideElement(precioInlineContainer);
+          clearPrecioInlineError();
+          if (precioInlineInput){
+            precioInlineInput.value = '';
+          }
+        }
+
         function mostrarRegistrarCosto(){
           showElement(registrarCostoContainer);
           hideElement(precioUnitarioContainer);
+          hideElement(precioInlineContainer);
           hideSeccionesFinales();
 
           refreshExpenseCard();
         }
 
         function mostrarPrecioUnitario(){
+          ocultarPrecioInline();
           showElement(precioUnitarioContainer);
           hideElement(registrarCostoContainer);
           showSeccionesFinales();
@@ -1729,7 +1776,7 @@
               } else {
                 updateGastoState('precioUnitario', null);
                 costoLookupFailedParse = (precioRaw !== null);
-                mostrarRegistrarCosto();
+                mostrarPrecioInline();
               }
 
 
@@ -1743,7 +1790,7 @@
               costoLookupFailedParse = false;
               updateGastoState('precioUnitario', null);
               updateGastoState('costoDebug', null);
-              mostrarRegistrarCosto();
+              mostrarPrecioInline();
               refreshExpenseCard();
               var msg = (err && err.message) ? err.message : 'No se pudo obtener el costo.';
               showError(msg);
@@ -1772,7 +1819,7 @@
                 costoLookupFailedParse = false;
                 updateGastoState('precioUnitario', null);
                 updateGastoState('costoDebug', null);
-                mostrarRegistrarCosto();
+                mostrarPrecioInline();
                 refreshExpenseCard();
                 return;
               }
@@ -1786,7 +1833,7 @@
               updateGastoState('idProducto', null);
               updateGastoState('precioUnitario', null);
               updateGastoState('costoDebug', null);
-              mostrarRegistrarCosto();
+              mostrarPrecioInline();
               refreshExpenseCard();
               var msg = (err && err.message) ? err.message : 'No se pudo obtener el producto seleccionado.';
               showError(msg);
@@ -2351,6 +2398,45 @@
           }
           qtyInput.addEventListener('input', updateMontoDesdeCantidad);
           qtyInput.addEventListener('keydown', handleQtyKeydown);
+        }
+
+        if (precioInlineInput){
+          precioInlineInput.addEventListener('input', function(){
+            clearError();
+            clearPrecioInlineError();
+            normalizeNumericInput(precioInlineInput);
+          });
+        }
+
+        if (btnConfirmPrecioInline){
+          btnConfirmPrecioInline.addEventListener('click', function(){
+            if (!precioInlineInput) return;
+            clearError();
+            clearPrecioInlineError();
+
+            var parsedPrecioInline = parseInputPrecio(precioInlineInput);
+            if (!parsedPrecioInline.sanitized){
+              showPrecioInlineError('Ingrese el precio por cantidad.');
+              precioInlineInput.focus();
+              return;
+            }
+
+            if (parsedPrecioInline.number === null || parsedPrecioInline.number <= 0){
+              showPrecioInlineError('Precio inválido.');
+              precioInlineInput.focus();
+              return;
+            }
+
+            var precioRedondeado = Math.round(parsedPrecioInline.number * 100) / 100;
+            precioInlineInput.value = precioRedondeado.toFixed(2).replace('.', ',');
+            updateGastoState('precioUnitario', precioRedondeado);
+            ocultarPrecioInline();
+            mostrarPrecioUnitario();
+            refreshExpenseCard();
+            if (qtyInput){
+              qtyInput.focus();
+            }
+          });
         }
 
         if (obsField){
