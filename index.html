@@ -15,6 +15,7 @@
       proveedor: null,
       proveedor_isDraft: false,
       unidad: null,
+      unidad_isDraft: false,
       precioUnitario: null,
       cantidad: null,
       gasto: null,
@@ -34,6 +35,7 @@
         proveedor: null,
         proveedor_isDraft: false,
         unidad: null,
+        unidad_isDraft: false,
         precioUnitario: null,
         cantidad: null,
         gasto: null,
@@ -1001,6 +1003,9 @@
         var proveedorLockedContainer = document.getElementById('proveedorLockedContainer');
         var proveedorLockedValue = document.getElementById('proveedorLockedValue');
         var btnUnlockProveedor = document.getElementById('btnUnlockProveedor');
+        var unidadLockedContainer = document.getElementById('unidadLockedContainer');
+        var unidadLockedValue = document.getElementById('unidadLockedValue');
+        var btnUnlockUnidad = document.getElementById('btnUnlockUnidad');
 
         function hideElement(el){
           if (!el) return;
@@ -1404,6 +1409,7 @@
           costoLookupFailedParse = false;
           updateGastoState('idProducto', null);
           updateGastoState('unidad', null);
+          updateGastoState('unidad_isDraft', false);
           updateGastoState('precioUnitario', null);
           updateGastoState('cantidad', null);
           updateGastoState('gasto', null);
@@ -1411,6 +1417,12 @@
           setDropdownLoading(unidadDropdown, false);
           setDropdownPlaceholder(unidadDropdown);
           setOptionsToDropdown(unidadDropdown, []);
+          if (unidadLockedContainer){
+            hideElement(unidadLockedContainer);
+          }
+          if (unidadDropdown){
+            showElement(unidadDropdown);
+          }
 
           if (qtyInput){
             qtyInput.value = '';
@@ -1436,6 +1448,32 @@
           ocultarSeccionesCosto();
         }
 
+        function resetCamposDesdeUnidad(){
+          costoLookupPending = false;
+          costoLookupFailedParse = false;
+          updateGastoState('idProducto', null);
+          updateGastoState('precioUnitario', null);
+          updateGastoState('cantidad', null);
+          updateGastoState('gasto', null);
+
+          if (qtyInput){
+            qtyInput.value = '';
+          }
+          if (unitLabel){
+            unitLabel.textContent = '';
+          }
+          if (unitPriceText){
+            unitPriceText.textContent = '';
+          }
+          if (expenseTotal){
+            expenseTotal.textContent = '0,00 $';
+          }
+
+          ocultarSeccionesCosto();
+          hideSeccionesFinales();
+          refreshExpenseCard();
+        }
+
         function unlockProveedor(){
           updateGastoState('proveedor', null);
           updateGastoState('proveedor_isDraft', false);
@@ -1447,6 +1485,12 @@
           if (proveedorDropdown){
             showElement(proveedorDropdown);
           }
+          if (unidadLockedContainer){
+            hideElement(unidadLockedContainer);
+          }
+          if (unidadDropdown){
+            showElement(unidadDropdown);
+          }
           closeOverlay();
           if (gastoState.categoria && gastoState.producto){
             cargarProveedoresPorProducto(gastoState.categoria, gastoState.producto);
@@ -1457,6 +1501,55 @@
           if (!btnUnlockProveedor) return;
           btnUnlockProveedor.addEventListener('click', function(){
             unlockProveedor();
+          });
+        }
+
+        function lockUnidad(value){
+          if (unidadLockedValue){
+            unidadLockedValue.textContent = value || '';
+          }
+          if (unidadDropdown){
+            hideElement(unidadDropdown);
+          }
+          if (unidadLockedContainer){
+            showElement(unidadLockedContainer);
+          }
+        }
+
+        function unlockUnidad(){
+          updateGastoState('idProducto', null);
+          updateGastoState('unidad', null);
+          updateGastoState('unidad_isDraft', false);
+          updateGastoState('precioUnitario', null);
+          updateGastoState('cantidad', null);
+          updateGastoState('gasto', null);
+
+          if (unidadLockedContainer){
+            hideElement(unidadLockedContainer);
+          }
+          if (unidadDropdown){
+            showElement(unidadDropdown);
+            setDropdownLoading(unidadDropdown, false);
+            setDropdownPlaceholder(unidadDropdown);
+          }
+
+          if (qtyInput){
+            qtyInput.value = '';
+          }
+          if (expenseTotal){
+            expenseTotal.textContent = '0,00 $';
+          }
+
+          ocultarSeccionesCosto();
+          hideSeccionesFinales();
+          closeOverlay();
+          refreshExpenseCard();
+        }
+
+        function bindUnlockUnidad(){
+          if (!btnUnlockUnidad) return;
+          btnUnlockUnidad.addEventListener('click', function(){
+            unlockUnidad();
           });
         }
 
@@ -1514,6 +1607,7 @@
           updateGastoState('proveedor', null);
           updateGastoState('proveedor_isDraft', false);
           updateGastoState('unidad', null);
+          updateGastoState('unidad_isDraft', false);
           updateGastoState('precioUnitario', null);
           updateGastoState('cantidad', null);
           updateGastoState('gasto', null);
@@ -1533,6 +1627,12 @@
           }
           if (proveedorDropdown){
             showElement(proveedorDropdown);
+          }
+          if (unidadLockedContainer){
+            hideElement(unidadLockedContainer);
+          }
+          if (unidadDropdown){
+            showElement(unidadDropdown);
           }
 
           if (qtyInput){
@@ -1568,6 +1668,7 @@
           updateGastoState('proveedor', null);
           updateGastoState('proveedor_isDraft', false);
           updateGastoState('unidad', null);
+          updateGastoState('unidad_isDraft', false);
           updateGastoState('precioUnitario', null);
           updateGastoState('cantidad', null);
           updateGastoState('gasto', null);
@@ -1581,6 +1682,12 @@
           }
           if (proveedorDropdown){
             showElement(proveedorDropdown);
+          }
+          if (unidadLockedContainer){
+            hideElement(unidadLockedContainer);
+          }
+          if (unidadDropdown){
+            showElement(unidadDropdown);
           }
           setDropdownPlaceholder(unidadDropdown);
           setOptionsToDropdown(unidadDropdown, []);
@@ -1945,6 +2052,7 @@
             }
 
             if (previousProveedor !== value){
+              updateGastoState('unidad_isDraft', false);
               updateGastoState('idProducto', null);
               updateGastoState('unidad', null);
               updateGastoState('precioUnitario', null);
@@ -1978,9 +2086,16 @@
 
             updateGastoState('idProducto', null);
             updateGastoState('unidad', value);
+            updateGastoState('unidad_isDraft', false);
             updateGastoState('precioUnitario', null);
             updateGastoState('cantidad', null);
             updateGastoState('gasto', null);
+            if (unidadLockedContainer){
+              hideElement(unidadLockedContainer);
+            }
+            if (unidadDropdown){
+              showElement(unidadDropdown);
+            }
             costoLookupPending = true;
             costoLookupFailedParse = false;
             if (qtyInput){ qtyInput.value = ''; }
@@ -2428,6 +2543,12 @@
             }
 
             var precioRedondeado = Math.round(parsedPrecioInline.number * 100) / 100;
+            if (precioRedondeado < 0.01){
+              showPrecioInlineError('Precio mínimo 0,01.');
+              precioInlineInput.focus();
+              return;
+            }
+
             precioInlineInput.value = precioRedondeado.toFixed(2).replace('.', ',');
             updateGastoState('precioUnitario', precioRedondeado);
             ocultarPrecioInline();
@@ -2535,7 +2656,9 @@
         }
         if (unidadDropdown){
           unidadDropdown.dataset.ph = 'Unidad';
-          if (gastoState.unidad){
+          if (gastoState.unidad && gastoState.unidad_isDraft === true){
+            setDropdownPlaceholder(unidadDropdown);
+          } else if (gastoState.unidad){
             var unidadLabel = unidadDropdown.querySelector('.dd-label');
             var unidadBtn = unidadDropdown.querySelector('.dd-button');
             if (unidadLabel){
@@ -2553,10 +2676,16 @@
           gastoState.proveedor_isDraft === true &&
           gastoState.origen === 'nuevoProveedor'
         );
+        var fromNuevaUnidad = (
+          gastoState.unidad_isDraft === true ||
+          gastoState.origen === 'nuevaUnidad'
+        );
 
         setInitialLoadingState();
         if (fromNuevoProveedor){
           resetCamposDesdeProveedor();
+        } else if (fromNuevaUnidad && gastoState.unidad){
+          resetCamposDesdeUnidad();
         } else if (gastoState.producto_isDraft === true && gastoState.producto){
           resetCamposDesdeProducto();
         } else if (gastoState.proveedor_isDraft === true && gastoState.proveedor) {
@@ -2568,10 +2697,16 @@
         bindUnlockCategoria();
         bindUnlockProducto();
         bindUnlockProveedor();
+        bindUnlockUnidad();
         initDropdowns();
         if (fromNuevoProveedor && gastoState.proveedor){
           showProveedorContainer();
           lockProveedor(gastoState.proveedor);
+          updateGastoState('origen', null);
+        }
+        if (fromNuevaUnidad && gastoState.unidad){
+          showUnidadContainer();
+          lockUnidad(gastoState.unidad);
           updateGastoState('origen', null);
         }
         cargarCategorias();
@@ -2591,7 +2726,7 @@
         if (gastoState.producto){
           showProveedorContainer();
         }
-        if (gastoState.proveedor && gastoState.proveedor_isDraft !== true){
+        if (gastoState.proveedor && gastoState.proveedor_isDraft !== true && !fromNuevaUnidad){
           cargarUnidades();
           showUnidadContainer();
         }
@@ -3207,8 +3342,12 @@
       || document.querySelector('input[type="text"]');
     var errorContainer = document.getElementById('nuevaUnidadError')
       || document.querySelector('[data-role="error"]');
-    var btnRegistrar = document.getElementById('btnRegistrarUnidad') || document.getElementById('btnRegistrar');
-    var btnVolverInicio = document.querySelector('button[data-role="volver-inicio"]') || document.getElementById('btnVolverInicio');
+    var btnGuardar = document.getElementById('btnGuardarUnidad') || document.getElementById('btnRegistrar');
+    var btnCancelar = document.getElementById('btnVolverUnidad') || document.getElementById('btnVolver');
+
+    function normalizarNombre(valor){
+      return (valor || '').toString().trim().replace(/\s+/g, ' ');
+    }
 
     function clearError(){
       if (errorContainer){
@@ -3226,110 +3365,80 @@
       }
     }
 
-    function setRegistrarLoading(isLoading){
-      if (!btnRegistrar) return;
-      if (btnRegistrar.classList && btnRegistrar.classList.contains('btn-noir')){
-        window.secoSetBlackButtonLoading(btnRegistrar, isLoading);
+    function setGuardarLoading(isLoading){
+      if (!btnGuardar) return;
+      if (btnGuardar.classList && btnGuardar.classList.contains('btn-noir')){
+        window.secoSetBlackButtonLoading(btnGuardar, isLoading);
         return;
       }
       if (isLoading){
-        if (btnRegistrar.dataset.spinner === '1') return;
-        btnRegistrar.disabled = true;
-        btnRegistrar.dataset.spinner = '1';
+        if (btnGuardar.dataset.spinner === '1') return;
+        btnGuardar.disabled = true;
+        btnGuardar.dataset.spinner = '1';
       } else {
-        btnRegistrar.disabled = false;
-        btnRegistrar.removeAttribute('data-spinner');
+        btnGuardar.disabled = false;
+        btnGuardar.removeAttribute('data-spinner');
       }
     }
 
-    function setVolverInicioEnabled(enable){
-      if (btnVolverInicio){
-        btnVolverInicio.disabled = !enable;
+    function setCancelarEnabled(enable){
+      if (btnCancelar){
+        btnCancelar.disabled = !enable;
       }
     }
 
-    function setRegistrarEnabled(enable){
-      if (!btnRegistrar || btnRegistrar.dataset.spinner === '1') return;
-      btnRegistrar.disabled = !enable;
+    function setGuardarEnabled(enable){
+      if (!btnGuardar || btnGuardar.dataset.spinner === '1') return;
+      btnGuardar.disabled = !enable;
     }
 
     if (unidadInput){
       unidadInput.value = '';
       unidadInput.addEventListener('input', function(){
         clearError();
-        setRegistrarEnabled(!!unidadInput.value.trim());
+        setGuardarEnabled(!!normalizarNombre(unidadInput.value));
       });
     }
     clearError();
-    setRegistrarLoading(false);
-    setRegistrarEnabled(false);
-    
-    if (btnVolverInicio){
-      if (typeof registerVolverInicioHook === 'function'){
-        registerVolverInicioHook(btnVolverInicio, function(){
-          resetGastoState();
-        });
-      } else {
-        btnVolverInicio.addEventListener('click', function(){
-          if (btnVolverInicio.disabled) return;
-          resetGastoState();
-          loadPage('inicio');
-        });
-      }
+    setGuardarLoading(false);
+    setGuardarEnabled(false);
+
+    if (btnCancelar){
+      btnCancelar.addEventListener('click', function(){
+        if (btnCancelar.disabled) return;
+        loadPage('registrarGasto');
+      });
     }
 
-    if (btnRegistrar){
-      btnRegistrar.addEventListener('click', function(){
-        if (btnRegistrar.disabled) return;
+    if (btnGuardar){
+      btnGuardar.addEventListener('click', function(){
+        if (btnGuardar.disabled) return;
 
-        var nombre = (unidadInput ? unidadInput.value : '').toString().trim();
-        if (!nombre){
+        var nombreNormalizado = normalizarNombre(unidadInput ? unidadInput.value : '');
+        if (!nombreNormalizado){
           showError('Ingrese la unidad.');
           if (unidadInput) unidadInput.focus();
           return;
         }
 
-        var nombreNormalizado = nombre.toLowerCase();
-
         clearError();
-        setRegistrarEnabled(false);
-        setRegistrarLoading(true);
-        setVolverInicioEnabled(false);
+        setGuardarEnabled(false);
+        setGuardarLoading(true);
+        setCancelarEnabled(false);
 
-        if (typeof google !== 'undefined' && google.script && google.script.run){
-          google.script.run
-            .withSuccessHandler(function(resp){
-              var ok = (resp && (resp.ok || resp.success)) || resp === undefined || resp === null || resp === true;
-              if (!ok){
-                setRegistrarLoading(false);
-                setVolverInicioEnabled(true);
-                setRegistrarEnabled(true);
-                var msg = (resp && resp.error) ? resp.error : 'Error al crear la unidad.';
-                showError(msg);
-                return;
-              }
+        updateGastoState('unidad', nombreNormalizado);
+        updateGastoState('unidad_isDraft', true);
+        updateGastoState('origen', 'nuevaUnidad');
+        updateGastoState('precioUnitario', null);
+        updateGastoState('cantidad', null);
+        updateGastoState('gasto', null);
+        updateGastoState('idProducto', null);
 
-              updateGastoState('unidad', nombreNormalizado);
-              updateGastoState('origen', null);
-              loadPage('registrarGasto');
-            })
-            .withFailureHandler(function(err){
-              setRegistrarLoading(false);
-              setVolverInicioEnabled(true);
-              setRegistrarEnabled(true);
-              var msg = (err && err.message) ? err.message : 'Error al crear la unidad.';
-              showError(msg);
-            })
-            .crearUnidad(nombreNormalizado);
-        } else {
-          setRegistrarLoading(false);
-          setVolverInicioEnabled(true);
-          setRegistrarEnabled(true);
-          showError('No se pudo crear la unidad.');
-        }
+        loadPage('registrarGasto');
       });
     }
   },
+
 
   pedidosDelDia: function(){
     var tabs = document.querySelectorAll('.tab');
