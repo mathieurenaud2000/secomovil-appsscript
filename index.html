@@ -1877,7 +1877,7 @@
               var msg = (err && err.message) ? err.message : 'No se pudieron cargar las unidades.';
               showError(msg);
             })
-            .getUnidades(gastoState.categoria, gastoState.producto, gastoState.proveedor);
+              .getUnidadesGlobal();
         }
 
         function cargarCostoSiListo(){
@@ -2519,7 +2519,7 @@
                 var msg = (err && err.message) ? err.message : 'No se pudieron cargar los proveedores.';
                 showError(msg);
               })
-              .getProveedoresPorProducto(categoria, producto);
+              .getProveedoresGlobal();
           } else {
             setDropdownLoading(proveedorDropdown, false);
             if (gastoState.proveedor_isDraft === true && gastoState.proveedor){
@@ -3042,7 +3042,7 @@
     function showProveedorError(msg){
       if (errorContainer){
         errorContainer.textContent = msg;
-        errorContainer.style.display = '';
+        errorContainer.style.display = 'block';
       } else {
         alert(msg);
       }
@@ -3168,7 +3168,7 @@
     function showCategoriaError(msg){
       if (errorContainer){
         errorContainer.textContent = msg;
-        errorContainer.style.display = '';
+        errorContainer.style.display = 'block';
       } else {
         alert(msg);
       }
@@ -3310,7 +3310,7 @@
     function showProductoError(msg){
       if (errorContainer){
         errorContainer.textContent = msg;
-        errorContainer.style.display = '';
+        errorContainer.style.display = 'block';
       } else {
         alert(msg);
       }
@@ -3471,7 +3471,7 @@
     function showUnidadError(msg){
       if (errorContainer){
         errorContainer.textContent = msg;
-        errorContainer.style.display = '';
+        errorContainer.style.display = 'block';
       } else {
         alert(msg);
       }

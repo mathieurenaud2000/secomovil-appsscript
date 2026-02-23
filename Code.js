@@ -4868,6 +4868,43 @@ function getUnidades(categoria, producto, proveedor) {
   return unidades;
 }
 
+
+/**
+ * Devuelve la lista única global de unidades registradas en PRODUCTO!E.
+ *
+ * @returns {string[]} unidades únicas ordenadas A→Z
+ */
+function getUnidadesGlobal() {
+  var sheet = getSheet_('PRODUCTO');
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) {
+    return [];
+  }
+
+  var rows = sheet.getRange(2, 5, lastRow - 1, 1).getValues(); // E
+  var unidadesMap = {};
+
+  rows.forEach(function (row) {
+    var unidad = (row[0] || '').toString().trim();
+    if (!unidad) return;
+
+    var key = unidad.toLowerCase();
+    if (!unidadesMap[key]) {
+      unidadesMap[key] = unidad;
+    }
+  });
+
+  var unidades = Object.keys(unidadesMap).map(function (key) {
+    return unidadesMap[key];
+  });
+
+  unidades.sort(function (a, b) {
+    return a.toLowerCase().localeCompare(b.toLowerCase());
+  });
+
+  return unidades;
+}
+
 /**
  * Resuelve el ID de PRODUCTO para una combinación exacta de
  * categoría, producto, proveedor y unidad.
@@ -5266,6 +5303,16 @@ function getProveedoresIndex() {
   });
 
   return proveedores;
+}
+
+
+/**
+ * Devuelve la lista única global de proveedores registrados en PRODUCTO!D.
+ *
+ * @returns {string[]} proveedores únicos ordenados A→Z
+ */
+function getProveedoresGlobal() {
+  return getProveedoresIndex();
 }
 
 /**
