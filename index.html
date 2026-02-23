@@ -2989,14 +2989,14 @@
     var btnGuardar = document.getElementById('btnGuardarProveedor') || document.getElementById('btnGuardar');
     var btnCancelar = document.getElementById('btnVolverProveedor') || document.getElementById('btnCancelar');
 
-    function clearError(){
+    function clearProveedorError(){
       if (errorContainer){
         errorContainer.textContent = '';
         errorContainer.style.display = 'none';
       }
     }
 
-    function showError(msg){
+    function showProveedorError(msg){
       if (errorContainer){
         errorContainer.textContent = msg;
         errorContainer.style.display = '';
@@ -3038,12 +3038,12 @@
     if (nombreInput){
       nombreInput.value = '';
       nombreInput.addEventListener('input', function(){
-        clearError();
+        clearProveedorError();
         setGuardarEnabled(!!normalizeNombreProveedor(nombreInput.value));
       });
     }
 
-    clearError();
+    clearProveedorError();
     setGuardarEnabled(false);
 
     if (btnCancelar){
@@ -3058,12 +3058,12 @@
 
         var nombreNormalizado = normalizeNombreProveedor(nombreInput ? nombreInput.value : '');
         if (!nombreNormalizado){
-          showError('Ingrese el nombre del proveedor.');
+          showProveedorError('Ingrese el nombre del proveedor.');
           if (nombreInput) nombreInput.focus();
           return;
         }
 
-        clearError();
+        clearProveedorError();
         setGuardarEnabled(false);
         setGuardarLoading(true);
 
@@ -3077,8 +3077,8 @@
 
               if (existe){
                 setGuardarLoading(false);
-                setGuardarEnabled(true);
-                showError('El proveedor ya existe.');
+                setGuardarEnabled(false);
+                showProveedorError('Este proveedor existe ya.');
                 return;
               }
 
@@ -3091,13 +3091,13 @@
               setGuardarLoading(false);
               setGuardarEnabled(true);
               var msg = (err && err.message) ? err.message : 'No se pudo validar el proveedor.';
-              showError(msg);
+              showProveedorError(msg);
             })
             .getProveedoresIndex();
         } else {
           setGuardarLoading(false);
           setGuardarEnabled(true);
-          showError('No se pudo validar el proveedor.');
+          showProveedorError('No se pudo validar el proveedor.');
         }
       });
     }
@@ -3115,14 +3115,14 @@
     var btnGuardar = document.getElementById('btnGuardarCategoria') || document.getElementById('btnRegistrar');
     var btnCancelar = document.getElementById('btnVolverCategoria') || document.getElementById('btnVolver');
 
-    function clearError(){
+    function clearCategoriaError(){
       if (errorContainer){
         errorContainer.textContent = '';
         errorContainer.style.display = 'none';
       }
     }
 
-    function showError(msg){
+    function showCategoriaError(msg){
       if (errorContainer){
         errorContainer.textContent = msg;
         errorContainer.style.display = '';
@@ -3161,11 +3161,11 @@
     if (categoriaInput){
       categoriaInput.value = '';
       categoriaInput.addEventListener('input', function(){
-        clearError();
+        clearCategoriaError();
         setGuardarEnabled(!!categoriaInput.value.trim());
       });
     }
-    clearError();
+    clearCategoriaError();
     setGuardarLoading(false);
     setGuardarEnabled(false);
 
@@ -3182,28 +3182,60 @@
 
         var nombre = (categoriaInput ? categoriaInput.value : '').toString().trim();
         if (!nombre){
-          showError('Ingrese el nombre de la categoria.');
+          showCategoriaError('Ingrese el nombre de la categoria.');
           if (categoriaInput) categoriaInput.focus();
           return;
         }
 
-        clearError();
+        clearCategoriaError();
         setGuardarEnabled(false);
         setGuardarLoading(true);
         setCancelarEnabled(false);
 
         var nombreNormalizado = nombre;
 
-        updateGastoState('categoria', nombreNormalizado);
-        updateGastoState('categoria_isDraft', true);
-        updateGastoState('producto', null);
-        updateGastoState('proveedor', null);
-        updateGastoState('unidad', null);
-        updateGastoState('precioUnitario', null);
-        updateGastoState('idProducto', null);
-        updateGastoState('origen', null);
+        if (typeof google !== 'undefined' && google.script && google.script.run){
+          google.script.run
+            .withSuccessHandler(function(categorias){
+              var existentes = Array.isArray(categorias) ? categorias : [];
+              var existe = existentes.some(function(item){
+                return (item || '').toString().trim().toLowerCase() === nombreNormalizado.toLowerCase();
+              });
 
-        loadPage('registrarGasto');
+              if (existe){
+                setGuardarLoading(false);
+                setCancelarEnabled(true);
+                setGuardarEnabled(false);
+                showCategoriaError('Esta categoría existe ya.');
+                return;
+              }
+
+              updateGastoState('categoria', nombreNormalizado);
+              updateGastoState('categoria_isDraft', true);
+              updateGastoState('producto', null);
+              updateGastoState('proveedor', null);
+              updateGastoState('unidad', null);
+              updateGastoState('precioUnitario', null);
+              updateGastoState('idProducto', null);
+              updateGastoState('origen', null);
+
+              loadPage('registrarGasto');
+            })
+            .withFailureHandler(function(err){
+              setGuardarLoading(false);
+              setCancelarEnabled(true);
+              setGuardarEnabled(true);
+              var msg = (err && err.message) ? err.message : 'No se pudo validar la categoria.';
+              showCategoriaError(msg);
+            })
+            .getCategorias();
+          return;
+        }
+
+        setGuardarLoading(false);
+        setCancelarEnabled(true);
+        setGuardarEnabled(true);
+        showCategoriaError('No se pudo validar la categoria.');
       });
     }
   },
@@ -3224,14 +3256,14 @@
       return (valor || '').toString().trim().replace(/\s+/g, ' ');
     }
 
-    function clearError(){
+    function clearProductoError(){
       if (errorContainer){
         errorContainer.textContent = '';
         errorContainer.style.display = 'none';
       }
     }
 
-    function showError(msg){
+    function showProductoError(msg){
       if (errorContainer){
         errorContainer.textContent = msg;
         errorContainer.style.display = '';
@@ -3270,12 +3302,12 @@
     if (productoInput){
       productoInput.value = '';
       productoInput.addEventListener('input', function(){
-        clearError();
+        clearProductoError();
         setGuardarEnabled(!!normalizarNombre(productoInput.value));
       });
     }
 
-    clearError();
+    clearProductoError();
     setGuardarLoading(false);
     setGuardarEnabled(false);
 
@@ -3292,12 +3324,12 @@
 
         var nombreNormalizado = normalizarNombre(productoInput ? productoInput.value : '');
         if (!nombreNormalizado){
-          showError('Ingrese el nombre del producto.');
+          showProductoError('Ingrese el nombre del producto.');
           if (productoInput) productoInput.focus();
           return;
         }
 
-        clearError();
+        clearProductoError();
         setGuardarEnabled(false);
         setGuardarLoading(true);
         setCancelarEnabled(false);
@@ -3326,18 +3358,16 @@
                 setGuardarLoading(false);
                 setCancelarEnabled(true);
                 setGuardarEnabled(true);
-                showError('Este producto ya existe en otra categoría.');
+                showProductoError('Este producto ya existe en otra categoría.');
                 return;
               }
 
               if (existeMismaCategoria){
-                var continuar = window.confirm('Este producto existe ya en la misma categoría. ¿Desea continuar?');
-                if (!continuar){
-                  setGuardarLoading(false);
-                  setCancelarEnabled(true);
-                  setGuardarEnabled(true);
-                  return;
-                }
+                setGuardarLoading(false);
+                setCancelarEnabled(true);
+                setGuardarEnabled(false);
+                showProductoError('Este producto existe ya en la misma categoría.');
+                return;
               }
 
               updateGastoState('producto', nombreNormalizado);
@@ -3357,7 +3387,7 @@
               setCancelarEnabled(true);
               setGuardarEnabled(true);
               var msg = (err && err.message) ? err.message : 'No se pudo validar el producto.';
-              showError(msg);
+              showProductoError(msg);
             })
             .getProductosIndex();
           return;
@@ -3366,7 +3396,7 @@
         setGuardarLoading(false);
         setCancelarEnabled(true);
         setGuardarEnabled(true);
-        showError('No se pudo validar el producto.');
+        showProductoError('No se pudo validar el producto.');
       });
     }
   },
@@ -3386,14 +3416,14 @@
       return (valor || '').toString().trim().replace(/\s+/g, ' ');
     }
 
-    function clearError(){
+    function clearUnidadError(){
       if (errorContainer){
         errorContainer.textContent = '';
         errorContainer.style.display = 'none';
       }
     }
 
-    function showError(msg){
+    function showUnidadError(msg){
       if (errorContainer){
         errorContainer.textContent = msg;
         errorContainer.style.display = '';
@@ -3432,11 +3462,11 @@
     if (unidadInput){
       unidadInput.value = '';
       unidadInput.addEventListener('input', function(){
-        clearError();
+        clearUnidadError();
         setGuardarEnabled(!!normalizarNombre(unidadInput.value));
       });
     }
-    clearError();
+    clearUnidadError();
     setGuardarLoading(false);
     setGuardarEnabled(false);
 
@@ -3453,25 +3483,57 @@
 
         var nombreNormalizado = normalizarNombre(unidadInput ? unidadInput.value : '');
         if (!nombreNormalizado){
-          showError('Ingrese la unidad.');
+          showUnidadError('Ingrese la unidad.');
           if (unidadInput) unidadInput.focus();
           return;
         }
 
-        clearError();
+        clearUnidadError();
         setGuardarEnabled(false);
         setGuardarLoading(true);
         setCancelarEnabled(false);
 
-        updateGastoState('unidad', nombreNormalizado);
-        updateGastoState('unidad_isDraft', true);
-        updateGastoState('origen', 'nuevaUnidad');
-        updateGastoState('precioUnitario', null);
-        updateGastoState('cantidad', null);
-        updateGastoState('gasto', null);
-        updateGastoState('idProducto', null);
+        if (typeof google !== 'undefined' && google.script && google.script.run){
+          google.script.run
+            .withSuccessHandler(function(unidades){
+              var existentes = Array.isArray(unidades) ? unidades : [];
+              var existe = existentes.some(function(item){
+                return normalizarNombre(item).toLowerCase() === nombreNormalizado.toLowerCase();
+              });
 
-        loadPage('registrarGasto');
+              if (existe){
+                setGuardarLoading(false);
+                setCancelarEnabled(true);
+                setGuardarEnabled(false);
+                showUnidadError('Esta unidad existe ya.');
+                return;
+              }
+
+              updateGastoState('unidad', nombreNormalizado);
+              updateGastoState('unidad_isDraft', true);
+              updateGastoState('origen', 'nuevaUnidad');
+              updateGastoState('precioUnitario', null);
+              updateGastoState('cantidad', null);
+              updateGastoState('gasto', null);
+              updateGastoState('idProducto', null);
+
+              loadPage('registrarGasto');
+            })
+            .withFailureHandler(function(err){
+              setGuardarLoading(false);
+              setCancelarEnabled(true);
+              setGuardarEnabled(true);
+              var msg = (err && err.message) ? err.message : 'No se pudo validar la unidad.';
+              showUnidadError(msg);
+            })
+            .getUnidades(gastoState.categoria, gastoState.producto, gastoState.proveedor);
+          return;
+        }
+
+        setGuardarLoading(false);
+        setCancelarEnabled(true);
+        setGuardarEnabled(true);
+        showUnidadError('No se pudo validar la unidad.');
       });
     }
   },
