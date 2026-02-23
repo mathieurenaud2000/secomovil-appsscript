@@ -1168,6 +1168,8 @@
         function updateMontoDesdeCantidad(){
           var parsed = parseInputCantidad(qtyInput);
           var cantidadNumber = parsed.number;
+          var precioNumero = parseFloat(gastoState.precioUnitario);
+          var precioValido = isFinite(precioNumero) && precioNumero > 0;
 
           if (!parsed.sanitized){
             updateGastoState('cantidad', null);
@@ -1191,8 +1193,7 @@
           }
 
           updateGastoState('cantidad', cantidadNumber);
-          var precioNumero = parseFloat(gastoState.precioUnitario);
-          var tienePrecio = isFinite(precioNumero);
+          var tienePrecio = precioValido;
           var monto = tienePrecio ? cantidadNumber * precioNumero : 0;
           updateGastoState('gasto', monto);
 
@@ -1204,7 +1205,7 @@
             clearError();
           }
 
-          setRegistrarEnabled(isFormularioValido());
+          setRegistrarEnabled(precioValido && cantidadNumber > 0);
         }
 
         function setExpenseCardLoading(isLoading){
@@ -1294,7 +1295,10 @@
             unitPriceText.textContent = precioNumber.toFixed(2).replace('.', ',') + ' $ / ' + unitTxt;
           }
 
-          if (typeof gastoState.cantidad === 'number' && isFinite(gastoState.cantidad) && gastoState.cantidad > 0){
+          var precioValido = isFinite(precioNumber) && precioNumber > 0;
+          var cantidadValida = typeof gastoState.cantidad === 'number' && isFinite(gastoState.cantidad) && gastoState.cantidad > 0;
+
+          if (cantidadValida){
             var qtyStr = gastoState.cantidad.toString().replace('.', ',');
             if (qtyInput && qtyInput.value !== qtyStr){
               qtyInput.value = qtyStr;
@@ -1304,7 +1308,7 @@
             if (expenseTotal){
               expenseTotal.textContent = formatMoney(monto);
             }
-            setRegistrarEnabled(isFormularioValido());
+            setRegistrarEnabled(precioValido && cantidadValida);
           } else {
             if (expenseTotal){
               expenseTotal.textContent = '0,00 $';
