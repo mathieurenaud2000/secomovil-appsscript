@@ -1858,14 +1858,25 @@
 
             var previousProducto = gastoState.producto;
             var shouldResetProductoDeps = previousProducto !== value;
+            var draftProveedorValue = gastoState.proveedor;
+            var draftProveedorActivo = gastoState.proveedor_isDraft === true && !!draftProveedorValue;
 
             updateGastoState('producto', value);
             updateGastoState('producto_isDraft', false);
             if (shouldResetProductoDeps){
               updateGastoState('idProducto', null);
               resetCamposDesdeProducto();
+
+              if (draftProveedorActivo){
+                updateGastoState('proveedor', draftProveedorValue);
+                updateGastoState('proveedor_isDraft', true);
+              }
             }
             showProveedorContainer();
+
+            if (gastoState.proveedor_isDraft === true && gastoState.proveedor){
+              lockProveedor(gastoState.proveedor);
+            }
 
             if (
               gastoState.categoria &&
@@ -2283,6 +2294,13 @@
                 setOptionsToDropdown(proveedorDropdown, opts);
 
                 if (gastoState.proveedor_isDraft === true && gastoState.proveedor){
+                  showProveedorContainer();
+                  lockProveedor(gastoState.proveedor);
+
+                  if (gastoState.categoria && gastoState.producto){
+                    showUnidadContainer();
+                    cargarUnidades();
+                  }
                   return;
                 }
 
@@ -2297,6 +2315,12 @@
 
                 if (gastoState.proveedor_isDraft === true && gastoState.proveedor){
                   setDropdownLoading(proveedorDropdown, false);
+                  showProveedorContainer();
+                  lockProveedor(gastoState.proveedor);
+                  if (gastoState.categoria && gastoState.producto){
+                    showUnidadContainer();
+                    cargarUnidades();
+                  }
                   return;
                 }
 
@@ -2309,6 +2333,12 @@
           } else {
             setDropdownLoading(proveedorDropdown, false);
             if (gastoState.proveedor_isDraft === true && gastoState.proveedor){
+              showProveedorContainer();
+              lockProveedor(gastoState.proveedor);
+              if (gastoState.categoria && gastoState.producto){
+                showUnidadContainer();
+                cargarUnidades();
+              }
               return;
             }
             setDropdownPlaceholder(proveedorDropdown);
