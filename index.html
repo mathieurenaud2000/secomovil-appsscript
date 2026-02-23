@@ -2219,7 +2219,12 @@
                 showElement(productoDropdown);
               }
 
-              if (gastoState.producto && productos.indexOf(gastoState.producto) !== -1){
+              var productoSeRestauraConSelectOption = (
+                gastoState.producto &&
+                productos.indexOf(gastoState.producto) !== -1
+              );
+
+              if (productoSeRestauraConSelectOption){
                 selectOption(productoDropdown, gastoState.producto);
               } else {
                 setDropdownPlaceholder(productoDropdown);
@@ -2229,7 +2234,8 @@
                 gastoState.categoria &&
                 gastoState.producto &&
                 gastoState.proveedor_isDraft === true &&
-                gastoState.proveedor
+                gastoState.proveedor &&
+                !productoSeRestauraConSelectOption
               ){
                 showProveedorContainer();
                 cargarProveedoresPorProducto(gastoState.categoria, gastoState.producto);
