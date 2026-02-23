@@ -2304,7 +2304,11 @@
           }
         }
         setInitialLoadingState();
-        resetCamposDependientes();
+        if (gastoState.producto_isDraft === true && gastoState.producto){
+          resetCamposDesdeProducto();
+        } else {
+          resetCamposDependientes();
+        }
         refreshExpenseCard();
         bindUnlockCategoria();
         bindUnlockProducto();
