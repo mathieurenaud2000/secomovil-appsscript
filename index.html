@@ -7496,6 +7496,7 @@ ventaRegistrada: function() {
 
         google.script.run
           .withSuccessHandler(function(res){
+            console.log('cerrarDia result:', res);
             if (res && res.ok === true){
               loadPage('diaCerrado');
               return;
