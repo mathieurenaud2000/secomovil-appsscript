@@ -364,40 +364,123 @@ function cerrarDia() {
  */
 function previsualizarCierreDia(fecha) {
   try {
+    var tz = Session.getScriptTimeZone();
+
     var sheetPedidos = getSheet_('PEDIDOS DIARIOS');
+    var sheetVentas = getSheet_('VENTAS DIRECTAS');
+    var sheetGastos = getSheet_('GASTOS');
+
+    var pedidosData = [];
     var lastRowPedidos = sheetPedidos.getLastRow();
-
-    if (lastRowPedidos < 2) {
-      return {
-        ok: false,
-        error: 'No hay pedidos para previsualizar el cierre del día.',
-        data: null
-      };
+    if (lastRowPedidos >= 2) {
+      pedidosData = sheetPedidos.getRange(2, 1, lastRowPedidos - 1, 11).getValues(); // A:K
     }
 
-    var pedidos = sheetPedidos
-      .getRange(2, 1, lastRowPedidos - 1, 10)
-      .getValues()
-      .filter(function (r) {
-        return r[0] || r[1] || r[2] || r[3] || r[4];
-      });
+    var pedidosCount = 0;
+    var pedidosSecos = 0;
+    var pedidosTotal = 0;
+    var fechaKey = '';
 
-    if (pedidos.length === 0) {
-      return {
-        ok: false,
-        error: 'No hay pedidos válidos para previsualizar el cierre del día.',
-        data: null
-      };
+    for (var i = 0; i < pedidosData.length; i++) {
+      var rowP = pedidosData[i];
+      if (String(rowP[6] || '').trim() !== 'Sí') { // G
+        continue;
+      }
+
+      pedidosCount++;
+      pedidosSecos += moneyToNumber_(rowP[4]); // E
+      pedidosTotal += moneyToNumber_(rowP[5]); // F
+
+      if (!fechaKey) {
+        fechaKey = dateKey_(rowP[0], tz); // A
+      }
     }
 
-    var resumen = construirResumenCierreDesdePedidos_(pedidos);
-    if (!resumen) {
-      return {
-        ok: false,
-        error: 'No se pudo construir el resumen de previsualización.',
-        data: null
-      };
+    if (!fechaKey) {
+      fechaKey = dateKey_(fecha, tz) || dateKey_(new Date(), tz);
     }
+
+    var ventasData = [];
+    var lastRowVentas = sheetVentas.getLastRow();
+    if (lastRowVentas >= 2) {
+      ventasData = sheetVentas.getRange(2, 1, lastRowVentas - 1, 6).getValues(); // A:F
+    }
+
+    var ventasCount = 0;
+    var ventasSecos = 0;
+    var ventasTotal = 0;
+
+    for (var j = 0; j < ventasData.length; j++) {
+      var rowV = ventasData[j];
+      if (rowV[0] === '' || rowV[0] === null) { // A non vide
+        continue;
+      }
+
+      ventasCount++;
+      ventasSecos += moneyToNumber_(rowV[2]); // C
+      ventasTotal += moneyToNumber_(rowV[4]); // E
+    }
+
+    var gastosData = [];
+    var lastRowGastos = sheetGastos.getLastRow();
+    if (lastRowGastos >= 2) {
+      gastosData = sheetGastos.getRange(2, 1, lastRowGastos - 1, 12).getValues(); // A:L
+    }
+
+    var gastosPorCategoriaMap = {};
+    var gastosTotal = 0;
+
+    for (var k = 0; k < gastosData.length; k++) {
+      var rowG = gastosData[k];
+      var categoria = String(rowG[2] || '').trim(); // C
+      if (!categoria) {
+        continue;
+      }
+
+      var monto = moneyToNumber_(rowG[7]); // H
+      gastosTotal += monto;
+      gastosPorCategoriaMap[categoria] = (gastosPorCategoriaMap[categoria] || 0) + monto;
+    }
+
+    var gastosPorCategoria = Object.keys(gastosPorCategoriaMap).map(function (categoria) {
+      return {
+        categoria: categoria,
+        total: gastosPorCategoriaMap[categoria]
+      };
+    });
+
+    var ingresosTotalCount = pedidosCount + ventasCount;
+    var ingresosTotalAmount = pedidosTotal + ventasTotal;
+
+    var resumen = {
+      fecha: fechaKey,
+      ingresos: {
+        pedidos: {
+          pedidosCount: pedidosCount,
+          secos: pedidosSecos,
+          total: pedidosTotal
+        },
+        ventas: {
+          ventasCount: ventasCount,
+          secos: ventasSecos,
+          total: ventasTotal
+        },
+        total: {
+          count: ingresosTotalCount,
+          total: ingresosTotalAmount
+        },
+        menuDelDia: getMenuProgramadoPorFechaKey_(fechaKey, tz)
+      },
+      gastos: {
+        porCategoria: gastosPorCategoria,
+        total: gastosTotal
+      },
+      beneficios: {
+        ingresos: ingresosTotalAmount,
+        gastos: gastosTotal,
+        total: ingresosTotalAmount - gastosTotal
+      }
+    };
 
     return {
       ok: true,
@@ -415,6 +498,99 @@ function previsualizarCierreDia(fecha) {
     };
   }
 }
+
+function moneyToNumber_(v) {
+  if (v === null || v === undefined || v === '') {
+    return 0;
+  }
+
+  if (typeof v === 'number') {
+    return isNaN(v) ? 0 : v;
+  }
+
+  var s = String(v).trim();
+  if (!s) {
+    return 0;
+  }
+
+  s = s.replace(/\s+/g, '');
+  s = s.replace(/\$/g, '');
+  s = s.replace(/,/g, '.');
+  s = s.replace(/[^0-9.\-]/g, '');
+
+  if (!s || s === '-' || s === '.') {
+    return 0;
+  }
+
+  var parts = s.split('.');
+  if (parts.length > 2) {
+    s = parts.shift() + '.' + parts.join('');
+  }
+
+  var n = Number(s);
+  return isNaN(n) ? 0 : n;
+}
+
+function dateKey_(value, tz) {
+  var timezone = tz || Session.getScriptTimeZone();
+  if (value === null || value === undefined || value === '') {
+    return '';
+  }
+
+  if (Object.prototype.toString.call(value) === '[object Date]') {
+    if (isNaN(value.getTime())) {
+      return '';
+    }
+    return Utilities.formatDate(value, timezone, 'yyyy-MM-dd');
+  }
+
+  var s = String(value).trim();
+  if (!s) {
+    return '';
+  }
+
+  var m;
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) {
+    return m[3] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[1]).slice(-2);
+  }
+
+  m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (m) {
+    return m[1] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[3]).slice(-2);
+  }
+
+  var d = new Date(s);
+  if (!isNaN(d.getTime())) {
+    return Utilities.formatDate(d, timezone, 'yyyy-MM-dd');
+  }
+
+  return '';
+}
+
+function getMenuProgramadoPorFechaKey_(fechaKey, tz) {
+  if (!fechaKey) {
+    return '';
+  }
+
+  var sheetProg = getSheet_('PROGRAMACIÓN MENÚS');
+  var lastRow = sheetProg.getLastRow();
+  if (lastRow < 2) {
+    return '';
+  }
+
+  var data = sheetProg.getRange(2, 1, lastRow - 1, 2).getValues(); // A:B
+  for (var i = 0; i < data.length; i++) {
+    var row = data[i];
+    var rowKey = dateKey_(row[0], tz);
+    if (rowKey === fechaKey) {
+      return String(row[1] || '').trim();
+    }
+  }
+
+  return '';
+}
+
 
 /**
  * Construye el resumen de cierre del día a partir de la matriz de pedidos
