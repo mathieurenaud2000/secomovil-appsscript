@@ -7296,6 +7296,38 @@ ventaRegistrada: function() {
       }
     }
 
+    function setClosingState(isClosing){
+      var btn = document.getElementById('btnCerrar');
+      var chk = document.getElementById('chkConfirm');
+      if (!btn) return;
+
+      btn.dataset.closing = isClosing ? '1' : '0';
+
+      if (typeof window.secoSetBlackButtonLoading === 'function'){
+        window.secoSetBlackButtonLoading(btn, !!isClosing);
+      }
+
+      if (isClosing){
+        btn.disabled = true;
+        btn.classList.remove('btn-noir');
+        btn.classList.add('btn-desactive');
+        return;
+      }
+
+      if (btn.dataset.previewLoading === '1'){
+        btn.disabled = true;
+        btn.classList.remove('btn-noir');
+        btn.classList.add('btn-desactive');
+        return;
+      }
+
+      if (chk && chk.checked){
+        btn.disabled = false;
+        btn.classList.remove('btn-desactive');
+        btn.classList.add('btn-noir');
+      }
+    }
+
     function setResumenFallback(){
       var closeDate = document.getElementById('closeDate');
       var menuDelDia = document.getElementById('menuDelDia');
@@ -7425,7 +7457,7 @@ ventaRegistrada: function() {
       var btn = document.getElementById('btnCerrar');
 
       function sync(){
-        if (btn && btn.dataset.previewLoading === '1'){
+        if (btn && (btn.dataset.previewLoading === '1' || btn.dataset.closing === '1')){
           btn.disabled = true;
           btn.classList.remove('btn-noir');
           btn.classList.add('btn-desactive');
@@ -7456,8 +7488,29 @@ ventaRegistrada: function() {
     if (btnCerrar){
       btnCerrar.addEventListener('click', function(){
         if (btnCerrar.disabled) return;
-        window.secoSetBlackButtonLoading(btnCerrar, true);
-        loadPage('diaCerrado');
+        setError('Cierre en cours...');
+        btnCerrar.disabled = true;
+        btnCerrar.classList.remove('btn-noir');
+        btnCerrar.classList.add('btn-desactive');
+        setClosingState(true);
+
+        google.script.run
+          .withSuccessHandler(function(res){
+            if (res && res.ok === true){
+              loadPage('diaCerrado');
+              return;
+            }
+
+            setError((res && res.error) ? res.error : 'No se pudo cerrar el día.');
+            setClosingState(false);
+          })
+          .withFailureHandler(function(err){
+            var details = '';
+            if (err && err.message) details = ' ' + err.message;
+            setError('Error al cerrar el día.' + details);
+            setClosingState(false);
+          })
+          .cerrarDia();
       });
     }
 
