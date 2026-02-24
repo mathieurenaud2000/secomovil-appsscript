@@ -175,19 +175,21 @@
     <!-- CONTENU -->
     <div class="stack">
 
-      <div class="txt-mini" id="closeDate">5/11/2025</div>
+      <div class="txt-mini" id="closeDate">—</div>
+      <div class="txt-mini" id="menuDelDia"></div>
+      <div class="txt-mini" id="errorBox"></div>
 
       <!-- ===== INGRESOS ===== -->
       <section class="section-block">
         <div class="section-title-box">INGRESOS</div>
 
         <div class="summary-rows">
-          <div class="summary-row"><div>Pedidos (34)</div><div>47,00 $</div></div>
-          <div class="summary-row"><div>Ventas (45)</div><div>65,00 $</div></div>
+          <div class="summary-row"><div id="ingPedidosLabel">0 Pedidos (0 Secos)</div><div id="ingPedidosTotal">0.00 $</div></div>
+          <div class="summary-row"><div id="ingVentasLabel">0 Ventas (0 Secos)</div><div id="ingVentasTotal">0.00 $</div></div>
 
           <div class="summary-sep-black"></div>
 
-          <div class="summary-row total"><div>Ingresos total (79)</div><div>112,00 $</div></div>
+          <div class="summary-row total"><div id="ingTotalLabel">Ingresos total (0)</div><div id="ingTotalAmount">0.00 $</div></div>
         </div>
       </section>
 
@@ -197,15 +199,11 @@
       <section class="section-block">
         <div class="section-title-box">GASTOS</div>
 
-        <div class="summary-rows">
-          <div class="summary-row"><div>Alimentos</div><div>39,00 $</div></div>
-          <div class="summary-row"><div>Transporte</div><div>12,00 $</div></div>
-          <div class="summary-row"><div>Empleados</div><div>26,00 $</div></div>
-          <div class="summary-row"><div>Otros</div><div>6,00 $</div></div>
+        <div class="summary-rows" id="gastosCategoriasContainer">
 
           <div class="summary-sep-black"></div>
 
-          <div class="summary-row total"><div>Total</div><div>83,00 $</div></div>
+          <div class="summary-row total"><div>Total</div><div id="gastosTotal">0.00 $</div></div>
         </div>
       </section>
 
@@ -216,12 +214,12 @@
         <div class="section-title-box">BENEFICIOS</div>
 
         <div class="summary-rows">
-          <div class="summary-row"><div>Ingresos</div><div>112,00 $</div></div>
-          <div class="summary-row"><div>Gastos</div><div>83,00 $</div></div>
+          <div class="summary-row"><div>Ingresos</div><div id="benefIngresos">0.00 $</div></div>
+          <div class="summary-row"><div>Gastos</div><div id="benefGastos">0.00 $</div></div>
 
           <div class="summary-sep-black"></div>
 
-          <div class="summary-row total"><div>Total</div><div>29,00 $</div></div>
+          <div class="summary-row total"><div>Total</div><div id="benefTotal">0.00 $</div></div>
         </div>
       </section>
 

@@ -7261,11 +7261,175 @@ ventaRegistrada: function() {
       }
     }
 
+    function formatNumberSafe(value){
+      var n = Number(value);
+      if (!isFinite(n)) return 0;
+      return n;
+    }
+
+    function formatAmount(value){
+      return formatNumberSafe(value).toFixed(2) + ' $';
+    }
+
+    function setError(message){
+      var errorBox = document.getElementById('errorBox');
+      if (errorBox){
+        errorBox.textContent = message || '';
+      }
+    }
+
+    function setLoadingState(isLoading){
+      var btn = document.getElementById('btnCerrar');
+      var chk = document.getElementById('chkConfirm');
+      if (!btn) return;
+      btn.dataset.previewLoading = isLoading ? '1' : '0';
+      if (isLoading){
+        btn.disabled = true;
+        btn.classList.remove('btn-noir');
+        btn.classList.add('btn-desactive');
+        return;
+      }
+      if (chk && chk.checked){
+        btn.disabled = false;
+        btn.classList.remove('btn-desactive');
+        btn.classList.add('btn-noir');
+      }
+    }
+
+    function setResumenFallback(){
+      var closeDate = document.getElementById('closeDate');
+      var menuDelDia = document.getElementById('menuDelDia');
+      var ingPedidosLabel = document.getElementById('ingPedidosLabel');
+      var ingPedidosTotal = document.getElementById('ingPedidosTotal');
+      var ingVentasLabel = document.getElementById('ingVentasLabel');
+      var ingVentasTotal = document.getElementById('ingVentasTotal');
+      var ingTotalLabel = document.getElementById('ingTotalLabel');
+      var ingTotalAmount = document.getElementById('ingTotalAmount');
+      var gastosContainer = document.getElementById('gastosCategoriasContainer');
+      var gastosTotal = document.getElementById('gastosTotal');
+      var benefIngresos = document.getElementById('benefIngresos');
+      var benefGastos = document.getElementById('benefGastos');
+      var benefTotal = document.getElementById('benefTotal');
+
+      if (closeDate) closeDate.textContent = '—';
+      if (menuDelDia) menuDelDia.textContent = '';
+      if (ingPedidosLabel) ingPedidosLabel.textContent = '0 Pedidos (0 Secos)';
+      if (ingPedidosTotal) ingPedidosTotal.textContent = formatAmount(0);
+      if (ingVentasLabel) ingVentasLabel.textContent = '0 Ventas (0 Secos)';
+      if (ingVentasTotal) ingVentasTotal.textContent = formatAmount(0);
+      if (ingTotalLabel) ingTotalLabel.textContent = 'Ingresos total (0)';
+      if (ingTotalAmount) ingTotalAmount.textContent = formatAmount(0);
+      if (gastosTotal) gastosTotal.textContent = formatAmount(0);
+      if (benefIngresos) benefIngresos.textContent = formatAmount(0);
+      if (benefGastos) benefGastos.textContent = formatAmount(0);
+      if (benefTotal) benefTotal.textContent = formatAmount(0);
+
+      if (gastosContainer){
+        Array.prototype.slice.call(gastosContainer.querySelectorAll('.summary-row.dynamic-gasto')).forEach(function(row){ row.remove(); });
+      }
+    }
+
+    function renderGastosCategorias(items){
+      var gastosContainer = document.getElementById('gastosCategoriasContainer');
+      if (!gastosContainer) return;
+
+      Array.prototype.slice.call(gastosContainer.querySelectorAll('.summary-row.dynamic-gasto')).forEach(function(row){ row.remove(); });
+
+      var sep = gastosContainer.querySelector('.summary-sep-black');
+      var refNode = sep || gastosContainer.firstChild;
+      var list = Array.isArray(items) ? items : [];
+      list.forEach(function(item){
+        var row = document.createElement('div');
+        row.className = 'summary-row dynamic-gasto';
+
+        var name = document.createElement('div');
+        name.textContent = String((item && item.categoria) || '');
+
+        var amount = document.createElement('div');
+        amount.textContent = formatAmount(item && item.total);
+
+        row.appendChild(name);
+        row.appendChild(amount);
+
+        gastosContainer.insertBefore(row, refNode);
+      });
+    }
+
+    function renderResumen(resumen){
+      var closeDate = document.getElementById('closeDate');
+      var menuDelDia = document.getElementById('menuDelDia');
+      var ingPedidosLabel = document.getElementById('ingPedidosLabel');
+      var ingPedidosTotal = document.getElementById('ingPedidosTotal');
+      var ingVentasLabel = document.getElementById('ingVentasLabel');
+      var ingVentasTotal = document.getElementById('ingVentasTotal');
+      var ingTotalLabel = document.getElementById('ingTotalLabel');
+      var ingTotalAmount = document.getElementById('ingTotalAmount');
+      var gastosTotal = document.getElementById('gastosTotal');
+      var benefIngresos = document.getElementById('benefIngresos');
+      var benefGastos = document.getElementById('benefGastos');
+      var benefTotal = document.getElementById('benefTotal');
+
+      var ingresos = (resumen && resumen.ingresos) || {};
+      var pedidos = ingresos.pedidos || {};
+      var ventas = ingresos.ventas || {};
+      var totalIng = ingresos.total || {};
+      var gastos = (resumen && resumen.gastos) || {};
+      var beneficios = (resumen && resumen.beneficios) || {};
+
+      if (closeDate) closeDate.textContent = String((resumen && resumen.fecha) || '—');
+      if (menuDelDia) menuDelDia.textContent = ingresos.menuDelDia ? ('Menú del día: ' + ingresos.menuDelDia) : '';
+
+      if (ingPedidosLabel) ingPedidosLabel.textContent = formatNumberSafe(pedidos.pedidosCount) + ' Pedidos (' + formatNumberSafe(pedidos.secos) + ' Secos)';
+      if (ingPedidosTotal) ingPedidosTotal.textContent = formatAmount(pedidos.total);
+
+      if (ingVentasLabel) ingVentasLabel.textContent = formatNumberSafe(ventas.ventasCount) + ' Ventas (' + formatNumberSafe(ventas.secos) + ' Secos)';
+      if (ingVentasTotal) ingVentasTotal.textContent = formatAmount(ventas.total);
+
+      if (ingTotalLabel) ingTotalLabel.textContent = 'Ingresos total (' + formatNumberSafe(totalIng.count) + ')';
+      if (ingTotalAmount) ingTotalAmount.textContent = formatAmount(totalIng.total);
+
+      renderGastosCategorias(gastos.porCategoria || []);
+      if (gastosTotal) gastosTotal.textContent = formatAmount(gastos.total);
+
+      if (benefIngresos) benefIngresos.textContent = formatAmount(beneficios.ingresos);
+      if (benefGastos) benefGastos.textContent = formatAmount(beneficios.gastos);
+      if (benefTotal) benefTotal.textContent = formatAmount(beneficios.total);
+    }
+
+    function fetchPreview(){
+      setLoadingState(true);
+      setError('Chargement...');
+      google.script.run
+        .withSuccessHandler(function(res){
+          if (!res || !res.ok || !res.data || !res.data.resumen){
+            setResumenFallback();
+            setError((res && res.error) ? res.error : 'No se pudo cargar la previsualización.');
+            setLoadingState(false);
+            return;
+          }
+          renderResumen(res.data.resumen);
+          setError('');
+          setLoadingState(false);
+        })
+        .withFailureHandler(function(){
+          setResumenFallback();
+          setError('Error al cargar la previsualización del cierre del día.');
+          setLoadingState(false);
+        })
+        .previsualizarCierreDia(null);
+    }
+
     function setupConfirm(){
       var chk = document.getElementById('chkConfirm');
       var btn = document.getElementById('btnCerrar');
 
       function sync(){
+        if (btn && btn.dataset.previewLoading === '1'){
+          btn.disabled = true;
+          btn.classList.remove('btn-noir');
+          btn.classList.add('btn-desactive');
+          return;
+        }
         if (chk && chk.checked){
           btn.disabled = false;
           btn.classList.remove('btn-desactive');
@@ -7300,6 +7464,7 @@ ventaRegistrada: function() {
       applyScaleFix();
       sizeHeaderImage();
       setupConfirm();
+      fetchPreview();
     }
 
     if (document.readyState === 'loading'){
