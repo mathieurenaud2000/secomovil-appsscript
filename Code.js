@@ -208,125 +208,203 @@ function guardarIngreso(data) {
  */
 function cerrarDia() {
   try {
+    var preview = previsualizarCierreDia(new Date());
+    if (!preview || !preview.ok || !preview.data || !preview.data.resumen) {
+      return {
+        ok: false,
+        error: (preview && preview.error) ? preview.error : 'No se pudo calcular el resumen de cierre.',
+        data: null
+      };
+    }
+
+    var resumen = preview.data.resumen;
+    var fechaKey = String(resumen.fecha || '').trim();
+    var menuDelDia = resumen.ingresos && resumen.ingresos.menuDelDia ? resumen.ingresos.menuDelDia : '';
+
     var sheetPedidos = getSheet_('PEDIDOS DIARIOS');
-    var sheetHist = getSheet_('HISTORIAL DE PEDIDOS');
+    var sheetHistPedidos = getSheet_('HISTORIAL DE PEDIDOS');
+    var sheetVentas = getSheet_('VENTAS DIRECTAS');
+    var sheetHistVentas = getSheet_('HISTORIAL DE VENTAS');
+    var sheetGastos = getSheet_('GASTOS');
+    var sheetHistGastos = getSheet_('HISTORIAL DE GASTOS');
+    var sheetBeneficios = getSheet_('BENEFICIOS');
+    var sheetResumeMensual = getSheet_('RESUME MENSUAL');
 
-    // 1. Lire les pedidos du jour
+    var pedidosData = [];
     var lastRowPedidos = sheetPedidos.getLastRow();
-    if (lastRowPedidos < 2) {
-      return {
-        ok: false,
-        error: 'No hay pedidos para cerrar este día.',
-        data: null
-      };
+    if (lastRowPedidos >= 2) {
+      pedidosData = sheetPedidos.getRange(2, 1, lastRowPedidos - 1, 11).getValues(); // A:K
     }
 
-    var pedidos = sheetPedidos
-      .getRange(2, 1, lastRowPedidos - 1, 10)
-      .getValues()
-      .filter(function (r) {
-        // on garde seulement les lignes qui ont au moins une info
-        return r[0] || r[1] || r[2] || r[3] || r[4];
-      });
+    var pedidosEntregados = [];
+    for (var i = 0; i < pedidosData.length; i++) {
+      var rowP = pedidosData[i];
+      if (String(rowP[6] || '').trim() !== 'Sí') { // G
+        continue;
+      }
 
-    if (pedidos.length === 0) {
-      return {
-        ok: false,
-        error: 'No hay pedidos válidos para cerrar este día.',
-        data: null
-      };
-    }
+      var cantidad = moneyToNumber_(rowP[4]); // E
+      var total = moneyToNumber_(rowP[5]); // F
+      var precioUnitario = '';
+      if (cantidad && !isNaN(cantidad) && cantidad !== 0) {
+        precioUnitario = total / cantidad;
+      }
 
-    // Construir el resumen ANTES de mover nada
-    var resumen = construirResumenCierreDesdePedidos_(pedidos);
-    if (!resumen) {
-      return {
-        ok: false,
-        error: 'No se pudo construir el resumen de cierre.',
-        data: null
-      };
-    }
-
-    // 2. Enregistrer l’ingreso du jour dans la feuille INGRESOS
-    registrarIngresoDesdePedidos_(pedidos);
-
-    // 3. Sauvegarder l’ancienne ligne 2 de l’historique (si elle existe)
-    var hadRow2 = sheetHist.getLastRow() >= 2;
-    var row2Values = null;
-    var row2Formulas = null;
-    if (hadRow2) {
-      row2Values = sheetHist.getRange(2, 1, 1, 12).getValues();
-      row2Formulas = sheetHist.getRange(2, 1, 1, 12).getFormulasR1C1();
-    }
-
-    // 4. Insérer autant de lignes que de pedidos juste sous l’entête
-    sheetHist.insertRowsAfter(1, pedidos.length);
-
-    // 5. Préparer les nouvelles lignes à écrire
-    var out = [];
-    pedidos.forEach(function (row) {
-      var fechaMenu   = row[0]; // A PEDIDOS DIARIOS
-      var cliente     = row[1]; // B
-      var telefono    = row[2]; // C
-      var direccion   = row[3]; // D
-      var cantidad    = row[4]; // E
-      var total       = row[5]; // F
-      var notas       = row[8]; // I
-      var estado      = row[9]; // J
-
-      // ID
-      var idPedido = generarIdPedido_(fechaMenu, cliente);
-
-      // Menu du jour depuis PROGRAMACIÓN MENÚS
-      var menuDelDia = getMenuProgramadoPorFecha_(fechaMenu);
-
-      // Mise à jour de la base clients (avec adresse et notes)
-      actualizarUltimoPedidoCliente({
-        nombre: cliente,
-        telefono: telefono,
-        fecha: fechaMenu || new Date(),
-        direccion: direccion || '',
-        notas: notas || ''
-      });
-
-      out.push([
-        idPedido,                // A ID pedido
-        new Date(),              // B Fecha del pedido (aujourd’hui)
-        fechaMenu || '',         // C Fecha de entrega
-        cliente || '',           // D Cliente
-        telefono || '',          // E Teléfono
-        direccion || '',         // F Dirección
-        menuDelDia || '',        // G Menú del día
-        cantidad || '',          // H Cantidad
-        1,                       // I Precio unitario ($)
-        total || '',             // J Total ($)
-        estado || '',            // K Estado
-        notas || ''              // L Observaciones
+      pedidosEntregados.push([
+        rowP[10] || '',            // A = K (ID pedido)
+        rowP[0] || '',             // B = A (Fecha pedido)
+        rowP[0] || '',             // C = A (Fecha entrega)
+        rowP[1] || '',             // D = B (Cliente)
+        rowP[2] || '',             // E = C (Teléfono)
+        rowP[3] || '',             // F = D (Dirección)
+        menuDelDia || '',          // G = menuDelDia
+        rowP[4] || '',             // H = E (Cantidad)
+        precioUnitario,            // I = F/E
+        rowP[5] || '',             // J = F (Total)
+        'Entregado',               // K = "Entregado"
+        rowP[8] || ''              // L = I (Observaciones)
       ]);
-    });
+    }
 
-    // 6. Écrire les nouvelles lignes dans l’historique
-    sheetHist.getRange(2, 1, out.length, out[0].length).setValues(out);
-    // enlever le gras sur les lignes qu’on vient d’ajouter
-    sheetHist.getRange(2, 1, out.length, 12).setFontWeight('normal');
+    if (pedidosEntregados.length > 0) {
+      var startHistPedidos = Math.max(sheetHistPedidos.getLastRow() + 1, 2);
+      sheetHistPedidos.getRange(startHistPedidos, 1, pedidosEntregados.length, 12).setValues(pedidosEntregados);
+    }
 
-    // 7. Rétablir l’ancienne ligne 2 (qui a été décalée)
-    if (hadRow2) {
-      var targetRow = 2 + out.length;
-      sheetHist.getRange(targetRow, 1, 1, 12).setValues(row2Values);
-      for (var c = 0; c < 12; c++) {
-        if (row2Formulas[0][c]) {
-          sheetHist.getRange(targetRow, c + 1).setFormulaR1C1(row2Formulas[0][c]);
-        }
+    var ventasData = [];
+    var lastRowVentas = sheetVentas.getLastRow();
+    if (lastRowVentas >= 2) {
+      ventasData = sheetVentas.getRange(2, 1, lastRowVentas - 1, 6).getValues(); // A:F
+    }
+
+    var ventasValidas = [];
+    for (var j = 0; j < ventasData.length; j++) {
+      var rowV = ventasData[j];
+      if (rowV[0] === '' || rowV[0] === null) {
+        continue;
+      }
+      ventasValidas.push([rowV[0], rowV[1], rowV[2], rowV[3], rowV[4], rowV[5]]);
+    }
+
+    if (ventasValidas.length > 0) {
+      var startHistVentas = Math.max(sheetHistVentas.getLastRow() + 1, 2);
+      sheetHistVentas.getRange(startHistVentas, 1, ventasValidas.length, 6).setValues(ventasValidas);
+    }
+
+    var gastosData = [];
+    var lastRowGastos = sheetGastos.getLastRow();
+    if (lastRowGastos >= 2) {
+      gastosData = sheetGastos.getRange(2, 1, lastRowGastos - 1, 12).getValues(); // A:L
+    }
+
+    var gastosValidos = [];
+    for (var k = 0; k < gastosData.length; k++) {
+      var rowG = gastosData[k];
+      if (!String(rowG[2] || '').trim()) {
+        continue;
+      }
+      gastosValidos.push(rowG);
+    }
+
+    if (gastosValidos.length > 0) {
+      var startHistGastos = Math.max(sheetHistGastos.getLastRow() + 1, 2);
+      sheetHistGastos.getRange(startHistGastos, 1, gastosValidos.length, 12).setValues(gastosValidos);
+    }
+
+    if (lastRowPedidos >= 2) {
+      sheetPedidos.getRange(2, 1, lastRowPedidos - 1, 11).clearContent();
+    }
+    if (lastRowVentas >= 2) {
+      sheetVentas.getRange(2, 1, lastRowVentas - 1, 6).clearContent();
+    }
+    if (lastRowGastos >= 2) {
+      sheetGastos.getRange(2, 1, lastRowGastos - 1, 12).clearContent();
+    }
+
+    var beneficiosTotal = moneyToNumber_(resumen.beneficios && resumen.beneficios.total);
+    var beneficiosRow = Math.max(sheetBeneficios.getLastRow() + 1, 2);
+    sheetBeneficios.getRange(beneficiosRow, 1, 1, 6).setValues([[
+      fechaKey,
+      moneyToNumber_(resumen.ingresos && resumen.ingresos.pedidos && resumen.ingresos.pedidos.pedidosCount),
+      moneyToNumber_(resumen.ingresos && resumen.ingresos.ventas && resumen.ingresos.ventas.ventasCount),
+      moneyToNumber_(resumen.beneficios && resumen.beneficios.ingresos),
+      moneyToNumber_(resumen.beneficios && resumen.beneficios.gastos),
+      beneficiosTotal
+    ]]);
+
+    var beneficiosValores = [];
+    var lastRowBeneficios = sheetBeneficios.getLastRow();
+    if (lastRowBeneficios >= 2) {
+      beneficiosValores = sheetBeneficios.getRange(2, 6, lastRowBeneficios - 1, 1).getValues();
+    }
+    var sumaBeneficios = 0;
+    for (var b = 0; b < beneficiosValores.length; b++) {
+      sumaBeneficios += moneyToNumber_(beneficiosValores[b][0]);
+    }
+    sheetBeneficios.getRange(beneficiosRow, 7).setValue(sumaBeneficios);
+
+    var tz = Session.getScriptTimeZone();
+    var fechaMes = fechaKey ? new Date(fechaKey + 'T00:00:00') : new Date();
+    var meses = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+    var mesLabel = meses[Number(Utilities.formatDate(fechaMes, tz, 'M')) - 1] + ' ' + Utilities.formatDate(fechaMes, tz, 'yyyy');
+
+    var lastRowResume = sheetResumeMensual.getLastRow();
+    var resumeData = [];
+    if (lastRowResume >= 2) {
+      resumeData = sheetResumeMensual.getRange(2, 1, lastRowResume - 1, 7).getValues();
+    }
+
+    var idxMes = -1;
+    for (var r = 0; r < resumeData.length; r++) {
+      if (String(resumeData[r][0] || '').trim().toLowerCase() === mesLabel) {
+        idxMes = r;
+        break;
       }
     }
 
-    // 8. Nettoyer PEDIDOS DIARIOS sans effacer les formules
-    limpiarPedidosDelDia();
-    // Mettre à jour le résumé mensuel
-    actualizarResumenMensual();
+    var addB = moneyToNumber_(resumen.ingresos && resumen.ingresos.pedidos && resumen.ingresos.pedidos.pedidosCount);
+    var addC = moneyToNumber_(resumen.ingresos && resumen.ingresos.ventas && resumen.ingresos.ventas.ventasCount);
+    var addD = moneyToNumber_(resumen.beneficios && resumen.beneficios.ingresos);
+    var addE = moneyToNumber_(resumen.beneficios && resumen.beneficios.gastos);
+    var addF = beneficiosTotal;
 
-    // 9. Retourner le resumen conforme au PAQUETE 6
+    if (idxMes >= 0) {
+      var rowNum = idxMes + 2;
+      var existing = resumeData[idxMes];
+      sheetResumeMensual.getRange(rowNum, 2, 1, 5).setValues([[
+        moneyToNumber_(existing[1]) + addB,
+        moneyToNumber_(existing[2]) + addC,
+        moneyToNumber_(existing[3]) + addD,
+        moneyToNumber_(existing[4]) + addE,
+        moneyToNumber_(existing[5]) + addF
+      ]]);
+    } else {
+      var newRow = Math.max(lastRowResume + 1, 2);
+      sheetResumeMensual.getRange(newRow, 1, 1, 6).setValues([[
+        mesLabel,
+        addB,
+        addC,
+        addD,
+        addE,
+        addF
+      ]]);
+    }
+
+    var lastRowResumeAfter = sheetResumeMensual.getLastRow();
+    var resumeF = [];
+    if (lastRowResumeAfter >= 2) {
+      resumeF = sheetResumeMensual.getRange(2, 6, lastRowResumeAfter - 1, 1).getValues();
+    }
+    var cumul = 0;
+    var cumulValues = [];
+    for (var c = 0; c < resumeF.length; c++) {
+      cumul += moneyToNumber_(resumeF[c][0]);
+      cumulValues.push([cumul]);
+    }
+    if (cumulValues.length > 0) {
+      sheetResumeMensual.getRange(2, 7, cumulValues.length, 1).setValues(cumulValues);
+    }
+
     return {
       ok: true,
       error: null,
@@ -343,6 +421,7 @@ function cerrarDia() {
     };
   }
 }
+
 
 /**
  * Previsualiza el cierre del día SIN mover datos ni limpiar hojas.
