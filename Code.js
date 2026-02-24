@@ -208,8 +208,11 @@ function guardarIngreso(data) {
  */
 function cerrarDia() {
   try {
+    Logger.log('cerrarDia START');
     var preview = previsualizarCierreDia(new Date());
+    Logger.log('cerrarDia preview: ' + JSON.stringify(preview));
     if (!preview || !preview.ok || !preview.data || !preview.data.resumen) {
+      Logger.log('cerrarDia EARLY_RETURN preview inválido');
       return {
         ok: false,
         error: (preview && preview.error) ? preview.error : 'No se pudo calcular el resumen de cierre.',
@@ -229,6 +232,12 @@ function cerrarDia() {
     var sheetHistGastos = getSheet_('HISTORIAL DE GASTOS');
     var sheetBeneficios = getSheet_('BENEFICIOS');
     var sheetResumeMensual = getSheet_('RESUME MENSUAL');
+
+    Logger.log('sheetHistPedidos=' + sheetHistPedidos.getName());
+    Logger.log('sheetHistVentas=' + sheetHistVentas.getName());
+    Logger.log('sheetHistGastos=' + sheetHistGastos.getName());
+    Logger.log('sheetBeneficios=' + sheetBeneficios.getName());
+    Logger.log('sheetResumeMensual=' + sheetResumeMensual.getName());
 
     var pedidosData = [];
     var lastRowPedidos = sheetPedidos.getLastRow();
