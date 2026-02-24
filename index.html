@@ -7496,14 +7496,13 @@ ventaRegistrada: function() {
 
         google.script.run
           .withSuccessHandler(function(res){
-            console.log('cerrarDia result:', res);
-            if (res && res.ok === true){
-              loadPage('diaCerrado');
+            if (!res || res.ok !== true){
+              setError((res && res.error) ? res.error : 'Error al cerrar el día.');
+              setClosingState(false);
               return;
             }
 
-            setError((res && res.error) ? res.error : 'No se pudo cerrar el día.');
-            setClosingState(false);
+            loadPage('diaCerrado');
           })
           .withFailureHandler(function(err){
             var details = '';

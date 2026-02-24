@@ -208,11 +208,8 @@ function guardarIngreso(data) {
  */
 function cerrarDia() {
   try {
-    Logger.log('cerrarDia START');
     var preview = previsualizarCierreDia(new Date());
-    Logger.log('cerrarDia preview: ' + JSON.stringify(preview));
     if (!preview || !preview.ok || !preview.data || !preview.data.resumen) {
-      Logger.log('cerrarDia EARLY_RETURN preview inválido');
       return {
         ok: false,
         error: (preview && preview.error) ? preview.error : 'No se pudo calcular el resumen de cierre.',
@@ -232,12 +229,6 @@ function cerrarDia() {
     var sheetHistGastos = getSheet_('HISTORIAL DE GASTOS');
     var sheetBeneficios = getSheet_('BENEFICIOS');
     var sheetResumeMensual = getSheet_('RESUME MENSUAL');
-
-    Logger.log('sheetHistPedidos=' + sheetHistPedidos.getName());
-    Logger.log('sheetHistVentas=' + sheetHistVentas.getName());
-    Logger.log('sheetHistGastos=' + sheetHistGastos.getName());
-    Logger.log('sheetBeneficios=' + sheetBeneficios.getName());
-    Logger.log('sheetResumeMensual=' + sheetResumeMensual.getName());
 
     var pedidosData = [];
     var lastRowPedidos = sheetPedidos.getLastRow();
@@ -302,6 +293,9 @@ function cerrarDia() {
 
     var gastosData = [];
     var lastRowGastos = sheetGastos.getLastRow();
+
+    Logger.log('lastRow PEDIDOS DIARIOS=' + lastRowPedidos + ' | VENTAS DIRECTAS=' + lastRowVentas + ' | GASTOS=' + lastRowGastos);
+
     if (lastRowGastos >= 2) {
       gastosData = sheetGastos.getRange(2, 1, lastRowGastos - 1, 12).getValues(); // A:L
     }
@@ -314,6 +308,8 @@ function cerrarDia() {
       }
       gastosValidos.push(rowG);
     }
+
+    Logger.log('selected counts pedidosEntregados=' + pedidosEntregados.length + ' | ventasValidas=' + ventasValidas.length + ' | gastosValidos=' + gastosValidos.length);
 
     if (gastosValidos.length > 0) {
       var startHistGastos = Math.max(sheetHistGastos.getLastRow() + 1, 2);
@@ -414,6 +410,8 @@ function cerrarDia() {
       sheetResumeMensual.getRange(2, 7, cumulValues.length, 1).setValues(cumulValues);
     }
 
+    Logger.log('FIN_OK');
+
     return {
       ok: true,
       error: null,
@@ -423,6 +421,7 @@ function cerrarDia() {
     };
 
   } catch (e) {
+    Logger.log('FIN_ERROR: ' + (e && e.message ? e.message : 'Error desconocido al cerrar el día.'));
     return {
       ok: false,
       error: e && e.message ? e.message : 'Error desconocido al cerrar el día.',
