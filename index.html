@@ -7385,7 +7385,8 @@ ventaRegistrada: function() {
       if (ingVentasLabel) ingVentasLabel.textContent = formatNumberSafe(ventas.ventasCount) + ' Ventas (' + formatNumberSafe(ventas.secos) + ' Secos)';
       if (ingVentasTotal) ingVentasTotal.textContent = formatAmount(ventas.total);
 
-      if (ingTotalLabel) ingTotalLabel.textContent = 'Ingresos total (' + formatNumberSafe(totalIng.count) + ')';
+      var totalSecos = formatNumberSafe(pedidos.secos) + formatNumberSafe(ventas.secos);
+      if (ingTotalLabel) ingTotalLabel.textContent = 'Ingresos total (' + totalSecos + ' Secos)';
       if (ingTotalAmount) ingTotalAmount.textContent = formatAmount(totalIng.total);
 
       renderGastosCategorias(gastos.porCategoria || []);
