@@ -35,62 +35,6 @@ function listarSectores() {
 
 
 
-function test_crearPedidos() {
-  var sheet = getSheet_('PEDIDOS DIARIOS');
-  
-  // données de test sans la colonne F
-  var pedidos = [
-    ['2025-11-03', 'Luis García', '+593987654321', 'Cerca del puente', 2, 'Sí', '12:30', 'Cliente habitual', 'Pendiente'],
-    ['2025-11-03', 'Marta López', '+593999888777', 'Junto al coliseo', 1, 'No', '12:45', 'Prefiere sin ensalada', 'Pendiente'],
-    ['2025-11-03', 'José Torres', '+593983333222', 'Frente a la iglesia', 3, 'Sí', '12:15', '', 'Pendiente'],
-    ['2025-11-03', 'Patricia Ramos', '+593982222111', 'Calle Bolívar', 2, 'No', '13:00', 'Pagar al recibir', 'Pendiente'],
-    ['2025-11-03', 'Carlos Méndez', '+593981111000', 'Barrio Central', 4, 'Sí', '12:20', '', 'Pendiente']
-  ];
-
-  var startRow = getFirstEmptyRowInColumn_(sheet, 1);
-
-  // Colonnes ciblées: A–E puis G–J
-  var ranges = [
-    sheet.getRange(startRow, 1, pedidos.length, 5), // A–E
-    sheet.getRange(startRow, 7, pedidos.length, 4)  // G–J
-  ];
-
-  // On sépare les blocs de données pour ne pas toucher F
-  var bloqueAE = pedidos.map(function (p) { return p.slice(0, 5); });
-  var bloqueGJ = pedidos.map(function (p) { return p.slice(5); });
-
-  ranges[0].setValues(bloqueAE);
-  ranges[1].setValues(bloqueGJ);
-}
-
-function test_actualizarMenu() {
-  actualizarMenu({
-    nombre: 'Seco de pollo',
-    descripcion: 'Receta mejorada',
-    ingredientes: 'pollo; arroz; ensalada; ají',
-    activo: 'Sí'
-  });
-}
-
-function test_baseClientes() {
-  // 1er passage: crée le client
-  actualizarUltimoPedidoCliente({
-    nombre: 'Luis García',
-    telefono: '+593987654321',
-    fecha: '2025-11-03',
-    direccion: 'Cerca del puente',
-    notas: 'Primera compra'
-  });
-
-  // 2e passage: même client, autre date, autre adresse, autre note
-  actualizarUltimoPedidoCliente({
-    nombre: 'Luis García',
-    telefono: '+593987654321',
-    fecha: '2025-11-04',
-    direccion: 'Oficina municipal',
-    notas: 'Entregar 12:30'
-  });
-}
 
 
 
